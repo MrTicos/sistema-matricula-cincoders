@@ -395,6 +395,32 @@ Cenários validados:
 
 **Evidência da suíte completa de 21/11/2026:** 4 arquivos aprovados; 32 testes aprovados; 0 falhas; duração de 2,55 s.
 
+### 8.5. US-05 — Consulta de matrículas — 21/11/2026
+
+**Jira:** MAT-8
+
+**Endpoint:** GET /api/aluno/matriculas
+
+**Arquivo:** apps/api/tests/matriculas.consulta.test.ts
+
+**Resultado:** 7 testes aprovados.
+
+#### Cenários validados
+
+- [x] CT-01 — Negar acesso sem autenticação (401).
+- [x] CT-02 — Bloquear acesso da secretaria (403).
+- [x] CT-03 — Listar matrículas ativas do aluno.
+- [x] CT-04 — Não retornar matrículas canceladas.
+- [x] CT-05 — Não expor matrículas de outro aluno.
+- [x] CT-06 — Ignorar tentativa de informar outro alunoId.
+- [x] CT-07 — Retornar lista vazia para aluno sem matrículas.
+
+**Suíte completa:** 39 testes aprovados, 0 falhas.
+
+**Pendências:**
+- Implementar a interface React.
+- Validar a atualização da listagem após cancelamento.
+
 ## 9. Priorização e riscos
 
 O prazo é curto. Priorizar **P0** no fluxo do aluno: credenciais, autorização, consulta de ofertas, matrícula, cancelamento, rematrícula, lotação, concorrência, progresso e isolamento de dados. Os testes **P1** da secretaria e do requisito extra acompanham sua implementação.

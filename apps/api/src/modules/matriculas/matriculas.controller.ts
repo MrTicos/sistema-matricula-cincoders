@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { realizarMatricula } from "./matriculas.service";
+import { realizarMatricula, consultarMatriculasAtivas } from "./matriculas.service";
 
 export async function criarMatricula(
   req: Request,
@@ -76,6 +76,44 @@ export async function criarMatricula(
 
     res.status(500).json({
       message: "Não foi possível realizar a matrícula.",
+    });
+  }
+}
+
+export async function listarMatriculasAtivas(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const usuario = req.session.usuario;
+
+  if (!usuario) {
+    res.status(401).json({
+      message: "Usuário não autenticado.",
+    });
+    return;
+  }
+
+  try {
+    const resultado = await consultarMatriculasAtivas(
+      usuario.id
+    );
+
+    if (!resultado) {
+      res.status(403).json({
+        message: "Aluno não possui cadastro acadêmico.",
+      });
+      return;
+    }
+
+    res.status(200).json(resultado);
+  } catch (erro) {
+    console.error(
+      "Erro ao consultar matrículas:",
+      erro
+    );
+
+    res.status(500).json({
+      message: "Não foi possível consultar as matrículas.",
     });
   }
 }

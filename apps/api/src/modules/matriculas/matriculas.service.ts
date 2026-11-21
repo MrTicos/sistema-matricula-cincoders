@@ -128,3 +128,60 @@ export async function realizarMatricula(
     };
   });
 }
+
+export async function consultarMatriculasAtivas(
+  usuarioId: number
+) {
+  const aluno = await prisma.aluno.findUnique({
+    where: { usuarioId },
+    select: { id: true },
+  });
+
+  if (!aluno) {
+    return null;
+  }
+
+  const registros = await prisma.matricula.findMany({
+    where: {
+      alunoId: aluno.id,
+      situacao: "ATIVA",
+    },
+    select: {
+      id: true,
+      turmaId: true,
+      criadaEm: true,
+      turma: {
+        select: {
+          disciplina: {
+            select: {
+              id: true,
+              codigo: true,
+              nome: true,
+              cargaHoraria: true,
+            },
+          },
+          professor: {
+            select: {
+              id: true,
+              nome: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: [
+      { criadaEm: "desc" },
+      { id: "desc" },
+    ],
+  });
+
+  return {
+    matriculas: registros.map((registro) => ({
+      id: registro.id,
+      turmaId: registro.turmaId,
+      criadaEm: registro.criadaEm,
+      disciplina: registro.turma.disciplina,
+      professor: registro.turma.professor,
+    })),
+  };
+}

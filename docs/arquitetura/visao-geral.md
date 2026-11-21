@@ -263,6 +263,30 @@
 
   **Status:** backend implementado e validado; frontend pendente.
 
+  ### Consulta de matrículas ativas — US-05
+
+  **Jira:** MAT-8
+
+  **Endpoint:** `GET /api/aluno/matriculas`
+
+  **Autorização:** perfil `ALUNO`.
+
+  A API identifica o aluno pela sessão autenticada e
+  retorna somente suas matrículas com situação `ATIVA`.
+
+  Cada registro apresenta:
+  - Identificador da matrícula e da turma.
+  - Data da matrícula.
+  - Código, nome e carga horária da disciplina.
+  - Identificador e nome do professor.
+
+  O cliente não escolhe o `alunoId`.
+
+  **Validação:** 7 testes automatizados aprovados.
+
+  **Status:** backend implementado e testado;
+  interface React pendente.
+
   ## Referências internas
 
   - `docs/requisitos-e-backlog.md`
