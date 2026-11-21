@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import { exigirPerfil } from "../../middlewares/auth.middleware";
-import { criarMatricula, listarMatriculasAtivas } from "./matriculas.controller";
+import { criarMatricula, listarMatriculasAtivas, cancelarMatricula } from "./matriculas.controller";
 
 export const matriculasRoutes = Router();
 
@@ -15,4 +15,10 @@ matriculasRoutes.get(
   "/",
   exigirPerfil("ALUNO"),
   listarMatriculasAtivas
+);
+
+matriculasRoutes.patch(
+  "/:matriculaId/cancelar",
+  exigirPerfil("ALUNO"),
+  cancelarMatricula
 );

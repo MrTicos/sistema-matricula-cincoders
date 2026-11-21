@@ -287,6 +287,31 @@
   **Status:** backend implementado e testado;
   interface React pendente.
 
+  ### Cancelamento de matrícula — US-06
+
+  **Jira:** MAT-15
+
+  **Endpoint:** `PATCH /api/aluno/matriculas/:matriculaId/cancelar`
+
+  **Autorização:** perfil `ALUNO`.
+
+  O aluno só pode cancelar suas próprias matrículas ativas.
+
+  O cancelamento:
+  - Altera a situação para `CANCELADA`.
+  - Registra a data em `canceladaEm`.
+  - Preserva o registro original.
+  - Libera a vaga automaticamente.
+  - Permite rematrícula elegível mediante novo registro.
+
+  A atualização utiliza condições de titularidade e situação
+  ativa na própria operação do banco.
+
+  **Validação:** 10 testes automatizados aprovados.
+
+  **Status:** backend implementado e testado;
+  interface React pendente.
+
   ## Referências internas
 
   - `docs/requisitos-e-backlog.md`

@@ -50,15 +50,10 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 **Saída/Definition of Done de cada User Story:**
 
 - [ ] Critérios de aceitação Gherkin exercitados.
-
 - [ ] Casos felizes e principais falhas/limites cobertos.
-
 - [ ] Nenhum teste crítico falha.
-
 - [ ] Rotas não vazam `senhaHash`, dados de outro aluno ou segredos.
-
 - [ ] Documentação e evidências atualizadas.
-
 - [ ] Commit/push verificados e Jira atualizado.
 
 ## 5. Matriz de rastreabilidade
@@ -295,27 +290,16 @@ Os três testes de autorização por perfil utilizam uma **rota exclusiva do amb
 ### 8.3. Situação da Definition of Done da US-01
 
 - [x] Login, `/me` e logout implementados e testados.
-
 - [x] Autorização por perfil implementada e testada.
-
 - [x] Hash Argon2id utilizado na verificação de credenciais.
-
 - [x] Resposta de login não expõe `senhaHash`.
-
 - [x] Armazenamento SQLite de sessões integrado, com arquivos distintos para desenvolvimento e testes.
-
 - [x] Atributos `HttpOnly` e `SameSite=Lax`, regeneração do ID e limpeza do cookie testados.
-
 - [ ] Evidência formal da sessão após reinício da API.
-
 - [ ] Proteção contra CSRF revisada e validada.
-
 - [ ] Atributo `Secure` validado em HTTPS.
-
 - [ ] Isolamento de dados acadêmicos validado quando as rotas estiverem disponíveis.
-
 - [x] Commit/push da autenticação verificados no GitLab (`847ddc8`).
-
 - [ ] Jira MAT-6 atualizado e demais critérios pendentes encerrados.
 
 **Status da US-01:** em andamento; não marcar como concluída apenas pelo resultado de 11/11 testes.
@@ -331,21 +315,13 @@ Os três testes de autorização por perfil utilizam uma **rota exclusiva do amb
 Cenários validados:
 
 - [x] Rejeitar acesso sem autenticação (401).
-
 - [x] Bloquear acesso da secretaria (403).
-
 - [x] Listar ofertas e calcular vagas disponíveis.
-
 - [x] Pesquisar disciplinas pelo código.
-
 - [x] Paginar resultados sem repetir turmas.
-
 - [x] Classificar disciplinas conforme o curso do aluno.
-
 - [x] Identificar disciplinas livres.
-
 - [x] Retornar lista vazia quando não houver resultados.
-
 - [x] Rejeitar parâmetros inválidos de paginação (400).
 
 **Suíte completa:** 20 testes aprovados, 0 falhas.
@@ -420,6 +396,36 @@ Cenários validados:
 **Pendências:**
 - Implementar a interface React.
 - Validar a atualização da listagem após cancelamento.
+
+### 8.6. US-06 — Cancelamento de matrícula — 21/11/2026
+
+**Jira:** MAT-15
+
+**Endpoint:** PATCH /api/aluno/matriculas/:matriculaId/cancelar
+
+**Arquivo:** apps/api/tests/matriculas.cancelamento.test.ts
+
+**Resultado:** 10 testes aprovados.
+
+#### Cenários validados
+
+- [x] CT-01 — Negar cancelamento sem autenticação (401).
+- [x] CT-02 — Bloquear acesso da secretaria (403).
+- [x] CT-03 — Rejeitar identificador inválido (400).
+- [x] CT-04 — Rejeitar matrícula inexistente (404).
+- [x] CT-05 — Cancelar matrícula própria.
+- [x] CT-06 — Impedir cancelamento de outro aluno.
+- [x] CT-07 — Impedir cancelamento repetido.
+- [x] CT-08 — Liberar vaga após cancelamento.
+- [x] CT-09 — Permitir rematrícula após cancelamento.
+- [x] CT-10 — Processar somente um cancelamento simultâneo.
+
+**Suíte completa:** 49 testes aprovados em 6 arquivos,
+0 falhas.
+
+**Limitações:**
+- A interface React ainda não foi implementada.
+- O teste concorrente não substitui testes de carga.
 
 ## 9. Priorização e riscos
 

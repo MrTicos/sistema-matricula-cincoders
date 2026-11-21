@@ -185,3 +185,64 @@ export async function consultarMatriculasAtivas(
     })),
   };
 }
+
+export async function cancelarMatriculaDoAluno(
+  usuarioId: number,
+  matriculaId: number
+) {
+  const aluno = await prisma.aluno.findUnique({
+    where: { usuarioId },
+    select: { id: true },
+  });
+
+  if (!aluno) {
+    return { tipo: "ALUNO_NAO_ENCONTRADO" as const };
+  }
+
+  const resultado = await prisma.matricula.updateMany({
+    where: {
+      id: matriculaId,
+      alunoId: aluno.id,
+      situacao: "ATIVA",
+    },
+    data: {
+      situacao: "CANCELADA",
+      canceladaEm: new Date(),
+    },
+  });
+
+  if (resultado.count === 1) {
+    const matricula = await prisma.matricula.findUniqueOrThrow({
+      where: { id: matriculaId },
+      select: {
+        id: true,
+        turmaId: true,
+        situacao: true,
+        canceladaEm: true,
+      },
+    });
+
+    return {
+      tipo: "CANCELADA" as const,
+      matricula,
+    };
+  }
+
+  // Somente verifica se a matrícula pertence ao próprio aluno.
+  // Não revela a existência de matrículas de terceiros.
+  const matriculaPropria = await prisma.matricula.findFirst({
+    where: {
+      id: matriculaId,
+      alunoId: aluno.id,
+    },
+    select: {
+      situacao: true,
+    },
+  });
+
+  if (matriculaPropria?.situacao === "CANCELADA") {
+    return { tipo: "JA_CANCELADA" as const };
+  }
+
+  return { tipo: "NAO_ENCONTRADA" as const };
+}

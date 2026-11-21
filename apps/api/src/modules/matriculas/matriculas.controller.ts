@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { realizarMatricula, consultarMatriculasAtivas } from "./matriculas.service";
+import { realizarMatricula, consultarMatriculasAtivas, cancelarMatriculaDoAluno } from "./matriculas.service";
 
 export async function criarMatricula(
   req: Request,
@@ -114,6 +114,81 @@ export async function listarMatriculasAtivas(
 
     res.status(500).json({
       message: "Não foi possível consultar as matrículas.",
+    });
+  }
+}
+
+export async function cancelarMatricula(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const usuario = req.session.usuario;
+
+  if (!usuario) {
+    res.status(401).json({
+      message: "Usuário não autenticado.",
+    });
+    return;
+  }
+
+  const idTexto = req.params.matriculaId;
+
+  if (
+    typeof idTexto !== "string" ||
+    !/^[1-9]\d*$/.test(idTexto)
+  ) {
+    res.status(400).json({
+      message: "Identificador de matrícula inválido.",
+    });
+    return;
+  }
+
+  const matriculaId = Number(idTexto);
+
+  if (!Number.isSafeInteger(matriculaId)) {
+    res.status(400).json({
+      message: "Identificador de matrícula inválido.",
+    });
+    return;
+  }
+
+  try {
+    const resultado = await cancelarMatriculaDoAluno(
+      usuario.id,
+      matriculaId
+    );
+
+    switch (resultado.tipo) {
+      case "CANCELADA":
+        res.status(200).json({
+          message: "Matrícula cancelada com sucesso.",
+          matricula: resultado.matricula,
+        });
+        return;
+
+      case "ALUNO_NAO_ENCONTRADO":
+        res.status(403).json({
+          message: "Aluno não possui cadastro acadêmico.",
+        });
+        return;
+
+      case "NAO_ENCONTRADA":
+        res.status(404).json({
+          message: "Matrícula não encontrada.",
+        });
+        return;
+
+      case "JA_CANCELADA":
+        res.status(409).json({
+          message: "Esta matrícula já foi cancelada.",
+        });
+        return;
+    }
+  } catch (erro) {
+    console.error("Erro ao cancelar matrícula:", erro);
+
+    res.status(500).json({
+      message: "Não foi possível cancelar a matrícula.",
     });
   }
 }

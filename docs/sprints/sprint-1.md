@@ -19,10 +19,10 @@ Entregar o fluxo prioritário do aluno: autenticação, consulta de ofertas, rea
 | Must | Consulta de ofertas — US-03 | Backend implementado; 9 testes aprovados; frontend pendente |
 | Must | Realização de matrícula — US-04 | Backend implementado; 12 testes aprovados; frontend pendente |
 | Must | Consulta das matrículas ativas — US-05 | Backend implementado; 7 testes aprovados; frontend pendente |
-| Must | Cancelamento — US-06 | Pendente; o CT-09 simula cancelamento diretamente no banco |
+| Must | Cancelamento — US-06 | Backend implementado; 10 testes aprovados; frontend pendente |
 | Must | Progresso curricular — US-07 | Pendente |
 | Must | Isolamento acadêmico entre alunos | Parcial: US-05 testa a separação de matrículas por titular; outros endpoints privados ainda exigem verificação |
-| Must | Testes automatizados do backend | **39 aprovados em 5 arquivos; 0 falhas** |
+| Must | Testes automatizados do backend | 49 testes aprovados em 6 arquivos; 0 falhas |
 | Must | Persistência das sessões | SQLite integrado; falta evidência após reinício da API |
 | Must | Segurança de cookies e requisições | `HttpOnly`, `SameSite=Lax`, regeneração de ID e limpeza no logout testados; CSRF e `Secure` em HTTPS pendentes |
 | Could | Melhorias visuais secundárias | Não iniciadas; após as funcionalidades essenciais |
@@ -62,6 +62,17 @@ Entregar o fluxo prioritário do aluno: autenticação, consulta de ofertas, rea
 - Matrículas canceladas não aparecem; um aluno não recebe registros de outro, mesmo informando outro `alunoId` na consulta.
 - Retorno de lista vazia para aluno sem matrículas ativas.
 - **7 testes automatizados aprovados**; frontend pendente.
+
+### Cancelamento de matrícula — US-06 (Jira MAT-15)
+
+- Endpoint `PATCH /api/aluno/matriculas/:matriculaId/cancelar`.
+- Cancelamento permitido somente ao titular.
+- Matrículas canceladas permanecem armazenadas.
+- Data do cancelamento registrada.
+- Liberação automática da vaga.
+- Cancelamento repetido rejeitado.
+- Rematrícula validada após cancelamento via API.
+- **10 testes automatizados aprovados**.
 
 ## Critérios de aceitação — Gherkin
 
@@ -191,6 +202,22 @@ Funcionalidade: Consultar matrículas ativas
 
 **Status:** backend implementado e testado; frontend e versionamento pendentes.
 
+### US-06 — Cancelamento de matrícula (MAT-15)
+
+- [x] Endpoint de cancelamento implementado.
+- [x] Autorização por perfil e titularidade validada.
+- [x] Preservação do registro cancelado.
+- [x] Liberação de vagas validada.
+- [x] Rematrícula após cancelamento validada.
+- [x] Concorrência no cancelamento testada.
+- [x] 10 testes automatizados aprovados.
+- [ ] Interface React implementada.
+- [ ] Commit e push verificados.
+- [ ] Jira MAT-15 atualizado.
+
+**Status:** backend implementado e testado;
+frontend pendente.
+
 ## Histórico de validações — 21/11/2026
 
 | Marco | Suítes/arquivos | Testes aprovados | Falhas |
@@ -198,9 +225,12 @@ Funcionalidade: Consultar matrículas ativas
 | Autenticação e autorização — US-01 | 2 | 11 | 0 |
 | Inclusão das ofertas — US-03 | 3 | 20 | 0 |
 | Realização de matrícula — US-04 | 4 | 32 | 0 |
-| Consulta de matrículas ativas — US-05 | 5 | **39** | **0** |
+| Consulta de matrículas ativas — US-05 | 5 | 39 | 0 |
+| Cancelamento de matrícula — US-06 | 6 | **49** | **0** |
 
-**Comando final executado:** `pnpm exec vitest run` (Vitest 5.1.1 + Supertest). Banco acadêmico: SQLite de teste.
+**Comando:** `pnpm exec vitest run`
+
+**Resultado atual:** 49 testes aprovados, 0 falhas.** `pnpm exec vitest run` (Vitest 5.1.1 + Supertest). Banco acadêmico: SQLite de teste.
 
 ## Revisão da Sprint — 21/11/2026
 
