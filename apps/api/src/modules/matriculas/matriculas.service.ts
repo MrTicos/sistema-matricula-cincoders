@@ -1,0 +1,130 @@
+import { prisma } from "../../config/database";
+
+type ResultadoMatricula =
+  | {
+      tipo: "CRIADA";
+      matricula: {
+        id: number;
+        turmaId: number;
+        situacao: string;
+        criadaEm: Date;
+      };
+    }
+  | {
+      tipo:
+        | "ALUNO_NAO_ENCONTRADO"
+        | "TURMA_NAO_ENCONTRADA"
+        | "DISCIPLINA_APROVADA"
+        | "MATRICULA_DUPLICADA"
+        | "TURMA_LOTADA";
+    };
+
+export async function realizarMatricula(
+  usuarioId: number,
+  turmaId: number
+): Promise<ResultadoMatricula> {
+  const aluno = await prisma.aluno.findUnique({
+    where: { usuarioId },
+    select: { id: true },
+  });
+
+  if (!aluno) {
+    return { tipo: "ALUNO_NAO_ENCONTRADO" };
+  }
+
+  return prisma.$transaction(async (tx) => {
+    // Reserva a escrita no SQLite antes das verificações.
+    // Isso ajuda a evitar que duas operações leiam
+    // simultaneamente a mesma disponibilidade de vagas.
+    const reserva = await tx.turma.updateMany({
+      where: { id: turmaId },
+      data: {
+        vagasTotais: { increment: 0 },
+      },
+    });
+
+    if (reserva.count === 0) {
+      return { tipo: "TURMA_NAO_ENCONTRADA" };
+    }
+
+    const turma = await tx.turma.findUnique({
+      where: { id: turmaId },
+      select: {
+        id: true,
+        disciplinaId: true,
+        vagasTotais: true,
+      },
+    });
+
+    if (!turma) {
+      return { tipo: "TURMA_NAO_ENCONTRADA" };
+    }
+
+    // Regra 1: aluno não pode cursar novamente
+    // uma disciplina que já foi aprovada.
+    const aprovacao = await tx.historico.findFirst({
+      where: {
+        alunoId: aluno.id,
+        disciplinaId: turma.disciplinaId,
+        situacao: "APROVADA",
+      },
+      select: { id: true },
+    });
+
+    if (aprovacao) {
+      return { tipo: "DISCIPLINA_APROVADA" };
+    }
+
+    // Regra 2: não pode existir matrícula ativa
+    // em outra turma da mesma disciplina.
+    const matriculaAtiva = await tx.matricula.findFirst({
+      where: {
+        alunoId: aluno.id,
+        situacao: "ATIVA",
+        turma: {
+          is: {
+            disciplinaId: turma.disciplinaId,
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    if (matriculaAtiva) {
+      return { tipo: "MATRICULA_DUPLICADA" };
+    }
+
+    // Regra 3: verificar a capacidade da turma.
+    const vagasOcupadas = await tx.matricula.count({
+      where: {
+        turmaId: turma.id,
+        situacao: "ATIVA",
+      },
+    });
+
+    if (vagasOcupadas >= turma.vagasTotais) {
+      return { tipo: "TURMA_LOTADA" };
+    }
+
+    // Regra 4: criar um NOVO registro.
+    // Matrículas canceladas anteriormente são preservadas.
+    const matricula = await tx.matricula.create({
+      data: {
+        alunoId: aluno.id,
+        turmaId: turma.id,
+        situacao: "ATIVA",
+      },
+      select: {
+        id: true,
+        turmaId: true,
+        situacao: true,
+        criadaEm: true,
+      },
+    });
+
+    return {
+      tipo: "CRIADA",
+      matricula,
+    };
+  });
+}

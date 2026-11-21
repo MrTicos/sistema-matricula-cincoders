@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import { sessionMiddleware } from "./config/session";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { ofertasRoutes } from "./modules/ofertas/ofertas.routes";
+import { matriculasRoutes } from "./modules/matriculas/matriculas.routes";
 
 export const app = express();
 
@@ -18,6 +19,7 @@ app.use(sessionMiddleware);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/aluno/ofertas", ofertasRoutes);
+app.use("/api/aluno/matriculas", matriculasRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.status(200).json({

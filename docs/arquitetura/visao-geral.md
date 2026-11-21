@@ -202,6 +202,67 @@
   **Status:** Backend implementado, com 9 testes aprovados.
   Frontend pendente.
 
+  ### Realização de matrícula — US-04
+
+  **Jira:** MAT-11
+
+  **Endpoint:** `POST /api/aluno/matriculas`
+
+  **Autorização:** perfil `ALUNO`.
+
+  **Entrada:** `{ "turmaId": 3 }`
+
+  O identificador acadêmico do aluno é recuperado a partir
+  da sessão autenticada. O cliente não informa `alunoId`.
+
+  #### Regras de negócio implementadas
+
+  1. A turma solicitada deve existir.
+  2. A turma deve possuir vagas disponíveis.
+  3. O aluno não pode ter sido aprovado anteriormente na disciplina.
+  4. O aluno não pode possuir matrícula ativa em outra turma da mesma disciplina.
+  5. A reprovação anterior não impede uma nova tentativa.
+  6. A rematrícula após cancelamento cria um novo registro.
+  7. As verificações e a criação da matrícula são executadas em transação.
+
+  As regras de rematrícula e unicidade de matrícula ativa
+  seguem, respectivamente, as ADRs 0001 e 0002.
+
+  #### Respostas HTTP
+
+  | Código | Significado |
+  |---|---|
+  | 201 | Matrícula realizada |
+  | 400 | Identificador de turma inválido |
+  | 401 | Usuário não autenticado |
+  | 403 | Perfil não autorizado ou cadastro acadêmico ausente |
+  | 404 | Turma inexistente |
+  | 409 | Violação de regra de matrícula |
+
+  #### Testes automatizados
+
+  **Arquivo:** `apps/api/tests/matriculas.test.ts`
+
+  **Resultado:** 12 testes aprovados em 21/11/2026.
+
+  A suíte valida matrícula válida, autenticação, autorização,
+  turma inexistente, entradas inválidas, aprovação anterior,
+  matrícula duplicada, turma lotada, rematrícula, reprovação
+  e atualização das vagas.
+
+  Também foi realizado um teste com dois alunos disputando
+  simultaneamente a última vaga. Nessa execução, apenas
+  uma matrícula foi confirmada.
+
+  #### Limitações atuais
+
+  - A interface React ainda não foi implementada.
+  - O cancelamento via API pertence à US-06.
+  - A persistência da matrícula foi validada no banco de testes.
+  - Testes adicionais de concorrência e carga permanecem recomendados.
+
+  **Status:** backend implementado e validado; frontend pendente.
+
   ## Referências internas
 
   - `docs/requisitos-e-backlog.md`
