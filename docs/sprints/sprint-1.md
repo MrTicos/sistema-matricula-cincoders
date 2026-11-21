@@ -20,9 +20,9 @@ Entregar o fluxo prioritário do aluno: autenticação, consulta de ofertas, rea
 | Must | Realização de matrícula — US-04 | Backend implementado; 12 testes aprovados; frontend pendente |
 | Must | Consulta das matrículas ativas — US-05 | Backend implementado; 7 testes aprovados; frontend pendente |
 | Must | Cancelamento — US-06 | Backend implementado; 10 testes aprovados; frontend pendente |
-| Must | Progresso curricular — US-07 | Pendente |
+| Must | Progresso curricular — US-07 | Backend implementado; 10 testes aprovados; frontend pendente |
 | Must | Isolamento acadêmico entre alunos | Parcial: US-05 testa a separação de matrículas por titular; outros endpoints privados ainda exigem verificação |
-| Must | Testes automatizados do backend | 49 testes aprovados em 6 arquivos; 0 falhas |
+| Must | Testes automatizados do backend | 59 testes aprovados em 7 arquivos; 0 falhas |
 | Must | Persistência das sessões | SQLite integrado; falta evidência após reinício da API |
 | Must | Segurança de cookies e requisições | `HttpOnly`, `SameSite=Lax`, regeneração de ID e limpeza no logout testados; CSRF e `Secure` em HTTPS pendentes |
 | Could | Melhorias visuais secundárias | Não iniciadas; após as funcionalidades essenciais |
@@ -72,6 +72,16 @@ Entregar o fluxo prioritário do aluno: autenticação, consulta de ofertas, rea
 - Liberação automática da vaga.
 - Cancelamento repetido rejeitado.
 - Rematrícula validada após cancelamento via API.
+- **10 testes automatizados aprovados**.
+
+### Progresso curricular — US-07 (Jira MAT-12)
+
+- Endpoint `GET /api/aluno/progresso` implementado.
+- Cálculo de CH obrigatória, perfil e livre.
+- Separação entre CH aprovada e CH em curso.
+- Transferência do excedente de perfil para livre.
+- Percentuais limitados a 100%.
+- Isolamento do progresso entre alunos.
 - **10 testes automatizados aprovados**.
 
 ## Critérios de aceitação — Gherkin
@@ -218,6 +228,24 @@ Funcionalidade: Consultar matrículas ativas
 **Status:** backend implementado e testado;
 frontend pendente.
 
+### US-07 — Progresso curricular (MAT-12)
+
+- [x] Endpoint de progresso implementado.
+- [x] Cálculos por categoria implementados.
+- [x] Histórico aprovado contabilizado corretamente.
+- [x] Reprovações desconsideradas.
+- [x] Matrículas ativas apresentadas separadamente.
+- [x] Excedente de perfil transferido para livre.
+- [x] Percentuais e CH faltante limitados corretamente.
+- [x] Isolamento entre alunos testado.
+- [x] 10 testes automatizados aprovados.
+- [ ] Interface React implementada.
+- [ ] Commit e push verificados.
+- [ ] Jira MAT-12 atualizado.
+
+**Status:** backend implementado e testado;
+frontend pendente.
+
 ## Histórico de validações — 21/11/2026
 
 | Marco | Suítes/arquivos | Testes aprovados | Falhas |
@@ -226,11 +254,12 @@ frontend pendente.
 | Inclusão das ofertas — US-03 | 3 | 20 | 0 |
 | Realização de matrícula — US-04 | 4 | 32 | 0 |
 | Consulta de matrículas ativas — US-05 | 5 | 39 | 0 |
-| Cancelamento de matrícula — US-06 | 6 | **49** | **0** |
+| Cancelamento de matrícula — US-06 | 6 | 49 | 0 |
+| Progresso curricular — US-07 | 7 | **59** | **0** |
 
 **Comando:** `pnpm exec vitest run`
 
-**Resultado atual:** 49 testes aprovados, 0 falhas.** `pnpm exec vitest run` (Vitest 5.1.1 + Supertest). Banco acadêmico: SQLite de teste.
+**Resultado:** 59 testes aprovados em 7 arquivos, 0 falhas.
 
 ## Revisão da Sprint — 21/11/2026
 

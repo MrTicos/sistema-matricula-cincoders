@@ -5,6 +5,7 @@ import { sessionMiddleware } from "./config/session";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { ofertasRoutes } from "./modules/ofertas/ofertas.routes";
 import { matriculasRoutes } from "./modules/matriculas/matriculas.routes";
+import { progressoRoutes } from "./modules/progresso/progresso.routes";
 
 export const app = express();
 
@@ -20,6 +21,7 @@ app.use(sessionMiddleware);
 app.use("/api/auth", authRoutes);
 app.use("/api/aluno/ofertas", ofertasRoutes);
 app.use("/api/aluno/matriculas", matriculasRoutes);
+app.use("/api/aluno/progresso", progressoRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.status(200).json({

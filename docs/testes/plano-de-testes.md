@@ -427,6 +427,34 @@ Cenários validados:
 - A interface React ainda não foi implementada.
 - O teste concorrente não substitui testes de carga.
 
+### 8.7. US-07 — Progresso curricular — 21/11/2026
+
+**Jira:** MAT-12
+
+**Endpoint:** GET /api/aluno/progresso
+
+**Arquivo:** apps/api/tests/progresso.test.ts
+
+**Resultado:** 10 testes aprovados.
+
+#### Cenários validados
+
+- [x] CT-01 — Negar acesso sem autenticação.
+- [x] CT-02 — Bloquear acesso da secretaria.
+- [x] CT-03 — Calcular CH aprovada por categoria.
+- [x] CT-04 — Retornar progresso vazio.
+- [x] CT-05 — Não integralizar disciplinas reprovadas.
+- [x] CT-06 — Transferir excedente de perfil para livre.
+- [x] CT-07 — Não contabilizar aprovação duplicada.
+- [x] CT-08 — Apresentar CH de matrícula ativa separadamente.
+- [x] CT-09 — Desconsiderar matrícula cancelada da CH em curso.
+- [x] CT-10 — Impedir consulta de progresso de outro aluno.
+
+**Suíte completa:** 59 testes aprovados,
+7 arquivos e 0 falhas.
+
+**Pendência:** integração com o frontend React.
+
 ## 9. Priorização e riscos
 
 O prazo é curto. Priorizar **P0** no fluxo do aluno: credenciais, autorização, consulta de ofertas, matrícula, cancelamento, rematrícula, lotação, concorrência, progresso e isolamento de dados. Os testes **P1** da secretaria e do requisito extra acompanham sua implementação.

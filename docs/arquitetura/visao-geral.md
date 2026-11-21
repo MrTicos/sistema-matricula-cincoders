@@ -312,6 +312,38 @@
   **Status:** backend implementado e testado;
   interface React pendente.
 
+  ### Progresso curricular — US-07
+
+  **Jira:** MAT-12
+
+  **Endpoint:** `GET /api/aluno/progresso`
+
+  **Autorização:** perfil `ALUNO`.
+
+  O progresso é calculado conforme o curso do aluno autenticado.
+
+  O sistema apresenta:
+  - CH exigida por categoria.
+  - CH integralizada por aprovação.
+  - CH em curso, separadamente.
+  - CH faltante.
+  - Percentual de conclusão.
+  - Resumo total do progresso.
+
+  **Regras:**
+  - Apenas históricos aprovados integralizam CH.
+  - Reprovações não integralizam CH.
+  - Matrículas ativas representam CH em curso.
+  - O excedente aprovado de perfil conta como livre.
+  - Percentuais são limitados a 100%.
+  - CH faltante nunca é negativa.
+  - Aprovações duplicadas não são somadas duas vezes.
+
+  **Validação:** 10 testes automatizados aprovados.
+
+  **Status:** backend implementado e testado;
+  frontend pendente.
+
   ## Referências internas
 
   - `docs/requisitos-e-backlog.md`
