@@ -8,7 +8,7 @@ import {
 
 import { useAuth } from "../hooks/useAuth";
 import { LoginPage } from "../pages/LoginPage";
-import { LogoutButton } from "../components/LogoutButton";
+import { OfertasPage } from "../pages/aluno/OfertasPage";
 
 type Perfil = "ALUNO" | "SECRETARIA";
 
@@ -64,11 +64,7 @@ export function AppRoutes() {
         <Route element={<RotaProtegida perfil="ALUNO" />}>
           <Route
             path="/aluno/ofertas"
-            element={
-              <main>
-                <h1>Ofertas disponíveis</h1>
-                <LogoutButton />
-              </main>
+            element={<OfertasPage />
             }
         />
           <Route

@@ -1,6 +1,38 @@
 # Sprint 1 — MVP do aluno: autenticação e fluxo principal
 
-> **Checkpoint atualizado — 21/11/2026:** backend do aluno com 59 testes aprovados; frontend de autenticação (US-02/MAT-7) implementado e aprovado em 11 testes. Total acumulado: **70 testes**, em execuções separadas. A Sprint segue em andamento. Seções abaixo com números menores registram checkpoints históricos.
+> **Checkpoint atualizado — 21/11/2026:** backend do aluno: 59 testes aprovados; frontend: 16 testes aprovados (11 autenticação, 5 ofertas/matrícula). **Total acumulado: 75 testes** em suítes separadas. Sprint ainda em andamento.
+
+## Checkpoint — US-03 e US-04 no frontend
+
+**Jira:** MAT-16 (US-03) e MAT-11 (US-04).
+**Estado:** interface integrada ao backend e validada manualmente; testes de componentes aprovados.
+
+### Entregas
+
+- Listagem de ofertas por aluno, pesquisa por nome/código, paginação na URL e classificação curricular por curso.
+- Exibição de professor, carga horária, vagas totais, ocupadas e disponíveis; indicador de turma lotada.
+- Botão de matrícula que chama `POST /api/aluno/matriculas` com `turmaId` e mantém sessão por cookie.
+- Estados de processamento, mensagens de sucesso/erro e atualização automática de vagas após confirmação.
+
+### Evidências
+
+| Suíte | Testes aprovados | Falhas |
+| --- | ---: | ---: |
+| Backend — US-01/03/04/05/06/07 | 59 | 0 |
+| Frontend — US-02 | 11 | 0 |
+| Frontend — Ofertas/matrícula US-03/04 | 5 | 0 |
+| **Total acumulado** | **75** | **0** |
+
+No frontend, `pnpm exec vitest run`, `pnpm lint` e `pnpm exec tsc -b` foram executados sem erros. Em teste manual, a regra de disciplina já aprovada bloqueou `aluno.si` em CIN0002; `aluno.si2` conseguiu matricular-se, com redução imediata das vagas exibidas. Essa atualização é resultado de nova consulta à API, não de alteração direta no contador pelo navegador.
+
+### Pendências antes de encerrar a entrega
+
+- [ ] Ampliar testes do frontend para paginação e atualização do contador após matrícula.
+- [ ] Validar layout e navegação em 360px.
+- [ ] Implementar telas de matrículas ativas, cancelamento e progresso curricular.
+- [ ] Concluir revisão de CSRF e sessão em HTTPS.
+- [ ] Confirmar commit/push deste checkpoint e atualizar MAT-16/MAT-11 no Jira.
+> **Checkpoint atualizado — 21/11/2026:**_ backend do aluno com 59 testes aprovados; frontend de autenticação (US-02/MAT-7) implementado e aprovado em 11 testes. Total acumulado: _**70 testes**_, em execuções separadas. A Sprint segue em andamento. Seções abaixo com números menores registram checkpoints históricos._
 
 ## US-02 — Interface de autenticação (MAT-7)
 
@@ -9,19 +41,29 @@
 ### Entregas
 
 - Frontend React + TypeScript + Vite inicializado.
+
 - Cliente HTTP com `credentials: "include"` e sessão no backend.
+
 - `AuthProvider` com recuperação da identidade em `/api/auth/me` e hook `useAuth`.
+
 - Formulário de login, estados de carregamento e mensagem de erro.
+
 - Redirecionamentos e rotas protegidas por perfil ALUNO/SECRETARIA.
+
 - Botão de logout; login e logout reais verificados manualmente.
 
 ### Validação
 
 | Categoria | Arquivo | Testes aprovados |
+
 | --- | --- | ---: |
+
 | Formulário | `LoginPage.test.tsx` | 4 |
+
 | Logout | `LogoutButton.test.tsx` | 3 |
+
 | Proteção de rotas | `AppRoutes.test.tsx` | 4 |
+
 | **Total frontend US-02** | **3 arquivos** | **11** |
 
 `pnpm exec vitest run`, `pnpm lint` e `pnpm exec tsc -b` foram executados em `apps/web` sem erros. A suíte do backend acumulou 59 testes aprovados em execução separada.
@@ -29,12 +71,19 @@
 ### Definition of Done — US-02
 
 - [x] Login integrado à API e sessão por cookie.
+
 - [x] Logout pela interface e tratamento de erro.
+
 - [x] Rotas protegidas por perfil e redirecionamentos.
+
 - [x] 11 testes automatizados de frontend aprovados.
+
 - [x] ESLint e TypeScript sem erros.
+
 - [ ] Verificar visualmente viewport de 360px.
+
 - [ ] Revisar CSRF e cookies em HTTPS para entrega.
+
 - [ ] Confirmar commit/push e atualizar Jira MAT-7.
 
 **Próximo foco:** integração das telas de ofertas, matrículas, cancelamento e progresso com o backend já implementado.

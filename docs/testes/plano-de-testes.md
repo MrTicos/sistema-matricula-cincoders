@@ -1,23 +1,55 @@
 # Plano de Testes — Sistema de Matrícula CINCoders
 
-> **Checkpoint consolidado — 21/11/2026:** 59 testes do backend (7 arquivos) e 11 do frontend (3 arquivos), total acumulado de **70 testes aprovados**, sem falhas. As suítes foram executadas separadamente. Seções históricas abaixo preservam resultados de checkpoints anteriores.
+> **Checkpoint consolidado — 21/11/2026:** 59 testes de backend (7 arquivos) e 16 de frontend (4 arquivos), total acumulado de **75 testes aprovados**, sem falhas. As suítes foram executadas separadamente. Resultados menores nas seções seguintes documentam checkpoints anteriores.
+
+## Frontend — US-03 (MAT-16) e US-04 (MAT-11)
+
+**Ferramentas:** Vitest 5.1.1, React Testing Library, user-event e jsdom.
+**Arquivo:** `apps/web/src/pages/aluno/OfertasPage.test.tsx`.
+
+| Caso | Critério | Resultado |
+| --- | --- | --- |
+| CT-01 | Exibir oferta e professor | Aprovado |
+| CT-02 | Pesquisar disciplina por código | Aprovado |
+| CT-03 | Enviar a turma para o serviço de matrícula e mostrar sucesso | Aprovado |
+| CT-04 | Exibir erro quando matrícula for rejeitada | Aprovado |
+| CT-05 | Desabilitar matrícula em turma lotada | Aprovado |
+
+**Resultado automatizado:** 5/5 aprovados. Suíte completa de frontend: 16/16 em 4 arquivos; `pnpm lint` e `pnpm exec tsc -b` sem erros.
+
+**Evidência manual:** login com `aluno.si` e tentativa de matrícula em CIN0002 impedida por aprovação anterior; com `aluno.si2`, matrícula realizada e atualização de vagas confirmada sem recarregar a página.
+
+**Limites:** os cinco testes da interface simulam respostas da API; não validam a persistência real. Os 59 testes de backend foram executados separadamente. Ainda faltam testes automatizados da paginação da interface, atualização do contador após POST, responsividade em 360px e fluxos integrados de consulta/cancelamento.
+> **Checkpoint consolidado — 21/11/2026:**_ 59 testes do backend (7 arquivos) e 11 do frontend (3 arquivos), total acumulado de _**70 testes aprovados**_, sem falhas. As suítes foram executadas separadamente. Seções históricas abaixo preservam resultados de checkpoints anteriores._
 
 ## US-02 — Interface de autenticação (MAT-7)
 
 **Estado:** implementada e testada no frontend React + TypeScript.
 
 | Caso | Cenário | Resultado |
+
 | --- | --- | --- |
+
 | CT-01 | Exibir campos de usuário e senha | Aprovado |
+
 | CT-02 | Enviar credenciais do formulário | Aprovado |
+
 | CT-03 | Exibir erro de login | Aprovado |
+
 | CT-04 | Impedir novo envio enquanto autentica | Aprovado |
+
 | CT-05 | Exibir botão de logout | Aprovado |
+
 | CT-06 | Efetuar logout e redirecionar | Aprovado |
+
 | CT-07 | Exibir erro quando logout falhar | Aprovado |
+
 | CT-08 | Redirecionar visitante à tela de login | Aprovado |
+
 | CT-09 | Impedir acesso do aluno à secretaria | Aprovado |
+
 | CT-10 | Impedir acesso da secretaria à área do aluno | Aprovado |
+
 | CT-11 | Permitir acesso autorizado do aluno | Aprovado |
 
 **Comandos (em `apps/web`):** `pnpm exec vitest run`, `pnpm lint` e `pnpm exec tsc -b`. Resultado: 3 arquivos, **11 testes aprovados**, ESLint e TypeScript sem erros. Login e logout também foram verificados manualmente com a API real.

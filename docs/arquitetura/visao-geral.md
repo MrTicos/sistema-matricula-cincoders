@@ -1,17 +1,36 @@
 # Visão geral da arquitetura — CINCoders
 
-> **Atualização — 21/11/2026:** o frontend React já está iniciado e o fluxo de login, logout e proteção de rotas foi implementado e testado. Descrições antigas de frontend "planejado" abaixo representam checkpoints anteriores.
+> **Checkpoint atualizado — 21/11/2026:** backend com 59 testes aprovados; frontend com 16 testes aprovados (US-02: 11; ofertas e matrícula: 5). **Total acumulado: 75 testes**, em suítes executadas separadamente. As seções antigas abaixo registram checkpoints históricos.
+
+## Consulta de ofertas e matrícula — frontend (US-03/MAT-16 e US-04/MAT-11)
+
+O React consome `GET /api/aluno/ofertas`, com busca por nome/código e paginação por parâmetros de URL (`busca`, `pagina`, `limite`). A resposta inclui disciplina, professor, classificação por curso, vagas totais, vagas ocupadas e vagas disponíveis. A interface mostra estados de carregamento, erro, lista vazia e turma lotada.
+
+O botão **Matricular-se** chama `POST /api/aluno/matriculas`, enviando somente `{ "turmaId": número }`. O backend identifica o aluno pela sessão e verifica vagas, aprovação anterior e unicidade de matrícula ativa por disciplina. Após sucesso, o frontend consulta novamente as ofertas para atualizar a ocupação sem recarregar o navegador.
+
+**Evidência:** cinco testes de componente aprovados (`src/pages/aluno/OfertasPage.test.tsx`), com respostas da API simuladas; ESLint e TypeScript sem erros. Em teste manual com a API real, `aluno.si` foi impedido de cursar novamente CIN0002 por já estar aprovado, enquanto `aluno.si2` realizou matrícula elegível e observou atualização automática das vagas.
+
+**Pendências:** ampliar cenários de busca/paginação, validar visualmente 360px e completar as páginas de consulta, cancelamento e progresso. O frontend não substitui a autorização do backend.
+> **Atualização — 21/11/2026:**_ o frontend React já está iniciado e o fluxo de login, logout e proteção de rotas foi implementado e testado. Descrições antigas de frontend "planejado" abaixo representam checkpoints anteriores._
 
 ## Frontend React — US-02 (MAT-7)
 
 | Pasta (`apps/web/src`) | Responsabilidade |
+
 | --- | --- |
+
 | `api/` | Cliente HTTP e URL do backend |
+
 | `components/` | Componentes reutilizáveis, inclusive logout |
+
 | `contexts/` | Estado de autenticação e provedor |
+
 | `hooks/` | Hook `useAuth` |
+
 | `pages/` | Login e páginas acadêmicas |
+
 | `routes/` | Navegação e proteção por perfil |
+
 | `types/` | Contratos TypeScript do frontend |
 
 Ao iniciar, o `AuthProvider` consulta `GET /api/auth/me`. O formulário envia credenciais para `POST /api/auth/login`; um login bem-sucedido direciona ALUNO a `/aluno/ofertas` e SECRETARIA a `/secretaria`. O logout chama `POST /api/auth/logout` e retorna a `/login`.
@@ -22,15 +41,15 @@ As requisições usam `credentials: "include"` para transportar o cookie de sess
 
 **Pendente:** interfaces acadêmicas definitivas, responsividade em 360px, revisão de CSRF e configuração de cookies HTTPS para produção.
 
-  **Estado do registro original:** documentação inicial de 21/11/2026. Para a situação atual do frontend, consultar a seção US-02 acima.
+  **Estado do registro original:** documentação inicial de 21/11/2026. Para a situação atual do frontend, consultar a seção US-02 acima.
 
-**&#xA0; ## Objetivo e escopo**
+**  ## Objetivo e escopo**
 
   O CINCoders é uma aplicação de matrícula acadêmica com dois perfis: **aluno** e **secretaria**. O aluno consulta ofertas, realiza/cancela matrículas e acompanha o progresso curricular. A secretaria cadastra disciplinas e professores, abre turmas e ajusta vagas dentro das regras de negócio.
 
   O objetivo do MVP é entregar primeiro o fluxo do aluno, os controles de acesso e os testes exigidos no enunciado. Consulte `docs/requisitos-e-backlog.md` para requisitos, Gherkin e prioridades detalhadas.
 
-**&#xA0; ## Stack adotada**
+**  ## Stack adotada**
 
   | Camada | Tecnologia | Situação |
 
@@ -52,7 +71,7 @@ As requisições usam `credentials: "include"` para transportar o cookie de sess
 
   | Organização | Repositório GitLab + Jira MAT | Em uso |
 
-**&#xA0; ## Componentes e fronteiras**
+**  ## Componentes e fronteiras**
 
   ```mermaid
 
@@ -228,7 +247,7 @@ As requisições usam `credentials: "include"` para transportar o cookie de sess
 
   Durante o desenvolvimento, ele está disponível em:
 
-  http\://localhost:3001/api/health
+  http\\://localhost:3001/api/health
 
   **## Segurança e implantação**
 
