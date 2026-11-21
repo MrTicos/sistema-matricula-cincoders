@@ -1,0 +1,26 @@
+# Dependências
+node_modules/
+
+# Variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Banco SQLite
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Prisma Client gerado
+apps/api/src/generated/
+
+# Build
+dist/
+
+# Logs
+*.log
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db

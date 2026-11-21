@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum PerfilUsuario {
+  SECRETARIA
+  ALUNO
+}
+
+enum CategoriaCurricular {
+  OBRIGATORIA
+  ELETIVA_PERFIL
+}
+
+enum SituacaoMatricula {
+  ATIVA
+  CANCELADA
+}
+
+enum SituacaoHistorico {
+  APROVADA
+  REPROVADA
+}
+
+model Usuario {
+  id        Int           @id @default(autoincrement())
+  username  String        @unique
+  nome      String
+  senhaHash String
+  perfil    PerfilUsuario
+
+  aluno Aluno?
+}
+
+model Curso {
+  id              Int    @id @default(autoincrement())
+  nome            String
+  chMinObrigatoria Int
+  chMinPerfil     Int
+  chMinLivre      Int
+
+  alunos      Aluno[]
+  componentes EstruturaCurricular[]
+}
+
+model Aluno {
+  id        Int @id @default(autoincrement())
+  usuarioId Int @unique
+  cursoId   Int
+
+  usuario    Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  curso      Curso      @relation(fields: [cursoId], references: [id], onDelete: Restrict)
+  matriculas Matricula[]
+  historico  Historico[]
+
+  @@index([cursoId])
+}
+
+model Disciplina {
+  id           Int    @id @default(autoincrement())
+  codigo       String @unique
+  nome         String
+  cargaHoraria Int
+
+  componentes EstruturaCurricular[]
+  turmas      Turma[]
+  historicos  Historico[]
+}
+
+model EstruturaCurricular {
+  cursoId      Int
+  disciplinaId Int
+  categoria    CategoriaCurricular
+
+  curso      Curso      @relation(fields: [cursoId], references: [id], onDelete: Restrict)
+  disciplina Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+
+  @@id([cursoId, disciplinaId])
+  @@index([disciplinaId])
+}
+
+model Professor {
+  id    Int    @id @default(autoincrement())
+  nome  String
+  email String @unique
+
+  turmas Turma[]
+}
+
+model Turma {
+  id           Int @id @default(autoincrement())
+  disciplinaId Int
+  professorId  Int
+  vagasTotais  Int
+
+  disciplina Disciplina  @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+  professor  Professor   @relation(fields: [professorId], references: [id], onDelete: Restrict)
+  matriculas Matricula[]
+
+  @@index([disciplinaId])
+  @@index([professorId])
+}
+
+model Matricula {
+  id          Int               @id @default(autoincrement())
+  alunoId     Int
+  turmaId     Int
+  situacao    SituacaoMatricula @default(ATIVA)
+  criadaEm    DateTime          @default(now())
+  canceladaEm DateTime?
+
+  aluno Aluno @relation(fields: [alunoId], references: [id], onDelete: Restrict)
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+
+  // Nao usar @@unique([alunoId, turmaId]): a rematricula cria novo registro.
+  // Nao basta limitar aluno+turma: turmas diferentes podem ter a mesma disciplina.
+  // Validar matricula ativa unica por aluno+disciplina dentro da operacao transacional da API.
+  @@index([alunoId, situacao])
+  @@index([turmaId, situacao])
+}
+
+model Historico {
+  id           Int              @id @default(autoincrement())
+  alunoId      Int
+  disciplinaId Int
+  situacao     SituacaoHistorico
+
+  aluno      Aluno      @relation(fields: [alunoId], references: [id], onDelete: Restrict)
+  disciplina Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+
+  @@index([alunoId, disciplinaId])
+  @@index([alunoId, situacao])
+}
