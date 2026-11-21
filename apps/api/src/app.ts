@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { sessionMiddleware } from "./config/session";
 import { authRoutes } from "./modules/auth/auth.routes";
+import { ofertasRoutes } from "./modules/ofertas/ofertas.routes";
 
 export const app = express();
 
@@ -16,6 +17,7 @@ app.use(cookieParser());
 app.use(sessionMiddleware);
 
 app.use("/api/auth", authRoutes);
+app.use("/api/aluno/ofertas", ofertasRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.status(200).json({

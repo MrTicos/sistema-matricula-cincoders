@@ -244,6 +244,34 @@ Os três testes de autorização por perfil utilizam uma **rota exclusiva do amb
 
 **Status da US-01:** em andamento; não marcar como concluída apenas pelo resultado de 11/11 testes.
 
+### US-03 — Consulta de ofertas — 21/11/2026
+
+**Implementação:** GET /api/aluno/ofertas
+
+**Ferramentas:** Vitest e Supertest.
+
+**Resultado:** 9 testes automatizados aprovados.
+
+Cenários validados:
+
+- [x] Rejeitar acesso sem autenticação (401).
+- [x] Bloquear acesso da secretaria (403).
+- [x] Listar ofertas e calcular vagas disponíveis.
+- [x] Pesquisar disciplinas pelo código.
+- [x] Paginar resultados sem repetir turmas.
+- [x] Classificar disciplinas conforme o curso do aluno.
+- [x] Identificar disciplinas livres.
+- [x] Retornar lista vazia quando não houver resultados.
+- [x] Rejeitar parâmetros inválidos de paginação (400).
+
+**Suíte completa:** 20 testes aprovados, 0 falhas.
+
+**Pendências:**
+- Implementar a interface React.
+- Validar busca e paginação refletidas na URL do navegador.
+- Testar o comportamento responsivo em 360px.
+- Validar a atualização da ocupação após matrícula e cancelamento.
+
 ## 9. Priorização e riscos
 
 O prazo é curto. Priorizar **P0** no fluxo do aluno: credenciais, autorização, consulta de ofertas, matrícula, cancelamento, rematrícula, lotação, concorrência, progresso e isolamento de dados. Os testes **P1** da secretaria e do requisito extra acompanham sua implementação.

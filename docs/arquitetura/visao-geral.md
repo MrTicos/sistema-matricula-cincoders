@@ -177,6 +177,31 @@
   A descrição detalhada dos testes está disponível em
   `docs/testes/plano-de-testes.md`.
 
+  ## Consulta de ofertas — US-03
+
+  **Endpoint:** `GET /api/aluno/ofertas`
+
+  **Autorização:** Perfil `ALUNO`.
+
+  ### Parâmetros
+
+  - `busca`: pesquisa por nome ou código da disciplina.
+  - `pagina`: página solicitada; padrão 1.
+  - `limite`: quantidade de ofertas; padrão 10, máximo 50.
+
+  ### Informações retornadas
+
+  - Disciplina e professor.
+  - Vagas totais, ocupadas e disponíveis.
+  - Classificação curricular relativa ao curso do aluno.
+  - Metadados de paginação.
+
+  A API utiliza o usuário autenticado para identificar
+  o curso do aluno. O cliente não informa o `alunoId`.
+
+  **Status:** Backend implementado, com 9 testes aprovados.
+  Frontend pendente.
+
   ## Referências internas
 
   - `docs/requisitos-e-backlog.md`

@@ -19,8 +19,9 @@ Permitir que alunos utilizem as funcionalidades prioritárias do MVP, iniciando 
 | Must | Login, sessão, `/me` e logout | Implementados e testados |
 | Must | Autorização por perfil `ALUNO`/`SECRETARIA` | Implementada e testada em rota exclusiva dos testes |
 | Must | Isolamento dos dados acadêmicos por aluno | Pendente; depende dos endpoints acadêmicos |
-| Must | Testes automatizados de autenticação/autorização | 11 testes aprovados, 0 falhas |
-| Must | Ofertas, matrícula, cancelamento e progresso do aluno | Pendente |
+| Must | Testes automatizados do backend | 20 aprovados: 11 de autenticação/autorização e 9 de ofertas |
+| Must | Consulta de ofertas | Backend implementado; 9 testes aprovados; frontend pendente |
+| Must | Matrícula, cancelamento e progresso | Pendente |
 | Must | Persistência das sessões | Armazenamento SQLite integrado; evidência após reinício a registrar |
 | Must | Segurança das sessões e cookies | `HttpOnly`, `SameSite=Lax`, regeneração de ID e limpeza no logout testados; CSRF e HTTPS pendentes |
 | Could | Melhorias visuais secundárias | Não iniciadas; após o MVP |
