@@ -1,0 +1,135 @@
+# Visão geral da arquitetura — CINCoders
+
+**Estado:** Documentação inicial, atualizada em 21/11/2026. As partes ainda não implementadas são explicitamente sinalizadas.
+
+## Objetivo e escopo
+
+O CINCoders é uma aplicação de matrícula acadêmica com dois perfis: **aluno** e **secretaria**. O aluno consulta ofertas, realiza/cancela matrículas e acompanha o progresso curricular. A secretaria cadastra disciplinas e professores, abre turmas e ajusta vagas dentro das regras de negócio.
+
+O objetivo do MVP é entregar primeiro o fluxo do aluno, os controles de acesso e os testes exigidos no enunciado. Consulte `docs/requisitos-e-backlog.md` para requisitos, Gherkin e prioridades detalhadas.
+
+## Stack adotada
+
+| Camada | Tecnologia | Situação |
+| --- | --- | --- |
+| Interface | React + TypeScript + Vite | Planejada; ainda sem implementação validada |
+| API HTTP | Express 5 + TypeScript, Node.js | Inicializada; `/api/health` testado manualmente |
+| Dados | Prisma ORM 7 + adaptador `better-sqlite3` | Schema validado; migração aplicada |
+| Persistência | SQLite local | Banco criado e seed conferido |
+| Senhas | Argon2id | Hash no seed e verificação no serviço de login |
+| Sessão | `express-session`, cookie HttpOnly | Proposta e configuração em andamento; ADR-0003 |
+| Testes | Vitest + Supertest | Dependências instaladas; cenários ainda pendentes |
+| Organização | Repositório GitLab + Jira MAT | Em uso |
+
+## Componentes e fronteiras
+
+```mermaid
+flowchart TB
+    A["Interface React (aluno/secretaria)"] -->|"HTTP + JSON"| B["API Express"]
+    B --> C["Rotas e middlewares"]
+    C --> D["Services de negócio"]
+    D --> E["Prisma Client"]
+    E --> F[("SQLite")]
+```
+
+- A interface é responsável pela apresentação, formulários e estados de carregamento/erro; não executa regras de autorização.
+- As rotas e controllers fazem a tradução HTTP (validação de entrada, códigos de resposta e cookies).
+- Os services aplicam as regras de matrícula e progresso e coordenam transações.
+- O Prisma acessa o SQLite; componentes React não acessam o banco diretamente.
+- A autenticação identifica o usuário; **autorização** confere perfil e propriedade dos dados a cada operação.
+
+## Estrutura de pastas proposta
+
+```text
+apps/
+  web/                       # React/Vite — planejado
+  api/
+    prisma/
+      schema.prisma
+      migrations/
+      seed.ts
+    src/
+      app.ts                 # Express e middlewares
+      server.ts              # Processo HTTP
+      config/
+        database.ts          # Prisma Client
+        session.ts           # Sessão — em andamento
+      middlewares/
+        auth.middleware.ts   # Controle de acesso — pendente
+      modules/
+        auth/
+          auth.service.ts   # Verificação de credenciais
+          auth.controller.ts # Pendente
+          auth.routes.ts     # Pendente
+      generated/prisma/      # Gerado, não versionado
+docs/
+  adr/
+  arquitetura/
+  sprints/
+```
+
+## Modelo de dados
+
+O schema físico contém nove entidades:
+
+| Entidade | Papel |
+| --- | --- |
+| `Usuario` | Login, hash e perfil |
+| `Aluno` | Identidade acadêmica com ID numérico e vínculo ao curso |
+| `Curso` | Mínimos de carga horária para progresso |
+| `Disciplina` | Código único e carga horária |
+| `EstruturaCurricular` | Classificação da disciplina dentro de cada curso |
+| `Professor` | Cadastro com e-mail único |
+| `Turma` | Oferta, disciplina, professor e capacidade |
+| `Matricula` | Matrícula ativa/cancelada e histórico de cancelamento |
+| `Historico` | Aprovação/reprovação de disciplinas |
+
+`EstruturaCurricular` contém `OBRIGATORIA` e `ELETIVA_PERFIL`; disciplina sem vínculo curricular naquele curso é tratada como **livre** pela regra de classificação, sem terceira categoria armazenada.
+
+## Regras de domínio críticas
+
+1. Disciplina tem código único e carga horária entre 15 e 120, múltipla de 15.
+2. Professor tem e-mail único.
+3. A turma tem ao menos uma vaga; redução de vagas não pode ficar abaixo das matrículas ativas.
+4. Não pode haver matrícula em turma lotada ou em disciplina já aprovada pelo aluno.
+5. Um aluno não pode possuir duas matrículas **ativas** em turmas de uma mesma disciplina, mesmo que sejam turmas distintas (ADR-0002).
+6. Cancelar a matrícula mantém seu registro como `CANCELADA`; uma rematrícula elegível cria outro registro (ADR-0001).
+7. Histórico com `APROVADA` integraliza carga horária; matrícula em andamento deve ser apresentada separadamente.
+8. A API deve impedir acesso a registros de outro aluno.
+
+Regras envolvendo quantidade de vagas e matrículas simultâneas precisam de verificação transacional. O schema validado **não comprova sozinho** essas invariantes.
+
+## Dados de desenvolvimento
+
+O seed possui três cursos (SI, CC, EC), quatro alunos e uma secretaria, com disciplinas compartilhadas classificadas de maneira diferente por curso. Há históricos aprovados e reprovados. Os usuários são fictícios e usam senha local definida por `SEED_PASSWORD`, armazenada com hash Argon2id.
+
+## Configuração e operação
+
+Execute os comandos abaixo em `apps/api`, com `.env` local configurado:
+
+```powershell
+pnpm install
+pnpm exec prisma validate
+pnpm exec prisma migrate status
+pnpm exec prisma generate
+pnpm exec prisma db seed
+pnpm dev
+```
+
+`GET http://localhost:3001/api/health` é a verificação manual da API já confirmada. Não execute `migrate reset` para conferir dados: isso apagaria o SQLite local.
+
+## Segurança e implantação
+
+- `.env`, banco `*.db`, `node_modules/` e Client gerado não entram no Git; `schema.prisma` e migrações devem entrar.
+- Senhas não são retornadas em respostas de API. Hash não é criptografia reversível.
+- Cookies de sessão e controle de autorização estão em construção; acompanhar `docs/arquitetura/autenticacao.md` e ADR-0003.
+- Para entrega, o `README.md` da raiz deve informar instalação, execução, seed, contas de desenvolvimento, testes, limitações conhecidas e decisões tomadas.
+
+## Referências internas
+
+- `docs/requisitos-e-backlog.md`
+- `docs/modelagem-fisica.md`
+- `docs/adr/0001-rematricula-novo-registro.md`
+- `docs/adr/0002-unicidade-matricula-ativa-por-disciplina.md`
+- `docs/adr/0003-autenticacao-por-sessao.md`
+- `docs/sprints/sprint-0.md` e `docs/sprints/sprint-1.md`
