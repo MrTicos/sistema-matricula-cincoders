@@ -1,9 +1,11 @@
 # Plano de Testes — Sistema de Matrícula CINCoders
 
-**Versão:** 1.0 — 21/11/2026  
-**Status:** Plano aprovado para implementação técnica; execução automatizada ainda pendente  
-**Responsável:** Thiago Silva  
-**Prazo de entrega:** 23/11/2026  
+**Versão:** 1.1 — 21/11/2026
+
+**Status:** Em execução — US-01 com 11 testes automatizados aprovados; demais funcionalidades do MVP pendentes
+
+**Responsável:** Thiago Silva
+**Prazo de entrega:** 23/11/2026
 **Rastreabilidade:** `docs/requisitos-e-backlog.md`, ADRs 0001–0003, Jira MAT
 
 ## 1. Objetivo
@@ -12,10 +14,10 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 
 ## 2. Escopo e estratégia
 
-| Nível | O que valida | Ferramenta planejada |
+| Nível | O que valida | Ferramenta / situação |
 | --- | --- | --- |
 | Unidade | Cálculo de progresso, classificação curricular, validações e regras isoladas | Vitest |
-| Integração | Rotas HTTP, autenticação, Prisma/SQLite, transações e efeitos persistidos | Vitest + Supertest + banco SQLite de teste |
+| Integração | Rotas HTTP, autenticação, Prisma/SQLite, transações e efeitos persistidos | Vitest + Supertest + SQLite; executado para US-01 |
 | Ponta a ponta/manual | Fluxos completos no navegador e estados visuais | Navegador; registrar evidências no PR/README |
 | Responsividade | Telas do aluno utilizáveis em largura de 360px | DevTools do navegador |
 
@@ -28,6 +30,8 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 - Dados iniciais: 6 disciplinas, 2 professores, 7 turmas, 11 vínculos curriculares, 8 históricos e 0 matrículas ativas.
 - Senha do seed via variável de ambiente local `SEED_PASSWORD`; não registrar seu valor no repositório.
 - **Isolamento:** testes automatizados devem apontar para um arquivo SQLite exclusivo de teste, distinto de `dev.db`; preparar dados previsíveis antes de cada teste ou suíte. Não executar migrações destrutivas no banco de desenvolvimento.
+- **Sessões:** a API utiliza `express-session` e `@bleed-believer/connect-sqlite3` para persistir sessões. Os arquivos `sessions.db` (desenvolvimento) e `sessions.test.db` (testes) foram criados em ambientes distintos, conforme verificação local.
+- **Arquivos locais:** `dev.db`, `test.db`, `sessions.db`, `sessions.test.db` e arquivos auxiliares de SQLite não devem ser versionados. O segredo da sessão e as senhas são definidos por variáveis de ambiente.
 - **Repetibilidade:** mesmo conjunto de entrada deve produzir o mesmo resultado e não depender da ordem dos testes.
 
 ## 4. Critérios de entrada e saída
@@ -45,7 +49,7 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 
 ## 5. Matriz de rastreabilidade
 
-**Legenda:** P0 = bloqueia o MVP; P1 = importante; P2 = se houver tempo. Todos os casos abaixo estão **planejados**, exceto onde a seção 8 registrar evidência de execução.
+**Legenda:** P0 = bloqueia o MVP; P1 = importante; P2 = se houver tempo. A execução dos casos é indicada na seção 8; a presença de um cenário nesta matriz não implica sua aprovação.
 
 | ID | Requisito/regra | Cenário a testar | Nível | Prioridade |
 | --- | --- | --- | --- | --- |
@@ -75,8 +79,39 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 | T-24 | API/UX | Erros de rede, carregamento, vazio, sem resultados e ação de tentar novamente | Manual/UI | P1 |
 | T-25 | Mobile | Fluxo do aluno utilizável a 360px sem perda dos comandos críticos | Manual/UI | P0 |
 | T-26 | Extra | Requisito funcional adicional escolhido possui cenário completo de sucesso e falha | Integração/UI | P1 |
+| T-27 | US-01, cookie | Login define cookie com `HttpOnly` e `SameSite=Lax` | Integração | P0 |
+| T-28 | US-01, sessão | Novo login regenera o identificador da sessão | Integração | P0 |
+| T-29 | US-01, logout | Logout envia instrução para limpar o cookie da sessão | Integração | P0 |
+| T-30 | US-01, persistência | Sessão continua válida após reinício da API sem novo login, dentro do prazo de expiração | Manual/integração | P1 |
+| T-31 | US-01, HTTPS | Cookie contém `Secure` em ambiente HTTPS de produção | Integração/manual | P1 |
+| T-32 | US-01, CSRF | Requisições que alteram dados são protegidas contra CSRF | Integração | P0 |
 
 ## 6. Exemplos Gherkin prioritários
+
+```gherkin
+Funcionalidade: Autenticação e sessão
+
+  Cenário: Login válido cria sessão protegida
+    Dado que existe um aluno com credenciais válidas
+    Quando ele realiza login
+    Então a API retorna seu perfil sem senhaHash
+    E cria uma sessão acessível por cookie HttpOnly e SameSite=Lax
+
+  Cenário: Usuário inexistente
+    Quando alguém tenta login com um username inexistente
+    Então a API responde 401 com mensagem genérica
+
+  Cenário: Logout invalida sessão
+    Dado que um aluno está autenticado
+    Quando ele solicita logout
+    Então a API invalida sua sessão e limpa o cookie
+    E uma consulta posterior a /api/auth/me retorna 401
+
+  Cenário: Sessão persiste após reinício
+    Dado que o aluno realizou login e possui cookie válido
+    Quando a API é reiniciada mantendo o mesmo segredo e banco de sessões
+    Então a consulta a /api/auth/me permanece autenticada sem novo login
+```
 
 ```gherkin
 Funcionalidade: Matrícula em turma
@@ -113,32 +148,36 @@ Funcionalidade: Progresso curricular
     E a CH das matrículas ativas deve ser apresentada separadamente
 ```
 
-## 7. Organização proposta dos testes
+## 7. Organização dos testes
 
 ```text
 apps/api/
   tests/
-    auth.test.ts
-    ofertas.test.ts
-    matriculas.test.ts
-    progresso.test.ts
-    secretaria.test.ts
+    auth.test.ts                  # Implementado: 8 testes
+    auth.middleware.test.ts       # Implementado: 3 testes
+    ofertas.test.ts               # Planejado
+    matriculas.test.ts            # Planejado
+    progresso.test.ts             # Planejado
+    secretaria.test.ts            # Planejado
     helpers/
-      banco-teste.ts
+      banco-teste.ts              # Estrutura sugerida, se necessária
 ```
 
-Os nomes são uma proposta; adequar à estrutura efetivamente implementada. Para Supertest, importar `app` de `src/app.ts` sem iniciar o processo com `server.ts`. Usar agentes de sessão do Supertest quando o teste exigir persistência de cookies.
+Os dois arquivos de autenticação já existem; os demais nomes são sugestões para os módulos futuros. Para Supertest, importar `app` de `src/app.ts` sem iniciar `server.ts`. Usar `request.agent(app)` nos cenários que precisam reutilizar cookies entre chamadas. A autorização da secretaria foi exercitada por rota exclusiva do ambiente de teste, não por um endpoint administrativo já entregue na API.
 
-### Comandos previstos
+### Comandos de verificação
 
 ```powershell
 cd C:\dev\sistema-matricula-cincoders\apps\api
 pnpm exec prisma validate
 pnpm exec prisma migrate status
-pnpm test
+pnpm exec vitest run tests/auth.test.ts
+pnpm exec vitest run
 ```
 
-**Atenção:** `pnpm test` só passa a representar evidência quando existirem testes e a execução terminar com sucesso. Não usar uma saída sem testes encontrados como prova de qualidade.
+**Pré-condição:** `DATABASE_URL` deve apontar para o banco SQLite de teste preparado com migrações e seed, nunca para `dev.db`. Os testes dependem das variáveis locais `SESSION_SECRET` e `SEED_PASSWORD`. Não registrar seus valores em logs ou documentos. Antes de executar uma suíte que altera dados, conferir as variáveis e o banco de destino.
+
+**Atenção:** um teste que passa não comprova requisitos ainda não exercitados. Os testes atuais de autenticação não substituem os futuros testes de matrícula, concorrência, propriedade de dados ou CSRF.
 
 ## 8. Registro de execução
 
@@ -149,18 +188,73 @@ pnpm test
 | 21/11/2026 | `prisma db seed` (duas execuções) | Ambas terminaram sem erros | Passou |
 | 21/11/2026 | Contagem do banco com Prisma Client | Quantidades esperadas conferidas pelo responsável | Passou — conferência manual |
 | 21/11/2026 | `GET /api/health` | Resposta JSON esperada informada pelo responsável | Passou — teste manual |
-| — | Testes automatizados de autenticação e regras de negócio | Não executados ainda | Pendente |
-| — | Testes da interface em 360px | Frontend ainda não validado | Pendente |
+| 21/11/2026 | Login manual `aluno.si` | HTTP 200 e perfil `ALUNO`; `/api/auth/me` respondeu autenticado | Passou — manual |
+| 21/11/2026 | Logout manual | `/api/auth/me` passou a responder `401` após logout | Passou — manual |
+| 21/11/2026 | Criação do armazenamento SQLite de sessões | `Test-Path .\sessions.db` → `True` | Passou — verificação de arquivo |
+| 21/11/2026 | Separação do arquivo de sessões de teste | `Test-Path .\sessions.test.db` → `True` | Passou — verificação de arquivo |
+| 21/11/2026 | `pnpm exec vitest run tests/auth.test.ts` | 1 arquivo, 8 testes, 0 falhas; duração 2,83 s | Passou |
+| 21/11/2026 | `pnpm exec vitest run` | 2 arquivos, 11 testes (8 autenticação + 3 autorização), 0 falhas; duração 2,18 s | Passou |
+| A confirmar | Sessão mantida após reiniciar a API | Registrar resposta de `/api/auth/me` sem novo login | Pendente de evidência explícita |
+| — | CSRF e atributo `Secure` em HTTPS | Ainda não testados | Pendente |
+| — | Isolamento acadêmico entre alunos | Endpoints acadêmicos ainda não implementados | Pendente |
+| — | Matrícula, cancelamento, progresso e demais regras de negócio | Testes ainda não implementados | Pendente |
+| — | Interface em largura de 360px | Frontend ainda não validado | Pendente |
 
-## 9. Riscos
+### 8.1. Evidências detalhadas da US-01 — 21/11/2026
+
+**Resultado da suíte completa:** 11 testes aprovados, 0 reprovados, em 2 arquivos de teste (Vitest 5.1.1 + Supertest).
+
+| ID de teste | Cenário automatizado | Evidência |
+| --- | --- | --- |
+| T-03 | `GET /api/auth/me` sem autenticação | HTTP 401 |
+| T-02 | Senha incorreta | HTTP 401 com mensagem genérica |
+| T-01 | Login válido e manutenção da sessão de `aluno.si` | HTTP 200; perfil `ALUNO`; resposta sem `senhaHash`; `/me` autenticado |
+| T-04 | Logout invalida sessão | `/me` após logout → HTTP 401 |
+| T-02 | Username inexistente | HTTP 401 com mensagem genérica |
+| T-27 | Cookie de sessão | `HttpOnly` e `SameSite=Lax` presentes |
+| T-28 | Novo login na mesma sessão de cliente | Identificador de sessão alterado |
+| T-29 | Logout limpa cookie | Resposta de logout envia cookie vazio; `/me` → HTTP 401 |
+| T-03 | Cliente sem sessão em rota restrita à secretaria | HTTP 401 |
+| T-03 | Aluno em rota restrita à secretaria | HTTP 403 |
+| T-03 | Secretaria em rota autorizada | HTTP 200 |
+
+Os três testes de autorização por perfil utilizam uma **rota exclusiva do ambiente de testes**. Eles validam o middleware, mas não representam a implementação dos futuros endpoints administrativos.
+
+### 8.2. Limites da evidência
+
+- O teste de regeneração compara identificadores emitidos em **dois logins sucessivos**; não substitui uma auditoria completa contra fixação de sessão.
+- O teste de `HttpOnly`/`SameSite=Lax` inspeciona o cabeçalho `Set-Cookie` no ambiente de testes. `Secure` deve ser verificado separadamente em HTTPS.
+- O armazenamento em arquivo SQLite foi criado, mas isso **não comprova sozinho** que a sessão sobrevive a reinício da API. É necessária a evidência específica do cenário T-30.
+- `SameSite=Lax` não é prova suficiente de proteção contra CSRF; o cenário T-32 permanece aberto.
+- Não há cobertura de autorização por propriedade dos dados acadêmicos (T-05) enquanto os endpoints correspondentes não existirem.
+
+### 8.3. Situação da Definition of Done da US-01
+
+- [x] Login, `/me` e logout implementados e testados.
+- [x] Autorização por perfil implementada e testada.
+- [x] Hash Argon2id utilizado na verificação de credenciais.
+- [x] Resposta de login não expõe `senhaHash`.
+- [x] Armazenamento SQLite de sessões integrado, com arquivos distintos para desenvolvimento e testes.
+- [x] Atributos `HttpOnly` e `SameSite=Lax`, regeneração do ID e limpeza do cookie testados.
+- [ ] Evidência formal da sessão após reinício da API.
+- [ ] Proteção contra CSRF revisada e validada.
+- [ ] Atributo `Secure` validado em HTTPS.
+- [ ] Isolamento de dados acadêmicos validado quando as rotas estiverem disponíveis.
+- [ ] Commit/push verificados e Jira MAT-6 atualizado.
+
+**Status da US-01:** em andamento; não marcar como concluída apenas pelo resultado de 11/11 testes.
+
+## 9. Priorização e riscos
+
+O prazo é curto. Priorizar **P0** no fluxo do aluno: credenciais, autorização, consulta de ofertas, matrícula, cancelamento, rematrícula, lotação, concorrência, progresso e isolamento de dados. Os testes **P1** da secretaria e do requisito extra acompanham sua implementação.
 
 Riscos que exigem atenção:
 
 1. **Concorrência:** duas matrículas simultâneas podem violar capacidade/unicidade sem transação adequada.
 2. **Privacidade:** usar o ID vindo do cliente em vez da sessão pode expor dados de outro aluno.
-3. **Sessões:** armazenamento em memória não atende à proposta final de persistência; revisar ADR-0003.
-4. **Banco de teste:** evitar modificar `dev.db` ao executar testes automatizados.
-5. **Cobertura falsa:** não marcar testes como concluídos apenas porque TypeScript compila ou porque seed e health check funcionam.
+3. **Sessões e CSRF:** a persistência foi integrada ao SQLite, mas requer evidência após reinício; revisar CSRF e os cookies de produção antes da entrega.
+4. **Banco de teste:** assegurar que Vitest, Prisma e o armazenamento de sessão não modifiquem `dev.db` nem o banco de sessões de desenvolvimento.
+5. **Cobertura falsa:** os 11 testes aprovados cobrem apenas autenticação/autorização; não implicam aprovação do MVP completo.
 
 ## 10. Manutenção
 

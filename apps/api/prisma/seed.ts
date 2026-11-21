@@ -9,10 +9,19 @@ if (!url) throw new Error("DATABASE_URL ausente em apps/api/.env");
 const prisma = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url }) });
 
 // Somente desenvolvimento. Defina SEED_PASSWORD no .env local, sem versionar.
-const senha = process.env.SEED_PASSWORD;
-if (!senha || senha.length < 12) {
-  throw new Error("Defina SEED_PASSWORD com pelo menos 12 caracteres no .env local");
+function obterSenhaSeed(): string {
+  const senha = process.env.SEED_PASSWORD;
+
+  if (!senha || senha.length < 12) {
+    throw new Error(
+      "Defina SEED_PASSWORD com pelo menos 12 caracteres no .env local"
+    );
+  }
+
+  return senha;
 }
+
+const senha = obterSenhaSeed();
 
 async function main() {
   const hash = await argon2.hash(senha, { type: argon2.argon2id });
