@@ -9,6 +9,8 @@ import {
 import { useAuth } from "../hooks/useAuth";
 import { LoginPage } from "../pages/LoginPage";
 import { OfertasPage } from "../pages/aluno/OfertasPage";
+import { MatriculasPage } from "../pages/aluno/MatriculasPage";
+import { ProgressoPage } from "../pages/aluno/ProgressoPage";
 
 type Perfil = "ALUNO" | "SECRETARIA";
 
@@ -69,11 +71,11 @@ export function AppRoutes() {
         />
           <Route
             path="/aluno/matriculas"
-            element={<h1>Minhas matrículas</h1>}
+            element={<MatriculasPage />}
           />
           <Route
             path="/aluno/progresso"
-            element={<h1>Progresso curricular</h1>}
+            element={<ProgressoPage />}
           />
         </Route>
 

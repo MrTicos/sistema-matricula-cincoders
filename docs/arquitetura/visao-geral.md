@@ -1,6 +1,25 @@
 # Visão geral da arquitetura — CINCoders
 
-> **Checkpoint atualizado — 21/11/2026:** backend com 59 testes aprovados; frontend com 16 testes aprovados (US-02: 11; ofertas e matrícula: 5). **Total acumulado: 75 testes**, em suítes executadas separadamente. As seções antigas abaixo registram checkpoints históricos.
+> **Checkpoint atualizado — 21/11/2026:** backend com 59 testes aprovados e frontend com 30 testes aprovados. **Total acumulado: 89 testes**, em execuções separadas. Seções antigas abaixo registram checkpoints históricos.
+
+## Consulta, cancelamento e progresso — frontend do aluno
+
+| História | Rota React | Endpoint Express |
+| --- | --- | --- |
+| US-05 — Matrículas ativas | `/aluno/matriculas` | `GET /api/aluno/matriculas` |
+| US-06 — Cancelamento | Ação em `/aluno/matriculas` | `PATCH /api/aluno/matriculas/:matriculaId/cancelar` |
+| US-07 — Progresso curricular | `/aluno/progresso` | `GET /api/aluno/progresso` |
+
+### Responsabilidades e comportamento
+
+- **Consulta de matrículas:** a interface apresenta apenas os registros ativos fornecidos pela API, com disciplina, professor, turma, carga horária e data. O aluno é identificado pela sessão; não se aceita `alunoId` do cliente para buscar dados privados.
+- **Cancelamento:** o frontend exige confirmação e oferece desistência. Após resposta de sucesso, remove a matrícula cancelada da lista; o backend preserva o registro com situação `CANCELADA` e libera a vaga. Em eventual rematrícula elegível, cria-se novo registro (ADR-0001).
+- **Progresso:** a API entrega indicadores `exigida`, `integralizada`, `emCurso`, `faltante` e `percentual` para obrigatória, perfil, livre e total, além de `cargaHorariaEmCurso`. O frontend exibe barras e indicadores sem recalcular as regras acadêmicas.
+- **Segurança:** autenticação e autorização de propriedade são garantidas no backend. Rotas protegidas no React não substituem as verificações da API.
+
+### Validação e pendências
+
+Foram aprovados 5 testes de frontend da US-05, 4 da US-06 e 5 da US-07, além dos 16 testes anteriores. A consulta de matrícula real, o cancelamento com liberação de vaga e a tela de progresso foram verificados manualmente. Permanecem pendentes testes de ponta a ponta, conferência em 360px, revisão de CSRF/HTTPS e implementação das áreas administrativas.
 
 ## Consulta de ofertas e matrícula — frontend (US-03/MAT-16 e US-04/MAT-11)
 

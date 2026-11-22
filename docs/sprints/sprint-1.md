@@ -1,6 +1,40 @@
 # Sprint 1 — MVP do aluno: autenticação e fluxo principal
 
-> **Checkpoint atualizado — 21/11/2026:** backend do aluno: 59 testes aprovados; frontend: 16 testes aprovados (11 autenticação, 5 ofertas/matrícula). **Total acumulado: 75 testes** em suítes separadas. Sprint ainda em andamento.
+> **Checkpoint atualizado — 21/11/2026:** backend do aluno: 59 testes aprovados; frontend: 30 testes aprovados. **Total acumulado: 89 testes** em suítes separadas, segundo as validações reportadas. A Sprint segue em andamento; números menores abaixo são históricos.
+
+## Checkpoint — US-05, US-06 e US-07 no frontend
+
+**Jira:** MAT-8 (US-05), MAT-15 (US-06) e MAT-12 (US-07).
+**Estado:** fluxo principal do aluno implementado no frontend; consolidação de entrega e refinamento final pendentes.
+
+### Entregas realizadas
+
+- **US-05:** página de matrículas ativas com disciplina, professor, turma, data, estados de carregamento, lista vazia e erro. Dados do próprio aluno vêm de `GET /api/aluno/matriculas`, usando a sessão.
+- **US-06:** confirmação antes do cancelamento, opção de desistir, `PATCH /api/aluno/matriculas/:matriculaId/cancelar`, mensagens de sucesso/erro e remoção da matrícula cancelada da lista.
+- **US-07:** página com curso, percentuais e cargas horárias obrigatória, perfil, livre e total; horas em andamento apresentadas separadamente de horas aprovadas.
+- Navegação provisória entre ofertas, matrículas e progresso; acabamento visual não priorizado neste checkpoint.
+
+### Validação
+
+| Escopo | Arquivos de testes | Testes aprovados |
+| --- | ---: | ---: |
+| Backend (US-01/03/04/05/06/07) | 7 | 59 |
+| Frontend — US-02/03/04 | 4 | 16 |
+| Frontend — US-05 | 1 | 5 |
+| Frontend — US-06 | 1 | 4 |
+| Frontend — US-07 | 1 | 5 |
+| **Total acumulado** | **14** | **89** |
+
+**Evidência manual:** consulta de matrícula real, cancelamento com liberação de vaga e apresentação de progresso curricular confirmados. **Verificações:** Vitest, ESLint e TypeScript passaram, conforme relato do desenvolvedor.
+
+### Pendências e próximos passos
+
+- [ ] Conferir `git status`, revisar alterações, registrar commit e push deste marco.
+- [ ] Atualizar as tarefas MAT-8, MAT-15 e MAT-12 no Jira.
+- [ ] Validar layout de 360px, navegação e comportamento em outros tamanhos de tela.
+- [ ] Revisar CSRF, HTTPS/cookies e persistência de sessão após reinício.
+- [ ] Implementar funcionalidades obrigatórias da secretaria e requisito adicional.
+- [ ] Revisar README, documentação e instruções de execução para a entrega de 23/11/2026.
 
 ## Checkpoint — US-03 e US-04 no frontend
 

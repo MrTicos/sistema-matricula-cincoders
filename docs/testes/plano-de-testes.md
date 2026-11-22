@@ -1,6 +1,48 @@
 # Plano de Testes — Sistema de Matrícula CINCoders
 
-> **Checkpoint consolidado — 21/11/2026:** 59 testes de backend (7 arquivos) e 16 de frontend (4 arquivos), total acumulado de **75 testes aprovados**, sem falhas. As suítes foram executadas separadamente. Resultados menores nas seções seguintes documentam checkpoints anteriores.
+> **Checkpoint consolidado — 21/11/2026:** 59 testes de backend (7 arquivos) e 30 de frontend (7 arquivos), total acumulado de **89 testes aprovados**, sem falhas reportadas. As suítes foram executadas separadamente. Resultados menores abaixo são checkpoints históricos.
+
+## Frontend — US-05, US-06 e US-07
+
+**Ferramentas:** Vitest, React Testing Library e jsdom. **Jira:** MAT-8, MAT-15 e MAT-12.
+
+| História | Arquivo | Cenários automatizados | Resultado |
+| --- | --- | ---: | --- |
+| US-05 — Consultar matrículas ativas | `MatriculasPage.test.tsx` | 5 | Aprovados |
+| US-06 — Cancelamento | `MatriculasCancelamento.test.tsx` | 4 | Aprovados |
+| US-07 — Progresso curricular | `ProgressoPage.test.tsx` | 5 | Aprovados, conforme confirmação do desenvolvedor |
+
+### Cenários US-05
+
+- [x] CT-01 — Exibir matrículas ativas.
+- [x] CT-02 — Exibir disciplina, professor, turma, carga horária e situação.
+- [x] CT-03 — Exibir estado vazio quando não houver matrículas.
+- [x] CT-04 — Apresentar erro de consulta.
+- [x] CT-05 — Exibir indicador de carregamento.
+
+### Cenários US-06
+
+- [x] CT-01 — Exigir confirmação antes de cancelar.
+- [x] CT-02 — Permitir desistência sem cancelar.
+- [x] CT-03 — Confirmar cancelamento e retirar a matrícula da lista.
+- [x] CT-04 — Exibir erro sem remover a matrícula quando a API falhar.
+
+### Cenários US-07
+
+- [x] CT-01 — Consultar o progresso do aluno.
+- [x] CT-02 — Exibir categorias obrigatória, perfil e livre.
+- [x] CT-03 — Exibir percentual total retornado pela API.
+- [x] CT-04 — Apresentar horas em andamento separadas das integralizadas.
+- [x] CT-05 — Exibir erro de consulta.
+
+### Evidências e limites
+
+- **Execução automatizada:** 30 testes de frontend em 7 arquivos e 59 de backend em 7 arquivos, total acumulado de 89, em execuções separadas.
+- **Verificações de qualidade:** ESLint e TypeScript sem erros, conforme resultados informados.
+- **Teste manual US-05:** listagem real de matrícula do aluno `aluno.si2` exibida na interface.
+- **Teste manual US-06:** cancelamento confirmado e vaga liberada na oferta correspondente.
+- **Teste manual US-07:** página de progresso renderizada corretamente com a API real.
+- **Limitações:** testes de componente simulam respostas HTTP e não equivalem a testes ponta a ponta; testar responsividade em 360px, navegação completa e cenários de sessão/CSRF no ambiente de entrega.
 
 ## Frontend — US-03 (MAT-16) e US-04 (MAT-11)
 
