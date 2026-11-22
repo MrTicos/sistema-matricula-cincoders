@@ -265,3 +265,190 @@ describe("US-08 — Consulta de disciplinas", () => {
     expect(await screen.findByText("Nenhuma disciplina cadastrada.")).toBeTruthy();
   });
 });
+
+describe("US-09 — Edição de disciplinas", () => {
+  const listaComDisciplina = {
+    disciplinas: [disciplinaExemplo],
+    paginacao: { pagina: 1, limite: 10, total: 1, totalPaginas: 1 },
+  };
+
+  it("CT-01: deve abrir formulário preenchido com os dados da disciplina", async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce(listaComDisciplina);
+
+    const usuario = userEvent.setup();
+    renderizarPagina();
+    await screen.findByText("CIN0100");
+
+    await usuario.click(screen.getByRole("button", { name: "Editar CIN0100" }));
+
+    expect(screen.getByLabelText("Código da disciplina em edição")).toHaveProperty(
+      "value", "CIN0100"
+    );
+    expect(screen.getByLabelText("Nome da disciplina em edição")).toHaveProperty(
+      "value", "Projeto de Software"
+    );
+    expect(screen.getByLabelText("Carga horária em edição")).toHaveProperty(
+      "value", "60"
+    );
+  });
+
+  it("CT-02: deve cancelar a edição sem chamar a API", async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce(listaComDisciplina);
+
+    const usuario = userEvent.setup();
+    renderizarPagina();
+    await screen.findByText("CIN0100");
+
+    await usuario.click(screen.getByRole("button", { name: "Editar CIN0100" }));
+    await usuario.click(screen.getByRole("button", { name: "Cancelar edição" }));
+
+    expect(screen.queryByRole("heading", { name: "Editar disciplina CIN0100" })).toBeNull();
+    expect(apiRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("CT-03: deve salvar a edição, atualizar a lista e preservar a URL", async () => {
+    const atualizada = { ...disciplinaExemplo, nome: "Projeto de Software Atualizado" };
+
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(listaComDisciplina)
+      .mockResolvedValueOnce({
+        message: "Disciplina atualizada com sucesso.",
+        disciplina: atualizada,
+      })
+      .mockResolvedValueOnce({
+        disciplinas: [atualizada],
+        paginacao: { pagina: 1, limite: 10, total: 1, totalPaginas: 1 },
+      });
+
+    const usuario = userEvent.setup();
+    renderizarPagina("/secretaria?busca=CIN0100&pagina=1");
+    await screen.findByText("CIN0100");
+
+    await usuario.click(screen.getByRole("button", { name: "Editar CIN0100" }));
+    const campoNome = screen.getByLabelText("Nome da disciplina em edição");
+    await usuario.clear(campoNome);
+    await usuario.type(campoNome, "Projeto de Software Atualizado");
+    await usuario.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    await waitFor(() => {
+      expect(apiRequest).toHaveBeenCalledWith(
+        "/api/secretaria/disciplinas/10",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({
+            codigo: "CIN0100",
+            nome: "Projeto de Software Atualizado",
+            cargaHoraria: 60,
+          }),
+        })
+      );
+    });
+
+    expect(
+      await screen.findByText("Disciplina CIN0100 atualizada com sucesso!")
+    ).toBeTruthy();
+    expect(await screen.findByText("Projeto de Software Atualizado")).toBeTruthy();
+    expect(screen.getByTestId("url-atual").textContent).toContain("busca=CIN0100");
+    expect(screen.getByTestId("url-atual").textContent).toContain("pagina=1");
+  });
+
+  it("CT-04: deve mostrar erro quando o novo código já existir", async () => {
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(listaComDisciplina)
+      .mockRejectedValueOnce(new Error("Já existe uma disciplina com esse código."));
+
+    const usuario = userEvent.setup();
+    renderizarPagina();
+    await screen.findByText("CIN0100");
+
+    await usuario.click(screen.getByRole("button", { name: "Editar CIN0100" }));
+    const campoCodigo = screen.getByLabelText("Código da disciplina em edição");
+    await usuario.clear(campoCodigo);
+    await usuario.type(campoCodigo, "CIN0200");
+    await usuario.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(await screen.findByRole("alert")).toHaveProperty(
+      "textContent", "Já existe uma disciplina com esse código."
+    );
+    expect(screen.getByRole("heading", { name: "Editar disciplina CIN0100" })).toBeTruthy();
+  });
+
+  it("CT-05: deve impedir envio com carga horária inválida", async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce(listaComDisciplina);
+
+    const usuario = userEvent.setup();
+    renderizarPagina();
+    await screen.findByText("CIN0100");
+
+    await usuario.click(screen.getByRole("button", { name: "Editar CIN0100" }));
+    const campoCarga = screen.getByLabelText("Carga horária em edição") as HTMLInputElement;
+    await usuario.clear(campoCarga);
+    await usuario.type(campoCarga, "16");
+
+    expect(campoCarga.validity.valid).toBe(false);
+    await usuario.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    // Somente a consulta inicial; nenhuma requisição PATCH.
+    expect(apiRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("CT-06: deve bloquear novo envio e cancelamento enquanto salva", async () => {
+    const atualizada = { ...disciplinaExemplo, nome: "Nome Atualizado" };
+    let concluirAtualizacao!: (valor: unknown) => void;
+    const requisicaoPendente = new Promise<unknown>((resolve) => {
+      concluirAtualizacao = resolve;
+    });
+
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(listaComDisciplina)
+      .mockReturnValueOnce(requisicaoPendente)
+      .mockResolvedValueOnce({ disciplinas: [atualizada], paginacao: listaComDisciplina.paginacao });
+
+    const usuario = userEvent.setup();
+    renderizarPagina();
+    await screen.findByText("CIN0100");
+
+    await usuario.click(screen.getByRole("button", { name: "Editar CIN0100" }));
+    await usuario.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(screen.getByRole("button", { name: "Salvando..." })).toHaveProperty(
+      "disabled", true
+    );
+    expect(screen.getByRole("button", { name: "Cancelar edição" })).toHaveProperty(
+      "disabled", true
+    );
+
+    concluirAtualizacao({ message: "Disciplina atualizada com sucesso.", disciplina: atualizada });
+
+    expect(
+      await screen.findByText("Disciplina CIN0100 atualizada com sucesso!")
+    ).toBeTruthy();
+  });
+
+  it("CT-07: deve permitir nova tentativa após erro na edição", async () => {
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(listaComDisciplina)
+      .mockRejectedValueOnce(new Error("Falha temporária"))
+      .mockResolvedValueOnce({
+        message: "Disciplina atualizada com sucesso.",
+        disciplina: disciplinaExemplo,
+      })
+      .mockResolvedValueOnce(listaComDisciplina);
+
+    const usuario = userEvent.setup();
+    renderizarPagina();
+    await screen.findByText("CIN0100");
+
+    await usuario.click(screen.getByRole("button", { name: "Editar CIN0100" }));
+    await usuario.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(await screen.findByRole("alert")).toHaveProperty(
+      "textContent", "Falha temporária"
+    );
+
+    await usuario.click(screen.getByRole("button", { name: "Salvar alterações" }));
+    expect(
+      await screen.findByText("Disciplina CIN0100 atualizada com sucesso!")
+    ).toBeTruthy();
+  });
+});

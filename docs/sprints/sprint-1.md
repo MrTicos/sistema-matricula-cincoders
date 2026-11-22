@@ -7,7 +7,7 @@
 
 ## Checkpoint consolidado — 22/11/2026
 
-**Resultado comprovado pelas execuções comunicadas:** `pnpm exec vitest run` em `apps/api` passou com **73/73 testes em 8 arquivos**; o mesmo comando em `apps/web` passou com **40/40 testes em 8 arquivos**. **Total: 113 testes em 16 arquivos, 0 falhas.** São execuções separadas, e não uma suíte ponta a ponta. O responsável confirmou também **8/8 verificações manuais** da consulta de disciplinas em navegador real.
+**Resultado comprovado pelas execuções comunicadas:** `pnpm exec vitest run` em `apps/api` passou com **84/84 testes em 8 arquivos** (confirmação do responsável); em `apps/web`, o log integral registra **47/47 testes em 8 arquivos** (7,00 s). **Total: 131 testes em 16 arquivos, 0 falhas.** São execuções separadas, não uma suíte ponta a ponta. O responsável confirmou **8/8 verificações manuais da consulta (US-08) e 8/8 da edição (US-09)** no navegador, totalizando 16 verificações manuais aprovadas.
 
 | Grupo | Backend | Frontend | Situação observada |
 | --- | ---: | ---: | --- |
@@ -19,8 +19,8 @@
 | US-06 — Cancelamento | 10 | 4 | API + fluxo de confirmação no frontend |
 | US-07 — Progresso curricular | 10 | 5 | API + `ProgressoPage` |
 | US-08 — Consulta de disciplinas (MAT-10) | 8 | 6 | Busca/paginação na API e interface; 8 verificações manuais aprovadas |
-| US-09 — Cadastro de disciplinas (MAT-13, parcial) | 6 | 4 | Criação implementada; **edição pendente** |
-| **Total sem duplicar os 5 compartilhados** | **73** | **40** | **113 aprovados** |
+| US-09 — Cadastro e edição de disciplinas (MAT-13) | 17 (6 + 11) | 11 (4 + 7) | Cadastro e edição implementados; 8 verificações manuais da edição aprovadas |
+| **Total sem duplicar os 5 compartilhados** | **84** | **47** | **131 aprovados** |
 
 **Limites:** o responsável informou `pnpm lint` e `pnpm exec tsc -b` aprovados no frontend e `pnpm exec tsc --noEmit` no backend. Persistência após reinício, CSRF, cookies em HTTPS, responsividade a 360px e testes de ponta a ponta automatizados permanecem exigindo evidência própria. Não considerar o conjunto de testes como encerramento automático da Sprint.
 
@@ -42,9 +42,9 @@ Entregar o fluxo prioritário do aluno: autenticação, consulta de ofertas, rea
 | Must | Cancelamento — US-06 | Backend implementado; 10 testes; confirmação no React com 4 testes |
 | Must | Progresso curricular — US-07 | Backend implementado; 10 testes; página React com 5 testes |
 | Must | Consulta de disciplinas — US-08 (MAT-10) | Listagem, pesquisa, URL e paginação implementadas; 8 testes API + 6 frontend e 8 verificações manuais aprovadas |
-| Must | Cadastro/edição de disciplinas — US-09 (MAT-13) | Cadastro implementado, 6 testes API + 4 frontend; **edição pendente** |
+| Must | Cadastro/edição de disciplinas — US-09 (MAT-13) | Cadastro e edição implementados; 17 testes API + 11 frontend; 8 verificações manuais da edição aprovadas |
 | Must | Isolamento acadêmico entre alunos | Testado nas consultas de matrículas e progresso; manter revisão dos demais endpoints privados |
-| Must | Testes automatizados | 73 backend + 40 frontend = 113 aprovados em 16 arquivos, 0 falhas |
+| Must | Testes automatizados | 84 backend + 47 frontend = 131 aprovados em 16 arquivos, 0 falhas |
 | Must | Persistência das sessões | SQLite integrado; falta evidência após reinício da API |
 | Must | Segurança de cookies e requisições | `HttpOnly`, `SameSite=Lax`, regeneração de ID e limpeza no logout testados; CSRF e `Secure` em HTTPS pendentes |
 | Could | Melhorias visuais secundárias | Não iniciadas; após as funcionalidades essenciais |
@@ -118,14 +118,17 @@ Entregar o fluxo prioritário do aluno: autenticação, consulta de ofertas, rea
 - `DisciplinasPage` mostra tabela, pesquisa refletida na URL, paginação, estado vazio, carregamento e erro com nova tentativa. A lista é atualizada depois de um cadastro.
 - **8 testes API + 6 frontend aprovados.** O responsável também relatou **8 testes manuais aprovados** com a aplicação real.
 
-### Cadastro de disciplinas — US-09 (Jira MAT-13; edição pendente)
+### Cadastro e edição de disciplinas — US-09 (Jira MAT-13)
 
 - `POST /api/secretaria/disciplinas` exige sessão válida e perfil `SECRETARIA`; alunos não podem cadastrar disciplinas.
 - Entrada com `codigo`, `nome` e `cargaHoraria`; código normalizado em maiúsculas; carga horária inteira de 15 a 120 e múltipla de 15; código único.
 - Respostas de referência: `201` criado; `400` inválido; `401` sem sessão; `403` perfil proibido; `409` duplicado.
 - Formulário `DisciplinasPage` apresenta os três campos, valida entradas, bloqueia envio simultâneo e informa sucesso ou falha.
 - **6 testes API + 4 testes frontend aprovados**, com logs separados.
-- **Ainda não concluídos:** edição de disciplinas, cadastro de professores, abertura de turmas e ajuste de vagas. A listagem de disciplinas pertence à US-08 e já foi validada.
+- `PATCH /api/secretaria/disciplinas/:id` permite atualizar um ou mais campos com autorização de `SECRETARIA`. Valida identificador e campos, retorna `200` com disciplina atualizada, `400` para dados inválidos, `404` se não encontrada e `409` para código duplicado.
+- `DisciplinasPage` oferece **Editar** por linha, formulário pré-preenchido, ações Salvar/Cancelar, bloqueio durante o envio, feedback de sucesso/erro e atualização da lista preservando busca e página.
+- **11 testes de edição no backend + 7 no frontend aprovados**, além dos 10 de cadastro. O responsável confirmou **8 verificações manuais de edição aprovadas**.
+- **Ainda não concluídos:** cadastro de professores, abertura de turmas e ajuste de vagas. A listagem de disciplinas pertence à US-08 e já foi validada.
 
 ## Critérios de aceitação — Gherkin
 
@@ -232,7 +235,7 @@ Funcionalidade: Consulta de disciplinas pela secretaria
     Então a interface oferece uma nova tentativa
 ```
 
-### US-09 — Cadastro de disciplinas pela secretaria
+### US-09 — Cadastro e edição de disciplinas pela secretaria
 
 ```gherkin
 Funcionalidade: Cadastro de disciplinas pela secretaria
@@ -260,6 +263,35 @@ Funcionalidade: Cadastro de disciplinas pela secretaria
     Dado que um aluno está autenticado
     Quando solicitar o cadastro de disciplina
     Então a API retorna 403
+
+  Cenário: Editar disciplina existente
+    Dado que a secretaria está autenticada
+    E existe uma disciplina com código e carga horária válidos
+    Quando alterar o nome e a carga horária dessa disciplina
+    Então a API retorna 200 com a disciplina atualizada
+    E a listagem apresenta as mudanças sem perder a busca e a página na URL
+
+  Cenário: Editar apenas um campo
+    Dado que a secretaria está autenticada
+    Quando alterar somente o nome de uma disciplina
+    Então o código e a carga horária permanecem inalterados
+
+  Cenário: Impedir código duplicado na edição
+    Dado que já existe outra disciplina com o código escolhido
+    Quando a secretaria tentar atribuir esse código a uma disciplina
+    Então a API retorna 409
+    E o registro original não é alterado
+
+  Cenário: Editar disciplina inexistente
+    Dado que o identificador informado não corresponde a nenhuma disciplina
+    Quando a secretaria solicitar a edição
+    Então a API retorna 404
+
+  Cenário: Cancelar edição pela interface
+    Dado que a secretaria abriu um formulário de edição
+    Quando cancelar a edição antes de salvar
+    Então nenhuma requisição PATCH é enviada
+    E os dados originais permanecem no sistema
 ```
 
 ## Definition of Done e acompanhamento
@@ -358,9 +390,10 @@ Funcionalidade: Cadastro de disciplinas pela secretaria
 - [x] Interface de listagem, pesquisa/URL, paginação, carregamento, vazio, erro e nova tentativa.
 - [x] 8 testes backend e 6 frontend aprovados.
 - [x] 8 verificações manuais aprovadas pelo responsável em 22/11/2026.
-- [ ] Confirmar commit/push desta implementação e atualizar MAT-10 no Jira.
+- [x] Commit e push da US-08 confirmados pelo responsável.
+- [ ] Atualizar MAT-10 no Jira, caso ainda não registrado.
 
-**Status:** funcionalidade implementada e validada nas verificações comunicadas; versionamento e rastreabilidade de entrega a conferir.
+**Status:** funcionalidade implementada, validada e publicada no Git; rastreabilidade Jira a conferir.
 
 ### US-09 — Cadastro e edição de disciplinas (MAT-13)
 
@@ -370,10 +403,14 @@ Funcionalidade: Cadastro de disciplinas pela secretaria
 - [x] 6 testes automatizados no backend e 4 no frontend aprovados em 22/11/2026.
 - [x] Verificação manual de atualização da lista após cadastro relatada pelo responsável.
 - [x] Commit `ff363db` da etapa original de cadastro realizado; a mensagem histórica usa US-08, mas a classificação correta no backlog é **US-09**. Não reescrever o histórico do Git.
-- [ ] Implementar e testar **edição de disciplinas**, necessária para completar a US-09.
-- [ ] Atualizar MAT-13 no Jira e conferir o push do commit original.
+- [x] Endpoint `PATCH /api/secretaria/disciplinas/:id`, com validação do ID, atualização parcial, `404` e `409`.
+- [x] Interface de edição com formulário preenchido, salvar/cancelar, erros e atualização da listagem preservando URL.
+- [x] 11 testes backend de edição, 7 testes frontend de edição e verificações de lint/TypeScript aprovados.
+- [x] 8/8 verificações manuais da edição aprovadas em 22/11/2026, conforme relato do responsável.
+- [ ] Criar commit e publicar a etapa de edição da US-09; conferir `git diff --check` e os arquivos preparados.
+- [ ] Atualizar MAT-13 no Jira e conferir o push do commit da edição.
 
-**Status:** cadastro implementado e testado nas camadas API e React; **US-09 parcial** até a edição ficar pronta.
+**Status:** **US-09 funcionalmente concluída e validada** (cadastro + edição). Versionamento da edição e atualização no Jira pendentes.
 
 ## Histórico de validações — 21/11/2026
 
@@ -395,7 +432,7 @@ Funcionalidade: Cadastro de disciplinas pela secretaria
 
 **Dificuldades:** configuração das variáveis de ambiente, tipagem do seed, credenciais de teste, inicialização do servidor e separação dos bancos de desenvolvimento e de testes. A nova suíte de matrícula exigiu configurar explicitamente `DATABASE_URL=file:./test.db`.
 
-**Validação no momento desse registro histórico:** 39 testes automatizados aprovados em 5 arquivos, sem falhas. O checkpoint atualizado de 22/11/2026 registra 113 testes em 16 arquivos.
+**Validação no momento desse registro histórico:** 39 testes automatizados aprovados em 5 arquivos, sem falhas. O checkpoint atualizado de 22/11/2026 registra 131 testes em 16 arquivos.
 
 **Riscos e pendências naquele momento:** CSRF, teste após reinício, isolamento nos demais endpoints privados, concorrência sob maior carga, implementação de cancelamento/progresso e frontend responsivo. Cancelamento e progresso foram implementados depois; os riscos de segurança, responsividade e carga ainda precisam de verificação.
 
@@ -409,8 +446,8 @@ Funcionalidade: Cadastro de disciplinas pela secretaria
 
 ## Próximas ações vigentes — 22/11/2026
 
-1. Versionar e publicar a US-08 (MAT-10), preservando o commit `ff363db` do cadastro e corrigindo o mapeamento nas referências futuras.
-2. Implementar **edição de disciplinas** para finalizar a US-09 (MAT-13); depois avançar para professores (US-10), turmas e vagas conforme backlog.
+1. Conferir `git status --short`, `git diff --check`, preparar o commit e publicar a **edição de disciplinas (US-09/MAT-13)**; conferir Jira MAT-10/MAT-13.
+2. Avançar para **listagem e cadastro de professores (US-10)**, depois listagem/abertura de turmas (US-11), ajuste de vagas (US-12) e requisito adicional.
 3. Validar as telas e os fluxos de aluno e secretaria no navegador a **360px**, com estados de carregamento, erro e vazio.
 4. Revisar proteção CSRF, atributos de cookie em HTTPS, persistência de sessão após reinício e isolamento dos dados nos endpoints privados.
 5. Confirmar `git diff --check`, `git status --short`, commits/push e atualização das histórias no Jira antes de declarar a entrega concluída.

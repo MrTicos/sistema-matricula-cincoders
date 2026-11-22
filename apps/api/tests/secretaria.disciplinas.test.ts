@@ -2,7 +2,9 @@ import "dotenv/config";
 
 import {
   afterAll,
+  afterEach,
   beforeAll,
+  beforeEach,
   describe,
   expect,
   it,
@@ -355,6 +357,320 @@ describe("US-08 — Consulta de disciplinas", () => {
     expect(resposta.body.paginacao).toMatchObject({
       total: 0,
       totalPaginas: 0,
+    });
+  });
+});
+
+describe("US-09 — Edição de disciplinas", () => {
+  const prefixoEdicao = `TUS09EDIT${Date.now()}`;
+
+  let sequencia = 0;
+  let disciplinaEditavelId = 0;
+  let codigoEditavel = "";
+  let codigoEmUso = "";
+
+  const idsCriados: number[] = [];
+
+  function rotaEdicao() {
+    return `/api/secretaria/disciplinas/${disciplinaEditavelId}`;
+  }
+
+  beforeEach(async () => {
+    if (!/test/i.test(process.env.DATABASE_URL ?? "")) {
+      throw new Error(
+        "Os testes de edição exigem um banco SQLite de teste."
+      );
+    }
+
+    sequencia += 1;
+
+    codigoEditavel = `${prefixoEdicao}${sequencia}A`;
+    codigoEmUso = `${prefixoEdicao}${sequencia}B`;
+
+    const editavel = await prisma.disciplina.create({
+      data: {
+        codigo: codigoEditavel,
+        nome: "Disciplina Original",
+        cargaHoraria: 60,
+      },
+    });
+
+    disciplinaEditavelId = editavel.id;
+    idsCriados.push(editavel.id);
+
+    const outra = await prisma.disciplina.create({
+      data: {
+        codigo: codigoEmUso,
+        nome: "Outra Disciplina",
+        cargaHoraria: 30,
+      },
+    });
+
+    idsCriados.push(outra.id);
+  });
+
+  afterEach(async () => {
+    if (!/test/i.test(process.env.DATABASE_URL ?? "")) {
+      return;
+    }
+
+    if (idsCriados.length === 0) {
+      return;
+    }
+
+    // Remove somente os registros criados por este teste.
+    // A limpeza por ID continua funcionando mesmo após
+    // a alteração do código de uma disciplina.
+    await prisma.disciplina.deleteMany({
+      where: {
+        id: {
+          in: idsCriados,
+        },
+      },
+    });
+
+    idsCriados.length = 0;
+  });
+
+  it("CT-01: deve atualizar uma disciplina válida", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const novoCodigo = `${codigoEditavel}NOVO`;
+
+    const resposta = await agente
+      .patch(rotaEdicao())
+      .send({
+        codigo: ` ${novoCodigo.toLowerCase()} `,
+        nome: "  Engenharia de Software  ",
+        cargaHoraria: 90,
+      })
+      .expect(200);
+
+    expect(resposta.body.message).toBe(
+      "Disciplina atualizada com sucesso."
+    );
+
+    expect(resposta.body.disciplina).toMatchObject({
+      id: disciplinaEditavelId,
+      codigo: novoCodigo,
+      nome: "Engenharia de Software",
+      cargaHoraria: 90,
+    });
+
+    // Confirma que a atualização foi persistida no banco.
+    const disciplinaBanco =
+      await prisma.disciplina.findUnique({
+        where: {
+          id: disciplinaEditavelId,
+        },
+      });
+
+    expect(disciplinaBanco).toMatchObject({
+      codigo: novoCodigo,
+      nome: "Engenharia de Software",
+      cargaHoraria: 90,
+    });
+  });
+
+  it("CT-02: deve permitir atualização parcial", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const resposta = await agente
+      .patch(rotaEdicao())
+      .send({
+        nome: "Nome Atualizado",
+      })
+      .expect(200);
+
+    expect(resposta.body.disciplina).toMatchObject({
+      id: disciplinaEditavelId,
+      codigo: codigoEditavel,
+      nome: "Nome Atualizado",
+      cargaHoraria: 60,
+    });
+  });
+
+  it("CT-03: deve negar edição sem autenticação", async () => {
+    await request(app)
+      .patch(rotaEdicao())
+      .send({
+        nome: "Alteração Indevida",
+      })
+      .expect(401);
+  });
+
+  it("CT-04: deve impedir edição pelo aluno", async () => {
+    const agente = await agenteAutenticado("aluno.si");
+
+    await agente
+      .patch(rotaEdicao())
+      .send({
+        nome: "Alteração Indevida",
+      })
+      .expect(403);
+
+    const disciplinaBanco =
+      await prisma.disciplina.findUnique({
+        where: {
+          id: disciplinaEditavelId,
+        },
+      });
+
+    expect(disciplinaBanco?.nome).toBe(
+      "Disciplina Original"
+    );
+  });
+
+  it("CT-05: deve rejeitar identificador inválido", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const identificadoresInvalidos = [
+      "abc",
+      "0",
+      "-1",
+      "1.5",
+      "999999999999999999999",
+    ];
+
+    for (const id of identificadoresInvalidos) {
+      await agente
+        .patch(`/api/secretaria/disciplinas/${id}`)
+        .send({
+          nome: "Nome Alterado",
+        })
+        .expect(400);
+    }
+  });
+
+  it("CT-06: deve rejeitar disciplina inexistente", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const resposta = await agente
+      .patch("/api/secretaria/disciplinas/2000000000")
+      .send({
+        nome: "Disciplina Inexistente",
+      })
+      .expect(404);
+
+    expect(resposta.body.message).toBe(
+      "Disciplina não encontrada."
+    );
+  });
+
+  it("CT-07: deve rejeitar código duplicado", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const resposta = await agente
+      .patch(rotaEdicao())
+      .send({
+        codigo: codigoEmUso.toLowerCase(),
+      })
+      .expect(409);
+
+    expect(resposta.body.message).toBe(
+      "Já existe uma disciplina com esse código."
+    );
+
+    // A tentativa não pode alterar o registro original.
+    const disciplinaBanco =
+      await prisma.disciplina.findUnique({
+        where: {
+          id: disciplinaEditavelId,
+        },
+      });
+
+    expect(disciplinaBanco?.codigo).toBe(
+      codigoEditavel
+    );
+  });
+
+  it("CT-08: deve rejeitar carga horária inválida", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const valoresInvalidos = [
+      0,
+      14,
+      16,
+      121,
+      -15,
+      30.5,
+      "60",
+      null,
+    ];
+
+    for (const cargaHoraria of valoresInvalidos) {
+      await agente
+        .patch(rotaEdicao())
+        .send({
+          cargaHoraria,
+        })
+        .expect(400);
+    }
+
+    const disciplinaBanco =
+      await prisma.disciplina.findUnique({
+        where: {
+          id: disciplinaEditavelId,
+        },
+      });
+
+    expect(disciplinaBanco?.cargaHoraria).toBe(60);
+  });
+
+  it("CT-09: deve exigir pelo menos um campo", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    await agente
+      .patch(rotaEdicao())
+      .send({})
+      .expect(400);
+
+    await agente
+      .patch(rotaEdicao())
+      .send({
+        campoDesconhecido: "valor",
+      })
+      .expect(400);
+  });
+
+  it("CT-10: deve rejeitar código e nome inválidos", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const entradasInvalidas = [
+      { codigo: "" },
+      { codigo: "   " },
+      { codigo: 123 },
+      { codigo: null },
+      { nome: "" },
+      { nome: "   " },
+      { nome: 123 },
+      { nome: null },
+    ];
+
+    for (const entrada of entradasInvalidas) {
+      await agente
+        .patch(rotaEdicao())
+        .send(entrada)
+        .expect(400);
+    }
+  });
+
+  it("CT-11: deve permitir manter o próprio código", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const resposta = await agente
+      .patch(rotaEdicao())
+      .send({
+        codigo: codigoEditavel,
+        nome: "Disciplina Renomeada",
+      })
+      .expect(200);
+
+    expect(resposta.body.disciplina).toMatchObject({
+      id: disciplinaEditavelId,
+      codigo: codigoEditavel,
+      nome: "Disciplina Renomeada",
+      cargaHoraria: 60,
     });
   });
 });

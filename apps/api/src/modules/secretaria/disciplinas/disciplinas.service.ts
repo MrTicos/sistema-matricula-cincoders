@@ -123,3 +123,89 @@ export async function consultarDisciplinas(
     },
   };
 }
+
+interface AtualizarDisciplinaInput {
+  id: number;
+  codigo?: string;
+  nome?: string;
+  cargaHoraria?: number;
+}
+
+type ResultadoAtualizacao =
+  | {
+      tipo: "ATUALIZADA";
+      disciplina: {
+        id: number;
+        codigo: string;
+        nome: string;
+        cargaHoraria: number;
+      };
+    }
+  | {
+      tipo: "CODIGO_DUPLICADO";
+    }
+  | {
+      tipo: "NAO_ENCONTRADA";
+    };
+
+export async function atualizarDisciplina(
+  dados: AtualizarDisciplinaInput
+): Promise<ResultadoAtualizacao> {
+  const atualizacoes: {
+    codigo?: string;
+    nome?: string;
+    cargaHoraria?: number;
+  } = {};
+
+  if (dados.codigo !== undefined) {
+    atualizacoes.codigo = dados.codigo.trim().toUpperCase();
+  }
+
+  if (dados.nome !== undefined) {
+    atualizacoes.nome = dados.nome.trim();
+  }
+
+  if (dados.cargaHoraria !== undefined) {
+    atualizacoes.cargaHoraria = dados.cargaHoraria;
+  }
+
+  try {
+    const disciplina = await prisma.disciplina.update({
+      where: {
+        id: dados.id,
+      },
+      data: atualizacoes,
+      select: {
+        id: true,
+        codigo: true,
+        nome: true,
+        cargaHoraria: true,
+      },
+    });
+
+    return {
+      tipo: "ATUALIZADA",
+      disciplina,
+    };
+  } catch (erro) {
+    if (
+      typeof erro === "object" &&
+      erro !== null &&
+      "code" in erro
+    ) {
+      if (erro.code === "P2002") {
+        return {
+          tipo: "CODIGO_DUPLICADO",
+        };
+      }
+
+      if (erro.code === "P2025") {
+        return {
+          tipo: "NAO_ENCONTRADA",
+        };
+      }
+    }
+
+    throw erro;
+  }
+}

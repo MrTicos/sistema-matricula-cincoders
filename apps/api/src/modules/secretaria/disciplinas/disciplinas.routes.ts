@@ -4,6 +4,7 @@ import { exigirPerfil } from "../../../middlewares/auth.middleware";
 
 import {
   criarDisciplina,
+  editarDisciplina,
   listarDisciplinas,
 } from "./disciplinas.controller";
 
@@ -19,4 +20,10 @@ disciplinasRoutes.post(
   "/",
   exigirPerfil("SECRETARIA"),
   criarDisciplina
+);
+
+disciplinasRoutes.patch(
+  "/:id",
+  exigirPerfil("SECRETARIA"),
+  editarDisciplina
 );
