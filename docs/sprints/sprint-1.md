@@ -2,12 +2,12 @@
 
 **Situação:** Em andamento — funcionalidades principais implementadas; encerramento condicionado às verificações pendentes de segurança, responsividade, integração e entrega.
 **Prazo de entrega do teste:** 23/11/2026
-**Referências Jira:** MAT-6 (US-01), MAT-7 (US-02), MAT-16 (US-03), MAT-11 (US-04), MAT-8 (US-05), MAT-15 (US-06), MAT-12 (US-07), MAT-10 (US-08 — consulta de disciplinas), MAT-13 (US-09 — cadastro/edição de disciplinas) e MAT-17 (US-10 — consulta/cadastro de professores). Conferir os estados dos itens no Jira.
+**Referências Jira:** MAT-6 (US-01), MAT-7 (US-02), MAT-16 (US-03), MAT-11 (US-04), MAT-8 (US-05), MAT-15 (US-06), MAT-12 (US-07), MAT-10 (US-08 — consulta de disciplinas), MAT-13 (US-09 — cadastro/edição de disciplinas) e MAT-17 (US-10 — consulta/cadastro de professores). **US-11** (consulta/abertura de turmas) concluída funcionalmente; conferir sua chave específica no Jira antes de atribuí-la no documento.
 **Último checkpoint:** 22/11/2026
 
 ## Checkpoint consolidado — 22/11/2026
 
-**Resultado comprovado pelas execuções comunicadas após US-10:** `pnpm exec vitest run` em `apps/api` passou com **98/98 testes em 9 arquivos** (6,67 s); em `apps/web`, o log integral mais recente registra **58/58 testes em 9 arquivos** (10,32 s), já após a integração da página de professores à navegação. **Total: 156 testes em 18 arquivos, 0 falhas.** São execuções separadas, não uma suíte ponta a ponta. O responsável confirmou **8/8 verificações manuais da consulta de disciplinas (US-08), 8/8 da edição de disciplinas (US-09) e 8/8 da consulta/cadastro de professores (US-10)**, totalizando **24 verificações manuais aprovadas**.
+**Resultado comprovado pelas execuções comunicadas após US-11:** `pnpm exec vitest run` em `apps/api` passou com **113/113 testes em 10 arquivos** (8,28 s); em `apps/web`, o log integral mais recente registra **72/72 testes em 10 arquivos** (9,10 s), após correção da navegação HTML. **Total: 185 testes em 20 arquivos, 0 falhas.** São execuções separadas, não uma suíte ponta a ponta. O responsável informou **8 verificações manuais aprovadas para cada uma das US-08, US-09, US-10 e US-11**, totalizando **32 verificações manuais**. A US-10 foi publicada no GitLab pelo commit `8425521`; o versionamento da US-11 será o próximo passo.
 
 | Grupo | Backend | Frontend | Situação observada |
 | --- | ---: | ---: | --- |
@@ -21,7 +21,8 @@
 | US-08 — Consulta de disciplinas (MAT-10) | 8 | 6 | Busca/paginação na API e interface; 8 verificações manuais aprovadas |
 | US-09 — Cadastro e edição de disciplinas (MAT-13) | 17 (6 + 11) | 11 (4 + 7) | Cadastro e edição implementados; 8 verificações manuais da edição aprovadas |
 | US-10 — Consulta e cadastro de professores (MAT-17) | 14 | 11 (6 consulta + 5 cadastro) | API e `ProfessoresPage` implementadas; 8 verificações manuais aprovadas |
-| **Total sem duplicar os 5 compartilhados** | **98** | **58** | **156 aprovados** |
+| US-11 — Consulta e abertura de turmas | 15 (8 consulta + 7 abertura) | 14 (6 consulta + 8 abertura) | API e `TurmasPage` implementadas, com 8 verificações manuais relatadas |
+| **Total sem duplicar os 5 compartilhados** | **113** | **72** | **185 aprovados** |
 
 **Limites:** o responsável informou `pnpm lint` e `pnpm exec tsc -b` aprovados no frontend e `pnpm exec tsc --noEmit` no backend. Persistência após reinício, CSRF, cookies em HTTPS, responsividade a 360px e testes de ponta a ponta automatizados permanecem exigindo evidência própria. Não considerar o conjunto de testes como encerramento automático da Sprint.
 
@@ -45,10 +46,10 @@ Entregar o fluxo prioritário do aluno: autenticação, consulta de ofertas, rea
 | Must | Consulta de disciplinas — US-08 (MAT-10) | Listagem, pesquisa, URL e paginação implementadas; 8 testes API + 6 frontend e 8 verificações manuais aprovadas |
 | Must | Cadastro/edição de disciplinas — US-09 (MAT-13) | Cadastro e edição implementados; 17 testes API + 11 frontend; 8 verificações manuais da edição aprovadas |
 | Must | Consulta/cadastro de professores — US-10 (MAT-17) | Listagem, pesquisa por nome/e-mail, URL, paginação e cadastro implementados; 14 testes API + 11 frontend + 8 manuais aprovados |
-| Must | Consulta e abertura de turmas — US-11 | Próxima funcionalidade; pendente |
+| Must | Consulta e abertura de turmas — US-11 | Listagem, pesquisa, vagas ocupadas/totais, abertura e seleção de disciplina/professor; 15 testes API + 14 frontend e 8 manuais aprovados |
 | Must | Ajuste de capacidade de turmas — US-12 | Pendente; deve respeitar matrículas ativas |
 | Must | Isolamento acadêmico entre alunos | Testado nas consultas de matrículas e progresso; manter revisão dos demais endpoints privados |
-| Must | Testes automatizados | 98 backend + 58 frontend = 156 aprovados em 18 arquivos, 0 falhas |
+| Must | Testes automatizados | 113 backend + 72 frontend = 185 aprovados em 20 arquivos, 0 falhas |
 | Must | Persistência das sessões | SQLite integrado; falta evidência após reinício da API |
 | Must | Segurança de cookies e requisições | `HttpOnly`, `SameSite=Lax`, regeneração de ID e limpeza no logout testados; CSRF e `Secure` em HTTPS pendentes |
 | Could | Melhorias visuais secundárias | Não iniciadas; após as funcionalidades essenciais |
@@ -132,7 +133,7 @@ Entregar o fluxo prioritário do aluno: autenticação, consulta de ofertas, rea
 - `PATCH /api/secretaria/disciplinas/:id` permite atualizar um ou mais campos com autorização de `SECRETARIA`. Valida identificador e campos, retorna `200` com disciplina atualizada, `400` para dados inválidos, `404` se não encontrada e `409` para código duplicado.
 - `DisciplinasPage` oferece **Editar** por linha, formulário pré-preenchido, ações Salvar/Cancelar, bloqueio durante o envio, feedback de sucesso/erro e atualização da lista preservando busca e página.
 - **11 testes de edição no backend + 7 no frontend aprovados**, além dos 10 de cadastro. O responsável confirmou **8 verificações manuais de edição aprovadas**.
-- **Evolução posterior:** o cadastro de professores foi concluído na US-10. Abertura de turmas e ajuste de vagas permanecem pendentes. A listagem de disciplinas pertence à US-08 e já foi validada.
+- **Evolução posterior:** o cadastro de professores foi concluído na US-10, e a consulta/abertura de turmas foi concluída funcionalmente na US-11. O ajuste de vagas (US-12) permanece pendente. A listagem de disciplinas pertence à US-08 e já foi validada.
 
 ### Consulta e cadastro de professores — US-10 (Jira MAT-17)
 
@@ -142,7 +143,18 @@ Entregar o fluxo prioritário do aluno: autenticação, consulta de ofertas, rea
 - A `ProfessoresPage` exibe listagem, formulário, pesquisa sincronizada com a URL, paginação, carregamento, ausência de resultados, erro/nova tentativa, sucesso e atualização após cadastro.
 - A rota React `/secretaria/professores` foi adicionada com perfil `SECRETARIA`, além da navegação entre disciplinas e professores.
 - **14/14 testes de API**, **11/11 testes de frontend** e **8/8 verificações manuais** aprovados, conforme logs e confirmação do responsável.
-- **Próximas etapas:** commit/push da US-10, atualização do Jira MAT-17 e início da US-11.
+- **Evolução:** a US-10 foi publicada no GitLab (`8425521`). A US-11 foi concluída funcionalmente depois; a próxima implementação será a US-12.
+
+### Consulta e abertura de turmas — US-11
+
+- `GET /api/secretaria/turmas` exige perfil `SECRETARIA`; recebe `busca`, `pagina` e `limite` (máximo 50) e devolve `turmas` com disciplina, professor, capacidade, vagas ocupadas e disponíveis, além de `paginacao`.
+- Busca pelo código/nome da disciplina ou nome do professor, com ordenação por ID e paginação no banco. **Vagas ocupadas consideram exclusivamente matrículas `ATIVA`**; matrículas `CANCELADA` não reduzem a disponibilidade.
+- `POST /api/secretaria/turmas` recebe `{ "disciplinaId": number, "professorId": number, "vagasTotais": number }`. Valida inteiros positivos e referências existentes; retorna `201` no sucesso, `400` para entrada inválida, `404` para referência inexistente, `401` sem sessão e `403` para aluno.
+- O Prisma já possuía `Turma`, `Disciplina` e `Professor` relacionados; não foi necessária migração nesta etapa.
+- `TurmasPage` apresenta tabela, URL sincronizada, paginação, estados de carregamento/vazio/erro e nova tentativa; formulário pesquisa e seleciona disciplina/professor, exige vagas positivas, apresenta mensagens e atualiza a listagem após cadastrar.
+- A página foi integrada à rota `/secretaria/turmas` e ao menu **Disciplinas · Professores · Turmas**. Um aviso de `<a>` aninhado detectado nos testes foi corrigido antes da última execução da suíte completa.
+- **15 testes de API + 14 testes frontend aprovados**, além das **8 verificações manuais** informadas como corretas pelo responsável. Ainda não se trata de teste E2E automatizado.
+- **Próximos passos:** commit/push da US-11, atualizar Jira, implementar **US-12 — alteração de vagas sem reduzir abaixo da ocupação ativa**.
 
 ## Critérios de aceitação — Gherkin
 
@@ -342,6 +354,41 @@ Funcionalidade: Consulta e cadastro de professores
     Então a API recusa a operação conforme a autenticação e o perfil
 ```
 
+### US-11 — Consulta e abertura de turmas pela secretaria
+
+```gherkin
+Funcionalidade: Consulta e abertura de turmas
+
+  Cenário: Listar turmas e contar somente matrículas ativas
+    Dado que existem turmas com matrículas ativas e canceladas
+    Quando a secretaria consultar as turmas
+    Então recebe disciplina, professor, total e vagas disponíveis
+    E somente matrículas ativas compõem o número de vagas ocupadas
+
+  Cenário: Pesquisar e paginar turmas
+    Dado que a secretaria está autenticada
+    Quando pesquisar pelo código ou nome da disciplina ou pelo professor
+    Então a lista é filtrada e a URL reflete a busca e a página
+    E não há repetição de turmas entre páginas
+
+  Cenário: Abrir turma válida
+    Dado que existem uma disciplina e um professor cadastrados
+    Quando a secretaria informar os identificadores e 30 vagas
+    Então a API persiste a turma e responde com sucesso
+    E a lista da secretaria é atualizada
+
+  Cenário: Rejeitar entrada e referências inválidas
+    Dado que a secretaria tenta abrir uma turma
+    Quando informar vagas não positivas ou identificadores inválidos
+    Então o cadastro é recusado sem criar nova turma
+    Quando informar disciplina ou professor inexistentes
+    Então a API responde que a referência não foi encontrada
+
+  Cenário: Bloquear acesso de outro perfil
+    Quando uma pessoa sem sessão ou um aluno consultar ou abrir turmas
+    Então a API impede a operação conforme autenticação e autorização
+```
+
 ## Definition of Done e acompanhamento
 
 ### US-01 — Autenticação (MAT-6)
@@ -471,10 +518,27 @@ Funcionalidade: Consulta e cadastro de professores
 - [x] 11 testes frontend aprovados (arquivo `ProfessoresPage.test.tsx`).
 - [x] ESLint e TypeScript aprovados no frontend; TypeScript aprovado no backend.
 - [x] 8 verificações manuais da US-10 aprovadas, conforme relato do responsável.
-- [ ] Revisar alterações, criar commit e realizar push da US-10.
+- [x] Commit e push da US-10 concluídos no GitLab (`8425521`), com `main` sincronizada a `origin/main` no checkpoint informado.
 - [ ] Conferir o item MAT-17 no Jira.
 
-**Status:** **US-10 funcionalmente implementada e validada**. O encerramento de versionamento e rastreabilidade depende do commit/push e da conferência do Jira.
+**Status:** **US-10 implementada, validada e publicada**. Rastreabilidade no Jira ainda a conferir.
+
+### US-11 — Consulta e abertura de turmas
+
+- [x] `GET /api/secretaria/turmas` com busca, paginação e cálculo de vagas ocupadas/disponíveis.
+- [x] Contagem de vagas filtrando somente matrículas `ATIVA` (canceladas não ocupam vagas).
+- [x] `POST /api/secretaria/turmas` com validação de ID de disciplina, ID de professor e vagas positivas.
+- [x] Autorização de `SECRETARIA` e respostas HTTP apropriadas (`400`, `401`, `403`, `404`, `201`).
+- [x] Rota React `/secretaria/turmas`, menu administrativo e formulário de abertura com seletores pesquisáveis.
+- [x] Estados visuais de carregamento, lista vazia, erro/nova tentativa, mensagens e recarga de consulta.
+- [x] **15 testes backend** da US-11 e suíte API completa **113/113** aprovados.
+- [x] **14 testes frontend** da US-11 e suíte web completa **72/72** aprovados, com lint/TypeScript sem erro.
+- [x] Aviso React de `<a>` aninhado corrigido, sem reaparecer na execução final.
+- [x] **8 verificações manuais** relatadas como aprovadas pelo responsável.
+- [ ] Conferir Git, preparar commit/push da US-11 e registrar o hash.
+- [ ] Conferir a chave correspondente da US-11 no Jira e seu estado.
+
+**Status:** **US-11 funcionalmente concluída e validada**. A formalização depende do versionamento e da rastreabilidade no Jira. US-12 e requisito adicional ainda pendentes.
 
 ## Histórico de validações — 21/11/2026
 
@@ -496,7 +560,7 @@ Funcionalidade: Consulta e cadastro de professores
 
 **Dificuldades:** configuração das variáveis de ambiente, tipagem do seed, credenciais de teste, inicialização do servidor e separação dos bancos de desenvolvimento e de testes. A nova suíte de matrícula exigiu configurar explicitamente `DATABASE_URL=file:./test.db`.
 
-**Validação no momento desse registro histórico:** 39 testes automatizados aprovados em 5 arquivos, sem falhas. O checkpoint atualizado de 22/11/2026, após US-10, registra 156 testes em 18 arquivos.
+**Validação no momento desse registro histórico:** 39 testes automatizados aprovados em 5 arquivos, sem falhas. O checkpoint atualizado de 22/11/2026, após US-11, registra 185 testes em 20 arquivos.
 
 **Riscos e pendências naquele momento:** CSRF, teste após reinício, isolamento nos demais endpoints privados, concorrência sob maior carga, implementação de cancelamento/progresso e frontend responsivo. Cancelamento e progresso foram implementados depois; os riscos de segurança, responsividade e carga ainda precisam de verificação.
 
@@ -510,8 +574,8 @@ Funcionalidade: Consulta e cadastro de professores
 
 ## Próximas ações vigentes — 22/11/2026
 
-1. Conferir `git status --short`, `git diff --check`, preparar o commit e publicar a **US-10 (professores/MAT-17)**; conferir Jira MAT-10/MAT-13/MAT-17 e o push da US-09.
-2. Avançar para **listagem e abertura de turmas (US-11)**, depois ajuste de vagas (US-12) e requisito adicional.
+1. Conferir `git status --short`, `git diff --check`, preparar o commit e publicar a **US-11 — consulta e abertura de turmas**; registrar o hash e conferir a rastreabilidade Jira.
+2. Avançar para **ajuste da quantidade de vagas (US-12)** e, em seguida, implementar o requisito funcional adicional.
 3. Validar as telas e os fluxos de aluno e secretaria no navegador a **360px**, com estados de carregamento, erro e vazio.
 4. Revisar proteção CSRF, atributos de cookie em HTTPS, persistência de sessão após reinício e isolamento dos dados nos endpoints privados.
 5. Confirmar `git diff --check`, `git status --short`, commits/push e atualização das histórias no Jira antes de declarar a entrega concluída.

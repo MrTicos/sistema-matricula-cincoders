@@ -200,11 +200,25 @@ export function ProfessoresPage() {
           <h1>Professores</h1>
           <p>Consulte e cadastre professores do sistema acadêmico.</p>
           <nav aria-label="Navegação da secretaria">
-            <Link to="/secretaria">Disciplinas</Link>{" · "}
-            <Link to="/secretaria/professores" aria-current="page">
-              Professores
+            <Link to="/secretaria">
+                Disciplinas
             </Link>
-          </nav>
+
+            {" · "}
+
+            <Link
+                to="/secretaria/professores"
+                aria-current="page"
+            >
+                Professores
+            </Link>
+
+            {" · "}
+
+            <Link to="/secretaria/turmas">
+                Turmas
+            </Link>
+            </nav>
         </div>
         <LogoutButton />
       </header>

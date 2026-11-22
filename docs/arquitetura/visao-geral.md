@@ -1,6 +1,6 @@
 # Visão geral da arquitetura — CINCoders
 
-> **Estado atualizado — 22/11/2026 (após US-10):** API Express/Prisma/SQLite e frontend React/Vite implementados para autenticação, ofertas, matrícula, consulta, cancelamento, progresso e parte dos cadastros da secretaria. Além da consulta e manutenção de disciplinas (US-08/US-09), a secretaria agora pode **listar, pesquisar, paginar e cadastrar professores (US-10)**. As suítes completas comunicadas pelo responsável passaram com **98 testes em 9 arquivos na API** e **58 em 9 arquivos no frontend**: **156 testes automatizados em 18 arquivos, 0 falhas**, em execuções separadas. Há **24 verificações manuais relatadas como aprovadas**: 8 de consulta de disciplinas (US-08), 8 de edição de disciplinas (US-09) e 8 de professores (US-10). Isso não equivale a uma suíte E2E automatizada, nem comprova segurança de produção ou encerramento do MVP completo.
+> **Estado atualizado — 22/11/2026 (após US-11):** API Express/Prisma/SQLite e frontend React/Vite implementados para autenticação, fluxo do aluno e administração de disciplinas (US-08/US-09), professores (US-10) e **consulta/abertura de turmas (US-11)**. As suítes completas passaram com **113 testes em 10 arquivos na API** (8,28 s) e **72 em 10 arquivos no frontend** (9,10 s na última execução, sem avisos de links aninhados): **185 testes automatizados em 20 arquivos, 0 falhas**, em execuções separadas. O responsável relatou **32 verificações manuais aprovadas**: 8 da US-08, 8 da US-09, 8 da US-10 e 8 da US-11. Não há suíte E2E automatizada equivalente; segurança de produção, US-12, requisito adicional e encerramento do MVP permanecem fora dessa evidência.
 
 ## Situação funcional atual
 
@@ -15,7 +15,8 @@
 | US-07 — Progresso | API e `ProgressoPage` | 10 testes backend; 5 testes frontend | Validar apresentação, arredondamentos e responsividade |
 | US-08 — Consulta de disciplinas (MAT-10) | `GET /api/secretaria/disciplinas`, busca, paginação e lista em `DisciplinasPage` sincronizada com URL | 8 testes backend; 6 frontend; 8 verificações manuais relatadas | Consulta implementada e validada; revisar acessibilidade/responsividade |
 | US-09 — Cadastro e edição de disciplinas (MAT-13) | `POST` e `PATCH /api/secretaria/disciplinas/:id`; formulários de cadastro e edição | 17 testes backend (6 cadastro + 11 edição), 11 frontend (4 cadastro + 7 edição); 8 verificações manuais da edição | Funcionalidade implementada e validada; commit relatado como realizado, push/Jira a conferir. Exclusão não foi exigida nessa história |
-| US-10 — Consulta e cadastro de professores (MAT-17) | `GET` e `POST /api/secretaria/professores`; listagem, busca por nome/e-mail, paginação e formulário React | 14 testes backend; 11 frontend (6 consulta + 5 cadastro); 8 verificações manuais relatadas | Funcionalmente validada; commit/push da US-10 e atualização Jira a conferir. A edição de professores não integra esta história |
+| US-10 — Consulta e cadastro de professores (MAT-17) | `GET` e `POST /api/secretaria/professores`; listagem, busca por nome/e-mail, paginação e formulário React | 14 testes backend; 11 frontend (6 consulta + 5 cadastro); 8 verificações manuais relatadas | Funcionalmente validada e publicada no GitLab (`8425521`); Jira MAT-17 a conferir. A edição de professores não integra esta história |
+| US-11 — Consulta e abertura de turmas | `GET` e `POST /api/secretaria/turmas`; pesquisa, paginação, capacidade e cadastro vinculando disciplina/professor | 15 testes backend; 14 frontend (6 consulta + 8 abertura); 8 verificações manuais relatadas | Funcionalmente validada; commit/push da US-11 ainda não realizados neste checkpoint. Ajustar capacidade pertence à US-12 |
 
 **Atenção à contagem:** os testes da US-02 e de páginas do aluno são contabilizados apenas uma vez no total geral. Os 5 testes de `OfertasPage.test.tsx` atendem US-03/US-04 conjuntamente.
 
@@ -37,6 +38,8 @@
 | `PATCH` | `/api/secretaria/disciplinas/:id` | `SECRETARIA` | Editar código, nome e/ou carga horária de disciplina |
 | `GET` | `/api/secretaria/professores` | `SECRETARIA` | Listar, pesquisar e paginar professores |
 | `POST` | `/api/secretaria/professores` | `SECRETARIA` | Cadastrar professor |
+| `GET` | `/api/secretaria/turmas` | `SECRETARIA` | Consultar turmas, pesquisar, paginar e visualizar vagas ocupadas/disponíveis |
+| `POST` | `/api/secretaria/turmas` | `SECRETARIA` | Abrir turma informando disciplina, professor e vagas totais |
 
 As rotas React protegem a experiência de navegação, mas os middlewares e os services da API continuam responsáveis por autenticação, autorização e integridade dos dados.
 
@@ -62,7 +65,7 @@ Ao iniciar, o `AuthProvider` consulta `GET /api/auth/me`. O formulário envia cr
 
 As requisições usam `credentials: "include"` para transportar o cookie de sessão `HttpOnly`. O frontend não armazena senha ou token no `localStorage`. A proteção de rotas React melhora a navegação, mas **a autorização de dados pertence à API**.
 
-**Validação naquele checkpoint, em `apps/web`:** 11 testes aprovados (4 login, 3 logout, 4 rotas), `pnpm lint` e `pnpm exec tsc -b` sem erros. Backend: 59 testes em execução separada; total acumulado de 70. **Checkpoint atual: 156 testes (22/11/2026, após US-10).**
+**Validação naquele checkpoint, em `apps/web`:** 11 testes aprovados (4 login, 3 logout, 4 rotas), `pnpm lint` e `pnpm exec tsc -b` sem erros. Backend: 59 testes em execução separada; total acumulado de 70. **Checkpoint atual: 185 testes (22/11/2026, após US-11).**
 
 **Pendente:** interfaces acadêmicas definitivas, responsividade em 360px, revisão de CSRF e configuração de cookies HTTPS para produção.
 
@@ -84,7 +87,7 @@ O objetivo do MVP é entregar primeiro o fluxo do aluno, os controles de acesso 
 | Persistência | SQLite local | Banco criado e seed conferido |
 | Senhas | Argon2id | Implementada e testada |
 | Sessão | `express-session`, cookie HttpOnly | Implementada |
-| Testes | Vitest, Supertest, Testing Library | 156 testes automatizados aprovados em 18 arquivos (22/11/2026) |
+| Testes | Vitest, Supertest, Testing Library | 185 testes automatizados aprovados em 20 arquivos (22/11/2026) |
 | Organização | Repositório GitLab + Jira MAT | Em uso |
 
 ## Componentes e fronteiras
@@ -199,6 +202,10 @@ apps/api/src/modules/secretaria/
     professores.service.ts
     professores.controller.ts
     professores.routes.ts
+  turmas/
+    turmas.service.ts
+    turmas.controller.ts
+    turmas.routes.ts
 apps/api/tests/
   ofertas.test.ts
   matriculas.test.ts
@@ -207,6 +214,7 @@ apps/api/tests/
   progresso.test.ts
   secretaria.disciplinas.test.ts
   secretaria.professores.test.ts
+  secretaria.turmas.test.ts
 apps/web/src/pages/
   aluno/OfertasPage.test.tsx
   aluno/MatriculasPage.test.tsx
@@ -216,6 +224,8 @@ apps/web/src/pages/
   secretaria/DisciplinasPage.test.tsx
   secretaria/ProfessoresPage.tsx
   secretaria/ProfessoresPage.test.tsx
+  secretaria/TurmasPage.tsx
+  secretaria/TurmasPage.test.tsx
 ```
 
 O cadastro da secretaria é registrado nas rotas de `apps/api/src/app.ts`. A árvore acima destaca as partes adicionadas; não pretende reproduzir todo o repositório.
@@ -343,7 +353,8 @@ A API utiliza Vitest e Supertest para testes automatizados.
 | `progresso.test.ts` | 10 |
 | `secretaria.disciplinas.test.ts` | 25 (8 consulta + 6 cadastro + 11 edição) |
 | `secretaria.professores.test.ts` | 14 (8 consulta + 6 cadastro/autorização/validação) |
-| **Total backend** | **98** |
+| `secretaria.turmas.test.ts` | 15 (8 consulta + 7 abertura/autorização/validação) |
+| **Total backend** | **113** |
 
 | Frontend — arquivo | Testes aprovados |
 | --- | ---: |
@@ -356,9 +367,10 @@ A API utiliza Vitest e Supertest para testes automatizados.
 | `ProgressoPage.test.tsx` | 5 |
 | `DisciplinasPage.test.tsx` | 17 (6 consulta + 4 cadastro + 7 edição) |
 | `ProfessoresPage.test.tsx` | 11 (6 consulta + 5 cadastro) |
-| **Total frontend** | **58** |
+| `TurmasPage.test.tsx` | 14 (6 consulta + 8 abertura) |
+| **Total frontend** | **72** |
 
-**Total geral: 156/156 testes aprovados, 18 arquivos e 0 falhas.** As execuções completas de `pnpm exec vitest run` foram feitas separadamente para `apps/api` e `apps/web`: o backend (98/98, 6,67 s) e o frontend (58/58, 10,32 s na última execução após a integração das rotas) tiveram logs compartilhados. A suíte específica de professores passou com 14/14 testes API e 11/11 frontend; esses casos já integram o total geral e **não são contados duas vezes**. `pnpm lint`, `pnpm exec tsc -b` (frontend) e `pnpm exec tsc --noEmit` (backend) passaram. Foram relatadas **24 verificações manuais aprovadas** (8 US-08 + 8 US-09 + 8 US-10), distintas dos testes Vitest.
+**Total geral: 185/185 testes aprovados, 20 arquivos e 0 falhas.** As execuções completas de `pnpm exec vitest run` foram feitas separadamente para `apps/api` e `apps/web`: o backend (113/113, 8,28 s) e o frontend (72/72, 9,10 s) tiveram logs compartilhados. Os testes focados da US-11 também passaram (15 API e 14 frontend), mas **não são somados novamente**. `pnpm lint` e `pnpm exec tsc -b` passaram no frontend, e `pnpm exec tsc --noEmit` foi confirmado para a API na etapa de integração. Foram relatadas **32 verificações manuais aprovadas** (8 US-08 + 8 US-09 + 8 US-10 + 8 US-11), distintas de testes automatizados. O primeiro log da US-11 mostrou aviso de links HTML aninhados; a navegação foi corrigida e a última execução frontend passou sem esse aviso.
 
 A aplicação utiliza bancos SQLite separados para
 
@@ -671,14 +683,45 @@ Na consulta, `paginacao` apresenta `pagina`, `limite`, `total` e `totalPaginas`.
 - `professores.controller.ts`: valida entrada e parâmetros de consulta, mapeia os resultados do service para respostas HTTP.
 - `professores.service.ts`: normaliza nome/e-mail, persiste no Prisma, trata unicidade e consulta com `count` + `findMany` em transação de leitura, filtros e `skip`/`take`.
 - `apps/web/src/pages/secretaria/ProfessoresPage.tsx`: apresenta tabela, busca sincronizada com a URL, paginação, carregamento, lista vazia, erro com nova tentativa e formulário de cadastro com bloqueio de reenvio, feedback de sucesso/erro e atualização da lista.
-- `apps/web/src/routes/AppRoutes.tsx`: protege `/secretaria/professores` para o perfil `SECRETARIA`; a navegação entre **Disciplinas** e **Professores** aparece no cabeçalho da área administrativa. A proteção visual não substitui o middleware da API.
+- `apps/web/src/routes/AppRoutes.tsx`: protege `/secretaria/professores` para o perfil `SECRETARIA`; a navegação administrativa também passou a incluir **Turmas** na US-11. A proteção visual não substitui o middleware da API.
 
 ### Evidências e limites
 
 - **Backend:** `apps/api/tests/secretaria.professores.test.ts`, **14/14 testes aprovados**, cobrindo acesso sem sessão/aluno, listagem, pesquisa por nome/e-mail, paginação, parâmetros inválidos, lista vazia, cadastro persistido, e-mail duplicado e entradas inválidas.
 - **Frontend:** `apps/web/src/pages/secretaria/ProfessoresPage.test.tsx`, **11/11 testes aprovados** (5 de cadastro e 6 de consulta). Confirmam campos, envio, erro de duplicidade, validação de e-mail, bloqueio de envio, resultados, URL, paginação, vazio, falha/nova tentativa e carregamento.
 - **Manual:** **8/8 verificações aprovadas**, conforme confirmação do responsável, após integração da página à navegação. A execução manual não equivale a uma suíte E2E automatizada reproduzível.
-- **Escopo:** US-10 funcionalmente implementada e validada. **Pendente registrar commit/push e conferir Jira MAT-17**. A implementação seguinte é **US-11 (consulta e abertura de turmas)**, seguida da **US-12 (ajuste de vagas)**; também permanecem o requisito adicional, a revisão de segurança e os testes de responsividade.
+- **Escopo:** US-10 funcionalmente implementada, validada e publicada no GitLab (`8425521`). Conferir Jira MAT-17. A US-11 foi implementada e validada posteriormente; a próxima é **US-12 (ajuste de vagas)**. Também permanecem o requisito adicional, a revisão de segurança e os testes de responsividade.
+
+## Consulta e abertura de turmas pela secretaria — US-11
+
+**Endpoints:** `GET /api/secretaria/turmas` (listagem) e `POST /api/secretaria/turmas` (abertura), ambos protegidos por `exigirPerfil("SECRETARIA")` e montados em `apps/api/src/app.ts`. Sessão ausente retorna `401`; aluno autenticado recebe `403`.
+
+### Modelo e contratos HTTP
+
+O modelo `Turma` já existia no schema Prisma, com `id`, `disciplinaId`, `professorId`, `vagasTotais` e as relações `disciplina`, `professor` e `matriculas`. **Nenhuma migração foi necessária para a US-11.** Não se impôs unicidade artificial ao par disciplina/professor: abrir turmas distintas para a mesma combinação é permitido pelo modelo atual.
+
+| Operação | Entrada | Saída e regras |
+| --- | --- | --- |
+| `GET /api/secretaria/turmas` | `busca` opcional (código/nome da disciplina ou nome do professor), `pagina` padrão 1, `limite` padrão 10 e máximo 50 | `200` com `turmas` e `paginacao`; pesquisa no banco, ordenação estável por `id`, parâmetros inválidos `400` |
+| `POST /api/secretaria/turmas` | `{ "disciplinaId": 1, "professorId": 1, "vagasTotais": 30 }` | `201` com turma aberta; `400` para identificadores/quantidade inválidos; `404` para disciplina ou professor inexistentes |
+
+Na listagem, cada turma retorna seus identificadores, os dados da disciplina e do professor, `vagasTotais`, `vagasOcupadas` e `vagasDisponiveis`. **Somente matrículas `ATIVA` ocupam vagas; as `CANCELADA` não entram na contagem.** A API utiliza `_count` filtrado do Prisma e calcula `vagasDisponiveis` sem valor negativo. A resposta inclui `paginacao: { pagina, limite, total, totalPaginas }`. A criação valida números inteiros positivos dentro do intervalo do `Int` do Prisma; o service confirma a existência das referências e trata também erro de integridade referencial `P2003`.
+
+### Responsabilidades e experiência React
+
+- `apps/api/src/modules/secretaria/turmas/turmas.routes.ts`: declara GET/POST com autorização de secretaria.
+- `turmas.controller.ts`: valida query/body, converte resultados em `200`, `201`, `400`, `404` e `500` e evita expor erros internos nas respostas.
+- `turmas.service.ts`: executa buscas, `count` + `findMany` com ordenação e paginação, contagem de matrículas ativas e `create` com relações válidas.
+- `apps/web/src/pages/secretaria/TurmasPage.tsx`: exibe disciplina, professor, vagas ocupadas/totais e disponíveis; integra busca/URL, paginação, estados de carregamento, vazio e erro/nova tentativa; permite abertura de turma com campos obrigatórios, feedback e recarga da lista após cadastro.
+- O formulário pesquisa opções de disciplinas e professores com suas rotas GET existentes (`limite=50` por consulta), permitindo encontrar opções além da primeira página sem depender de IDs digitados manualmente.
+- `apps/web/src/routes/AppRoutes.tsx`: protege `/secretaria/turmas`; navegação administrativa com **Disciplinas · Professores · Turmas**. Durante a implementação, um aviso de `<a>` aninhado foi corrigido antes da validação final.
+
+### Evidência e limites
+
+- **Backend:** `apps/api/tests/secretaria.turmas.test.ts` — **15/15 testes aprovados**. Inclui acesso, pesquisa por disciplina/professor, paginação estável, parâmetros inválidos, lista vazia, criação persistida, IDs/vagas inválidos, referências inexistentes e **exclusão das matrículas canceladas do total ocupado**.
+- **Frontend:** `apps/web/src/pages/secretaria/TurmasPage.test.tsx` — **14/14 testes aprovados**: 6 de consulta e 8 de abertura. Abrange URL, navegação, carregamento, erro/nova tentativa, validação, salvamento, prevenção de envio duplicado e busca das opções do formulário.
+- **Manual:** o responsável confirmou as **8 verificações manuais como funcionando**, incluindo consulta, busca, abertura válida, persistência e navegação; a paginação entre páginas depende da existência de registros suficientes para exercê-la. As verificações manuais não constituem evidência de E2E automatizada.
+- **Estado:** **US-11 funcionalmente implementada e validada**, com **commit/push ainda a preparar**. **US-12 — ajuste de capacidade** é distinta: deverá impedir redução de `vagasTotais` abaixo da contagem atual de matrículas ativas. Requisito adicional, avaliação a 360px e revisões de segurança continuam no plano de entrega.
 
 ## Referências internas
 
