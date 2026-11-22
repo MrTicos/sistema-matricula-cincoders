@@ -61,3 +61,65 @@ export async function cadastrarDisciplina(
     throw erro;
   }
 }
+
+
+
+interface ConsultarDisciplinasInput {
+  busca: string;
+  pagina: number;
+  limite: number;
+}
+
+export async function consultarDisciplinas(
+  dados: ConsultarDisciplinasInput
+) {
+  const { busca, pagina, limite } = dados;
+
+  const where = busca
+    ? {
+        OR: [
+          {
+            codigo: {
+              contains: busca.toUpperCase(),
+            },
+          },
+          {
+            nome: {
+              contains: busca,
+            },
+          },
+        ],
+      }
+    : undefined;
+
+  const [total, disciplinas] = await prisma.$transaction([
+    prisma.disciplina.count({
+      where,
+    }),
+    prisma.disciplina.findMany({
+      where,
+      orderBy: [
+        { codigo: "asc" },
+        { id: "asc" },
+      ],
+      skip: (pagina - 1) * limite,
+      take: limite,
+      select: {
+        id: true,
+        codigo: true,
+        nome: true,
+        cargaHoraria: true,
+      },
+    }),
+  ]);
+
+  return {
+    disciplinas,
+    paginacao: {
+      pagina,
+      limite,
+      total,
+      totalPaginas: Math.ceil(total / limite),
+    },
+  };
+}

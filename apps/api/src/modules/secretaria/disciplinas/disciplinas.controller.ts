@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { cadastrarDisciplina } from "./disciplinas.service";
+import { cadastrarDisciplina, consultarDisciplinas } from "./disciplinas.service";
 
 export async function criarDisciplina(
   req: Request,
@@ -56,6 +56,83 @@ export async function criarDisciplina(
 
     res.status(500).json({
       message: "Não foi possível cadastrar a disciplina.",
+    });
+  }
+}
+
+function lerInteiroPositivo(
+  valor: unknown,
+  padrao: number
+): number | null {
+  if (valor === undefined) {
+    return padrao;
+  }
+
+  if (
+    typeof valor !== "string" ||
+    !/^\d+$/.test(valor)
+  ) {
+    return null;
+  }
+
+  const numero = Number(valor);
+
+  if (!Number.isSafeInteger(numero) || numero < 1) {
+    return null;
+  }
+
+  return numero;
+}
+
+export async function listarDisciplinas(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const pagina = lerInteiroPositivo(req.query.pagina, 1);
+  const limite = lerInteiroPositivo(req.query.limite, 10);
+  const buscaParam = req.query.busca;
+
+  if (
+    pagina === null ||
+    limite === null ||
+    limite > 50 ||
+    (buscaParam !== undefined &&
+      typeof buscaParam !== "string")
+  ) {
+    res.status(400).json({
+      message: "Parâmetros de consulta inválidos.",
+    });
+    return;
+  }
+
+  const busca =
+    typeof buscaParam === "string"
+      ? buscaParam.trim()
+      : "";
+
+  if (
+    busca.length > 100 ||
+    !Number.isSafeInteger((pagina - 1) * limite)
+  ) {
+    res.status(400).json({
+      message: "Parâmetros de consulta inválidos.",
+    });
+    return;
+  }
+
+  try {
+    const resultado = await consultarDisciplinas({
+      busca,
+      pagina,
+      limite,
+    });
+
+    res.status(200).json(resultado);
+  } catch (erro) {
+    console.error("Erro ao listar disciplinas:", erro);
+
+    res.status(500).json({
+      message: "Não foi possível consultar as disciplinas.",
     });
   }
 }

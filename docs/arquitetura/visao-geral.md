@@ -1,6 +1,6 @@
 # Visão geral da arquitetura — CINCoders
 
-> **Estado atualizado — 22/11/2026:** API Express/Prisma/SQLite e frontend React/Vite implementados para os fluxos de autenticação, ofertas, matrícula, consulta, cancelamento, progresso e cadastro de disciplinas pela secretaria. A execução integral do Vitest registrou **65 testes aprovados em 8 arquivos no backend** e **34 testes aprovados em 8 arquivos no frontend**: **99 testes, 16 arquivos, 0 falhas**. Os dois comandos foram executados separadamente. Isso não equivale, por si só, à aprovação de testes ponta a ponta, segurança de produção ou encerramento de todas as User Stories.
+> **Estado atualizado — 22/11/2026:** API Express/Prisma/SQLite e frontend React/Vite implementados para os fluxos de autenticação, ofertas, matrícula, consulta, cancelamento, progresso e secretaria. A consulta/pesquisa/paginação de disciplinas (US-08) e o cadastro (parte da US-09) estão implementados. As suítes completas registraram **73 testes aprovados em 8 arquivos no backend** e **40 em 8 arquivos no frontend**: **113 testes, 16 arquivos, 0 falhas**. Foram executadas separadamente. O responsável também confirmou **8 verificações manuais bem-sucedidas** da consulta/listagem no navegador. Isso não comprova, isoladamente, segurança de produção ou encerramento de todas as User Stories.
 
 ## Situação funcional atual
 
@@ -13,7 +13,10 @@
 | US-05 — Matrículas ativas | API e `MatriculasPage` | 7 testes backend; 5 testes frontend | Validar navegação real e estados visuais |
 | US-06 — Cancelamento | API e interface com confirmação | 10 testes backend; 4 testes frontend | Validar integração real e concorrência sob carga |
 | US-07 — Progresso | API e `ProgressoPage` | 10 testes backend; 5 testes frontend | Validar apresentação, arredondamentos e responsividade |
-| US-08 — Cadastro de disciplinas | Rota protegida da secretaria e `DisciplinasPage` | 6 testes backend; 4 testes frontend | Cadastro validado; listagem, edição e exclusão administrativas **não estão comprovadas** por estas suítes |
+| US-08 — Consulta de disciplinas (MAT-10) | `GET /api/secretaria/disciplinas`, busca, paginação e lista em `DisciplinasPage` sincronizada com URL | 8 testes backend; 6 frontend; 8 verificações manuais relatadas | Consulta implementada e validada; revisar acessibilidade/responsividade |
+| US-09 — Cadastro e edição de disciplinas (MAT-13) | `POST /api/secretaria/disciplinas` e formulário de cadastro | 6 testes backend; 4 frontend | **Cadastro concluído; edição ainda pendente**. Exclusão não integra a evidência desta entrega |
+
+**Atenção à contagem:** os testes da US-02 e de páginas do aluno são contabilizados apenas uma vez no total geral. Os 5 testes de `OfertasPage.test.tsx` atendem US-03/US-04 conjuntamente.
 
 ## Contratos HTTP em uso
 
@@ -28,6 +31,7 @@
 | `GET` | `/api/aluno/matriculas` | `ALUNO` | Consultar matrículas ativas |
 | `PATCH` | `/api/aluno/matriculas/:matriculaId/cancelar` | `ALUNO` | Cancelar matrícula própria |
 | `GET` | `/api/aluno/progresso` | `ALUNO` | Consultar progresso curricular |
+| `GET` | `/api/secretaria/disciplinas` | `SECRETARIA` | Listar, pesquisar e paginar disciplinas |
 | `POST` | `/api/secretaria/disciplinas` | `SECRETARIA` | Cadastrar disciplina |
 
 As rotas React protegem a experiência de navegação, mas os middlewares e os services da API continuam responsáveis por autenticação, autorização e integridade dos dados.
@@ -54,7 +58,7 @@ Ao iniciar, o `AuthProvider` consulta `GET /api/auth/me`. O formulário envia cr
 
 As requisições usam `credentials: "include"` para transportar o cookie de sessão `HttpOnly`. O frontend não armazena senha ou token no `localStorage`. A proteção de rotas React melhora a navegação, mas **a autorização de dados pertence à API**.
 
-**Validação naquele checkpoint, em `apps/web`:** 11 testes aprovados (4 login, 3 logout, 4 rotas), `pnpm lint` e `pnpm exec tsc -b` sem erros. Backend: 59 testes em execução separada; total acumulado de 70. **Checkpoint atual: 99 testes (22/11/2026).**
+**Validação naquele checkpoint, em `apps/web`:** 11 testes aprovados (4 login, 3 logout, 4 rotas), `pnpm lint` e `pnpm exec tsc -b` sem erros. Backend: 59 testes em execução separada; total acumulado de 70. **Checkpoint atual: 113 testes (22/11/2026).**
 
 **Pendente:** interfaces acadêmicas definitivas, responsividade em 360px, revisão de CSRF e configuração de cookies HTTPS para produção.
 
@@ -70,13 +74,13 @@ O objetivo do MVP é entregar primeiro o fluxo do aluno, os controles de acesso 
 
 | Camada | Tecnologia | Situação |
 | --- | --- | --- |
-| Interface | React + TypeScript + Vite | Implementada nas telas de autenticação, aluno e cadastro de disciplinas |
+| Interface | React + TypeScript + Vite | Implementada nas telas de autenticação, aluno e consulta/cadastro de disciplinas |
 | API HTTP | Express 5 + TypeScript, Node.js | API inicializada |
 | Dados | Prisma ORM 7 + adaptador `better-sqlite3` | Implementada |
 | Persistência | SQLite local | Banco criado e seed conferido |
 | Senhas | Argon2id | Implementada e testada |
 | Sessão | `express-session`, cookie HttpOnly | Implementada |
-| Testes | Vitest, Supertest, Testing Library | 99 testes automatizados aprovados em 16 arquivos (22/11/2026) |
+| Testes | Vitest, Supertest, Testing Library | 113 testes automatizados aprovados em 16 arquivos (22/11/2026) |
 | Organização | Repositório GitLab + Jira MAT | Em uso |
 
 ## Componentes e fronteiras
@@ -325,8 +329,8 @@ A API utiliza Vitest e Supertest para testes automatizados.
 | `matriculas.consulta.test.ts` | 7 |
 | `matriculas.cancelamento.test.ts` | 10 |
 | `progresso.test.ts` | 10 |
-| `secretaria.disciplinas.test.ts` | 6 |
-| **Total backend** | **65** |
+| `secretaria.disciplinas.test.ts` | 14 (8 consulta + 6 cadastro) |
+| **Total backend** | **73** |
 
 | Frontend — arquivo | Testes aprovados |
 | --- | ---: |
@@ -337,10 +341,10 @@ A API utiliza Vitest e Supertest para testes automatizados.
 | `MatriculasPage.test.tsx` | 5 |
 | `MatriculasCancelamento.test.tsx` | 4 |
 | `ProgressoPage.test.tsx` | 5 |
-| `DisciplinasPage.test.tsx` | 4 |
-| **Total frontend** | **34** |
+| `DisciplinasPage.test.tsx` | 10 (6 consulta + 4 cadastro) |
+| **Total frontend** | **40** |
 
-**Total geral: 99/99 testes aprovados, 16 arquivos e 0 falhas.** As execuções completas de `pnpm exec vitest run` foram apresentadas separadamente para `apps/api` e `apps/web`. A saída fornecida mais recentemente para o frontend terminou em `$ eslint .`; portanto, **a conclusão do lint e do `tsc -b` nesta última execução específica não está demonstrada por esse trecho**, ainda que tivessem passado em checkpoints anteriores.
+**Total geral: 113/113 testes aprovados, 16 arquivos e 0 falhas.** As execuções completas de `pnpm exec vitest run` foram apresentadas separadamente para `apps/api` e `apps/web`. O responsável informou também aprovação de `pnpm lint` e `pnpm exec tsc -b` no frontend, e `pnpm exec tsc --noEmit` no backend. Foram relatadas oito verificações manuais bem-sucedidas da consulta no navegador; esse registro não substitui uma suíte E2E reproduzível.
 
 A aplicação utiliza bancos SQLite separados para
 
@@ -563,7 +567,23 @@ O sistema apresenta:
 
 **Status em 22/11/2026:** backend implementado e testado (10 casos); `ProgressoPage` implementada e testada (5 casos frontend).
 
-## Cadastro de disciplinas pela secretaria — US-08
+## Consulta de disciplinas pela secretaria — US-08 (MAT-10)
+
+**Endpoint:** `GET /api/secretaria/disciplinas` (somente `SECRETARIA`, com `401` sem sessão e `403` para aluno).
+
+| Parâmetro | Funcionamento |
+| --- | --- |
+| `busca` | Pesquisa textual por código ou nome; omitir para consultar todas as disciplinas |
+| `pagina` | Página da listagem, iniciando em 1 |
+| `limite` | Registros por página; padrão 10 e máximo 50 |
+
+Parâmetros de paginação inválidos são rejeitados com `400`. A API pesquisa e conta registros no banco, ordena por código e ID e aplica `skip`/`take` antes de retornar os dados. A resposta inclui `disciplinas` (lista) e `paginacao` com `pagina`, `limite`, `total` e `totalPaginas`.
+
+A `DisciplinasPage` inclui tabela, formulário de busca, navegação de páginas e estados de carregamento, resultado vazio e erro com opção de tentar novamente. Busca e página ficam refletidas na URL, de modo que a consulta possa ser reproduzida pelo histórico/navegação. Após criar uma disciplina, a listagem é consultada novamente. As verificações manuais do responsável foram **8/8 aprovadas**, abrangendo listagem, pesquisa, parâmetros da URL, resultado vazio, atualização após cadastro, paginação e recuperação de erro.
+
+**Evidência:** 8 testes de integração da API e 6 testes de componente de consulta, todos aprovados. A validação manual foi relatada pelo responsável; não há gravação de teste E2E automatizado associada a esse resultado.
+
+## Cadastro de disciplinas pela secretaria — US-09 (MAT-13, parcial)
 
 **Endpoint:** `POST /api/secretaria/disciplinas`
 
@@ -607,10 +627,10 @@ O exemplo demonstra o formato dos dados, sem representar necessariamente uma dis
 
 ### Evidências e limites
 
-- **API:** `apps/api/tests/secretaria.disciplinas.test.ts`, 6 testes aprovados. O log enviado inclui exemplos de bloqueio do aluno, cadastro válido e rejeição de código duplicado.
-- **Frontend:** `apps/web/src/pages/secretaria/DisciplinasPage.test.tsx`, 4 testes aprovados: campos obrigatórios, cadastro válido, duplicidade e carga horária inválida.
-- **Integração:** o resultado combinado **não** demonstra sozinho a execução de um navegador real com API real, banco e rede.
-- **Escopo:** cadastro validado. Não registrar listagem, edição, exclusão, cadastro de professores, abertura de turmas ou ajuste de vagas como concluídos sem implementação e evidência adicionais.
+- **API:** `apps/api/tests/secretaria.disciplinas.test.ts`, 6 testes de cadastro aprovados. O log enviado inclui bloqueio do aluno, cadastro válido e rejeição de código duplicado.
+- **Frontend:** `apps/web/src/pages/secretaria/DisciplinasPage.test.tsx`, 4 testes de cadastro aprovados: campos obrigatórios, cadastro válido, duplicidade e carga horária inválida.
+- **Integração:** testes automatizados de API e de componente não demonstram, sozinhos, toda a integração real. O responsável concluiu também a verificação manual de atualização da lista após cadastro.
+- **Escopo:** cadastro validado e consulta (US-08) concluída. A **edição de disciplinas**, necessária para completar a US-09, permanece pendente, assim como professores, abertura de turmas e ajuste de vagas. Não declarar essas histórias concluídas.
 
 ## Referências internas
 

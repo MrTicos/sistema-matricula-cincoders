@@ -1,22 +1,9 @@
 // @vitest-environment jsdom
 
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
-
-import {
-  cleanup,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
-
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter, useLocation } from "react-router-dom";
 
 import { DisciplinasPage } from "./DisciplinasPage";
 import { apiRequest } from "../../api/client";
@@ -29,60 +16,83 @@ vi.mock("../../components/LogoutButton", () => ({
   LogoutButton: () => <button type="button">Sair</button>,
 }));
 
-describe("US-08 — Cadastro de disciplinas", () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
+const listaVazia = {
+  disciplinas: [],
+  paginacao: {
+    pagina: 1,
+    limite: 10,
+    total: 0,
+    totalPaginas: 0,
+  },
+};
 
-  afterEach(() => {
-    cleanup();
-  });
+const disciplinaExemplo = {
+  id: 10,
+  codigo: "CIN0100",
+  nome: "Projeto de Software",
+  cargaHoraria: 60,
+};
 
+function LocalizacaoTeste() {
+  const localizacao = useLocation();
+  return <output data-testid="url-atual">{localizacao.search}</output>;
+}
+
+function renderizarPagina(url = "/secretaria") {
+  return render(
+    <MemoryRouter initialEntries={[url]}>
+      <DisciplinasPage />
+      <LocalizacaoTeste />
+    </MemoryRouter>
+  );
+}
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  vi.mocked(apiRequest).mockResolvedValue(listaVazia);
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+describe("US-09 — Cadastro de disciplinas", () => {
   it("CT-01: deve apresentar os campos obrigatórios", () => {
-    render(<DisciplinasPage />);
+    renderizarPagina();
 
-    expect(
-      screen.getByLabelText("Código da disciplina")
-    ).toBeTruthy();
-
-    expect(
-      screen.getByLabelText("Nome da disciplina")
-    ).toBeTruthy();
-
-    expect(
-      screen.getByLabelText("Carga horária")
-    ).toBeTruthy();
+    expect(screen.getByLabelText("Código da disciplina")).toBeTruthy();
+    expect(screen.getByLabelText("Nome da disciplina")).toBeTruthy();
+    expect(screen.getByLabelText("Carga horária")).toBeTruthy();
   });
 
-  it("CT-02: deve cadastrar uma disciplina válida", async () => {
-    vi.mocked(apiRequest).mockResolvedValue({
-      message: "Disciplina cadastrada com sucesso.",
-      disciplina: {
-        id: 10,
-        codigo: "CIN0100",
-        nome: "Projeto de Software",
-        cargaHoraria: 60,
-      },
-    });
+  it("CT-02: deve cadastrar uma disciplina válida e atualizar a lista", async () => {
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(listaVazia)
+      .mockResolvedValueOnce({
+        message: "Disciplina cadastrada com sucesso.",
+        disciplina: disciplinaExemplo,
+      })
+      .mockResolvedValueOnce({
+        disciplinas: [disciplinaExemplo],
+        paginacao: {
+          pagina: 1,
+          limite: 10,
+          total: 1,
+          totalPaginas: 1,
+        },
+      });
 
     const usuario = userEvent.setup();
+    renderizarPagina();
+    await screen.findByText("Nenhuma disciplina cadastrada.");
 
-    render(<DisciplinasPage />);
-
-    await usuario.type(
-      screen.getByLabelText("Código da disciplina"),
-      "cin0100"
-    );
-
+    await usuario.type(screen.getByLabelText("Código da disciplina"), "cin0100");
     await usuario.type(
       screen.getByLabelText("Nome da disciplina"),
       "Projeto de Software"
     );
-
     await usuario.click(
-      screen.getByRole("button", {
-        name: "Cadastrar disciplina",
-      })
+      screen.getByRole("button", { name: "Cadastrar disciplina" })
     );
 
     await waitFor(() => {
@@ -100,40 +110,30 @@ describe("US-08 — Cadastro de disciplinas", () => {
     });
 
     expect(
-      await screen.findByText(
-        "Disciplina CIN0100 cadastrada com sucesso!"
-      )
+      await screen.findByText("Disciplina CIN0100 cadastrada com sucesso!")
     ).toBeTruthy();
+    expect(await screen.findByText("Projeto de Software")).toBeTruthy();
   });
 
   it("CT-03: deve apresentar erro de código duplicado", async () => {
-    vi.mocked(apiRequest).mockRejectedValue(
-      new Error("Já existe uma disciplina com esse código.")
-    );
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(listaVazia)
+      .mockRejectedValueOnce(new Error("Já existe uma disciplina com esse código."));
 
     const usuario = userEvent.setup();
+    renderizarPagina();
+    await screen.findByText("Nenhuma disciplina cadastrada.");
 
-    render(<DisciplinasPage />);
-
-    await usuario.type(
-      screen.getByLabelText("Código da disciplina"),
-      "CIN0100"
-    );
-
+    await usuario.type(screen.getByLabelText("Código da disciplina"), "CIN0100");
     await usuario.type(
       screen.getByLabelText("Nome da disciplina"),
       "Projeto de Software"
     );
-
     await usuario.click(
-      screen.getByRole("button", {
-        name: "Cadastrar disciplina",
-      })
+      screen.getByRole("button", { name: "Cadastrar disciplina" })
     );
 
-    expect(
-      await screen.findByRole("alert")
-    ).toHaveProperty(
+    expect(await screen.findByRole("alert")).toHaveProperty(
       "textContent",
       "Já existe uma disciplina com esse código."
     );
@@ -141,34 +141,127 @@ describe("US-08 — Cadastro de disciplinas", () => {
 
   it("CT-04: deve impedir cadastro com carga horária inválida", async () => {
     const usuario = userEvent.setup();
+    renderizarPagina();
+    await screen.findByText("Nenhuma disciplina cadastrada.");
 
-    render(<DisciplinasPage />);
-
-    await usuario.type(
-      screen.getByLabelText("Código da disciplina"),
-      "CIN0200"
-    );
-
+    await usuario.type(screen.getByLabelText("Código da disciplina"), "CIN0200");
     await usuario.type(
       screen.getByLabelText("Nome da disciplina"),
       "Disciplina Inválida"
     );
 
-    const carga = screen.getByLabelText(
-      "Carga horária"
-    ) as HTMLInputElement;
-
+    const carga = screen.getByLabelText("Carga horária") as HTMLInputElement;
     await usuario.clear(carga);
     await usuario.type(carga, "16");
 
     expect(carga.validity.valid).toBe(false);
-
     await usuario.click(
-      screen.getByRole("button", {
-        name: "Cadastrar disciplina",
-      })
+      screen.getByRole("button", { name: "Cadastrar disciplina" })
     );
 
-    expect(apiRequest).not.toHaveBeenCalled();
+    // A chamada GET inicial existe; nenhum POST deve ter sido enviado.
+    expect(apiRequest).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("US-08 — Consulta de disciplinas", () => {
+  it("CT-01: deve exibir as disciplinas retornadas", async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce({
+      disciplinas: [disciplinaExemplo],
+      paginacao: { pagina: 1, limite: 10, total: 1, totalPaginas: 1 },
+    });
+
+    renderizarPagina();
+
+    expect(await screen.findByText("CIN0100")).toBeTruthy();
+    expect(screen.getByText("Projeto de Software")).toBeTruthy();
+    expect(screen.getByText("60 h")).toBeTruthy();
+    expect(screen.getByRole("table")).toBeTruthy();
+  });
+
+  it("CT-02: deve pesquisar e refletir a busca na URL", async () => {
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(listaVazia)
+      .mockResolvedValueOnce({
+        disciplinas: [disciplinaExemplo],
+        paginacao: { pagina: 1, limite: 10, total: 1, totalPaginas: 1 },
+      });
+
+    const usuario = userEvent.setup();
+    renderizarPagina();
+    await screen.findByText("Nenhuma disciplina cadastrada.");
+
+    await usuario.type(
+      screen.getByLabelText("Pesquisar disciplinas por código ou nome"),
+      "CIN0100"
+    );
+    await usuario.click(screen.getByRole("button", { name: "Pesquisar" }));
+
+    expect(await screen.findByText("Projeto de Software")).toBeTruthy();
+    expect(screen.getByTestId("url-atual").textContent).toContain("busca=CIN0100");
+    expect(screen.getByTestId("url-atual").textContent).toContain("pagina=1");
+    expect(apiRequest).toHaveBeenLastCalledWith(
+      expect.stringContaining("busca=CIN0100")
+    );
+  });
+
+  it("CT-03: deve avançar a página e atualizar a URL", async () => {
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce({
+        disciplinas: [disciplinaExemplo],
+        paginacao: { pagina: 1, limite: 10, total: 11, totalPaginas: 2 },
+      })
+      .mockResolvedValueOnce({
+        disciplinas: [{ ...disciplinaExemplo, id: 11, codigo: "CIN0200" }],
+        paginacao: { pagina: 2, limite: 10, total: 11, totalPaginas: 2 },
+      });
+
+    const usuario = userEvent.setup();
+    renderizarPagina();
+    await screen.findByText("CIN0100");
+
+    await usuario.click(screen.getByRole("button", { name: "Próxima" }));
+
+    expect(await screen.findByText("CIN0200")).toBeTruthy();
+    expect(screen.getByTestId("url-atual").textContent).toContain("pagina=2");
+    expect(apiRequest).toHaveBeenLastCalledWith(
+      expect.stringContaining("pagina=2")
+    );
+  });
+
+  it("CT-04: deve apresentar mensagem de lista vazia", async () => {
+    renderizarPagina("/secretaria?busca=INEXISTENTE&pagina=1");
+
+    expect(
+      await screen.findByText('Nenhuma disciplina encontrada para "INEXISTENTE".')
+    ).toBeTruthy();
+  });
+
+  it("CT-05: deve permitir tentar novamente após erro de rede", async () => {
+    vi.mocked(apiRequest)
+      .mockRejectedValueOnce(new Error("Falha de conexão"))
+      .mockResolvedValueOnce(listaVazia);
+
+    const usuario = userEvent.setup();
+    renderizarPagina();
+
+    expect(await screen.findByRole("alert")).toHaveProperty(
+      "textContent",
+      "Falha de conexão"
+    );
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Tentar novamente" })
+    );
+
+    expect(await screen.findByText("Nenhuma disciplina cadastrada.")).toBeTruthy();
+    expect(apiRequest).toHaveBeenCalledTimes(2);
+  });
+
+  it("CT-06: deve informar carregamento enquanto consulta", async () => {
+    renderizarPagina();
+
+    expect(screen.getByText("Carregando disciplinas...")).toBeTruthy();
+    expect(await screen.findByText("Nenhuma disciplina cadastrada.")).toBeTruthy();
   });
 });

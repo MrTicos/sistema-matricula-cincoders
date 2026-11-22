@@ -2,13 +2,13 @@
 
 ## Checkpoint atual — 22/11/2026
 
-**Fonte da evidência:** saídas completas de `pnpm exec vitest run` enviadas pelo responsável do projeto, uma em `apps/api` e outra em `apps/web`.
+**Fonte da evidência:** resultados de `pnpm exec vitest run` comunicados pelo responsável do projeto em `apps/api` e `apps/web`, além de oito verificações manuais de consulta/listagem de disciplinas, todas relatadas como aprovadas.
 
 | Camada | Arquivos aprovados | Testes aprovados | Reprovados | Tempo informado |
 | --- | ---: | ---: | ---: | --- |
-| Backend — Vitest + Supertest | 8 | 65 | 0 | 5,64 s |
-| Frontend — Vitest / testes de componentes | 8 | 34 | 0 | 8,68 s |
-| **Total (execuções separadas)** | **16** | **99** | **0** | Não somar durações como se fosse uma execução única |
+| Backend — Vitest + Supertest | 8 | 73 | 0 | Não informado para a execução de 73 testes |
+| Frontend — Vitest / testes de componentes | 8 | 40 | 0 | 5,72 s |
+| **Total (execuções separadas)** | **16** | **113** | **0** | Não somar durações como se fosse uma execução única |
 
 ### Inventário de suítes — backend
 
@@ -21,8 +21,8 @@
 | `matriculas.consulta.test.ts` | US-05 | 7 |
 | `matriculas.cancelamento.test.ts` | US-06 | 10 |
 | `progresso.test.ts` | US-07 | 10 |
-| `secretaria.disciplinas.test.ts` | US-08 | 6 |
-| **Total** | | **65** |
+| `secretaria.disciplinas.test.ts` | US-08 (8 consulta) + US-09 (6 cadastro) | 14 |
+| **Total** | | **73** |
 
 ### Inventário de suítes — frontend
 
@@ -35,12 +35,24 @@
 | `pages/aluno/MatriculasPage.test.tsx` | US-05 | 5 |
 | `pages/aluno/MatriculasCancelamento.test.tsx` | US-06 | 4 |
 | `pages/aluno/ProgressoPage.test.tsx` | US-07 | 5 |
-| `pages/secretaria/DisciplinasPage.test.tsx` | US-08 | 4 |
-| **Total** | | **34** |
+| `pages/secretaria/DisciplinasPage.test.tsx` | US-08 (6 consulta) + US-09 (4 cadastro) | 10 |
+| **Total** | | **40** |
 
-Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cinco testes para US-03 e mais cinco para US-04. O teste focado de `DisciplinasPage.test.tsx` também foi executado separadamente com **4/4 aprovações**, além de participar da suíte completa com o mesmo total; não o contabilizar duas vezes.
+Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cinco testes para US-03 e mais cinco para US-04. O teste focado de `DisciplinasPage.test.tsx` foi executado separadamente com **10/10 aprovações**, além de participar da suíte completa; não o contabilizar duas vezes.
 
-### US-08 — Cadastro de disciplinas: evidência nova
+### US-08 — Consulta de disciplinas (MAT-10): evidência atual
+
+**Contrato em teste:** `GET /api/secretaria/disciplinas?busca=&pagina=&limite=`. A API restringe o acesso a `SECRETARIA`, pesquisa por código/nome, pagina resultados e informa `{ disciplinas, paginacao: { pagina, limite, total, totalPaginas } }`. A interface sincroniza a busca e a página com a URL e trata os estados de carregamento, vazio e erro.
+
+| Fonte | Cobertura relatada | Resultado |
+| --- | --- | --- |
+| Backend — `secretaria.disciplinas.test.ts` | 8 cenários de consulta, acesso, pesquisa e paginação | **8/8 aprovados** |
+| Frontend — `DisciplinasPage.test.tsx` | 6 cenários: renderização, busca/URL, paginação/URL, vazio, erro/nova tentativa e carregamento | **6/6 aprovados** |
+| Manual — navegador, API e banco reais | 8 verificações concluídas, incluindo pesquisa, URL, lista vazia, atualização pós-cadastro e navegação | **8/8 aprovadas, conforme relato do responsável** |
+
+**Total US-08:** 14 testes automatizados aprovados e 8 verificações manuais bem-sucedidas. Os 14 casos já integram o consolidado de 113; os testes manuais **não** aumentam a contagem de Vitest.
+
+### US-09 — Cadastro de disciplinas (MAT-13): evidência parcial
 
 **Contrato em teste:** `POST /api/secretaria/disciplinas`, acessível apenas ao perfil `SECRETARIA`; entrada `{ "codigo": string, "nome": string, "cargaHoraria": number }`. Código obrigatório e único, normalizado em maiúsculas; nome obrigatório; carga horária inteira de 15 a 120 e múltipla de 15. O frontend apresenta os mesmos campos e feedback de validação/erro.
 
@@ -55,14 +67,15 @@ Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cin
 | Frontend — mesmo arquivo | CT-03: mostrar erro de código duplicado | Aprovado |
 | Frontend — mesmo arquivo | CT-04: impedir cadastro com carga horária inválida | Aprovado |
 
-**Total US-08:** 6 testes de backend + 4 testes de frontend = **10 testes aprovados**, já incluídos nos 99 totais. Os títulos dos três casos adicionais do backend não foram exibidos; não atribuir a eles resultados específicos sem consultar o arquivo completo.
+**Total do cadastro da US-09:** 6 testes de backend + 4 testes de frontend = **10 testes aprovados**, já incluídos nos 113 totais. O código de teste fornecido inclui os casos CT-01 a CT-06 do cadastro. A **edição**, exigida para concluir a US-09, ainda não foi implementada/testada.
 
-**O que esses resultados não provam isoladamente:** integração real navegador/API/banco, proteção CSRF, cookie `Secure` em HTTPS, persistência da sessão após reinício, acessibilidade, responsividade em 360px, testes de carga ou fluxos administrativos de listagem/edição de disciplinas, professores, turmas e vagas.
+**O que esses resultados não provam isoladamente:** proteção CSRF, cookie `Secure` em HTTPS, persistência da sessão após reinício, acessibilidade, responsividade em 360px, testes de carga ou fluxos de edição de disciplinas, professores, turmas e vagas. A consulta/listagem de disciplinas teve também verificação manual bem-sucedida, mas não uma suíte E2E automatizada.
 
 ### Comandos para reproduzir o checkpoint
 
 ```powershell
 cd C:\dev\sistema-matricula-cincoders\apps\api
+pnpm exec tsc --noEmit
 pnpm exec vitest run
 
 cd C:\dev\sistema-matricula-cincoders\apps\web
@@ -72,7 +85,7 @@ pnpm lint
 pnpm exec tsc -b
 ```
 
-**Importante:** somente os comandos Vitest têm saídas completas confirmadas neste checkpoint. O último log compartilhado de lint/TypeScript termina em `$ eslint .`, sem resultado de término. Os arquivos de banco e variáveis de ambiente devem permanecer segregados entre desenvolvimento e testes.
+**Importante:** o responsável também confirmou `pnpm lint`, `pnpm exec tsc -b` no frontend e `pnpm exec tsc --noEmit` no backend como aprovados. Os arquivos de banco e variáveis de ambiente devem permanecer segregados entre desenvolvimento e testes.
 
 ---
 
@@ -205,14 +218,18 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 | T-30 | US-01, persistência | Sessão continua válida após reinício da API sem novo login, dentro do prazo de expiração | Manual/integração | P1 |
 | T-31 | US-01, HTTPS | Cookie contém `Secure` em ambiente HTTPS de produção | Integração/manual | P1 |
 | T-32 | US-01, CSRF | Requisições que alteram dados são protegidas contra CSRF | Integração | P0 |
-| T-33 | US-08, acesso | Requisição não autenticada não cadastra disciplina; aluno autenticado é bloqueado | Integração | P0 |
-| T-34 | US-08, cadastro | Secretaria cria disciplina com código, nome e CH válidos | Integração | P1 |
-| T-35 | US-08, unicidade | Código já existente, inclusive após normalização, não produz novo cadastro | Integração | P1 |
-| T-36 | US-08, validação | Código/nome obrigatórios, CH inteira de 15–120 e múltipla de 15 | Integração/UI | P1 |
-| T-37 | US-08, formulário | Campos, envio válido, erro de duplicidade e bloqueio de CH inválida | Componente | P1 |
-| T-38 | US-08, integração | Cadastro pela interface real atualiza o banco via API com sessão da secretaria | Ponta a ponta/manual | P1 |
+| T-33 | US-09, acesso | Requisição não autenticada não cadastra disciplina; aluno autenticado é bloqueado | Integração | P0 |
+| T-34 | US-09, cadastro | Secretaria cria disciplina com código, nome e CH válidos | Integração | P1 |
+| T-35 | US-09, unicidade | Código já existente, inclusive após normalização, não produz novo cadastro | Integração | P1 |
+| T-36 | US-09, validação | Código/nome obrigatórios, CH inteira de 15–120 e múltipla de 15 | Integração/UI | P1 |
+| T-37 | US-09, formulário | Campos, envio válido, erro de duplicidade e bloqueio de CH inválida | Componente | P1 |
+| T-38 | US-09, integração | Cadastro pela interface real atualiza o banco via API com sessão da secretaria | Ponta a ponta/manual | P1 |
+| T-39 | US-08, consulta | Secretaria consulta disciplinas com autorização, busca por código e nome e paginação | Integração | P1 |
+| T-40 | US-08, interface | A listagem apresenta resultados, vazio, carregamento, erro e nova tentativa | Componente/manual | P1 |
+| T-41 | US-08, navegação | Busca e página são sincronizadas com a URL, e o cadastro atualiza a lista | Componente/manual | P1 |
+| T-42 | US-09, edição | Alterar dados válidos de disciplina, validar unicidade, carga horária e autorização | Integração/UI | P1 |
 
-**Rastreabilidade da US-08:** os testes automatizados do checkpoint de 22/11 comprovam seis casos no backend e quatro no frontend; o T-38 continua pendente de uma evidência ponta a ponta. A matriz expressa *o que testar*, não autoriza marcar como aprovado todo cenário cujos detalhes não estejam demonstrados.
+**Rastreabilidade atual:** US-08 (consulta, MAT-10) tem 8 testes de API, 6 de frontend e 8 verificações manuais aprovadas; US-09 (cadastro/edição, MAT-13) tem 6 testes de cadastro na API e 4 no frontend, com edição pendente (T-42). O T-38 teve verificação manual de atualização da lista após cadastro; não existe ainda uma suíte E2E automatizada para ele. A matriz expressa *o que testar*, sem declarar aprovados cenários não exercitados.
 
 ## 6. Exemplos Gherkin prioritários
 
@@ -366,7 +383,7 @@ apps/api/
 
 ```
 
-**Contexto histórico:** naquele momento só os quatro arquivos de autenticação/autorização, ofertas e matrículas estavam concluídos; os demais nomes eram sugestões. Em 22/11/2026, `progresso.test.ts` e `secretaria.disciplinas.test.ts` já aparecem nas suítes reais, juntamente com os testes de consulta e cancelamento. Para Supertest, importar `app` de `src/app.ts` sem iniciar `server.ts`. Usar `request.agent(app)` nos cenários que precisam reutilizar cookies. A autorização da secretaria foi inicialmente exercitada por rota exclusiva de teste; posteriormente a US-08 implementou uma rota administrativa real.
+**Contexto histórico:** naquele momento só os quatro arquivos de autenticação/autorização, ofertas e matrículas estavam concluídos; os demais nomes eram sugestões. Em 22/11/2026, `progresso.test.ts` e `secretaria.disciplinas.test.ts` já aparecem nas suítes reais, juntamente com os testes de consulta e cancelamento. Para Supertest, importar `app` de `src/app.ts` sem iniciar `server.ts`. Usar `request.agent(app)` nos cenários que precisam reutilizar cookies. A autorização da secretaria foi inicialmente exercitada por rota exclusiva de teste; posteriormente o cadastro (US-09) e a consulta (US-08) implementaram rotas administrativas reais.
 
 ### Comandos de verificação
 
@@ -392,16 +409,18 @@ pnpm exec vitest run
 
 ## 8. Registro de execução
 
-### Registro atual — 22/11/2026
+### Registro atual — 22/11/2026 (US-08 consulta)
 
 | Data | Verificação | Evidência observada | Resultado |
 | --- | --- | --- | --- |
-| 22/11/2026 | `apps/api`: `pnpm exec vitest run` | 8 arquivos, 65 testes, 0 falhas, duração 5,64 s | **Passou** |
-| 22/11/2026 | `apps/web`: `pnpm exec vitest run src/pages/secretaria/DisciplinasPage.test.tsx` | 1 arquivo, 4 testes da US-08, 0 falhas, duração 5,78 s | **Passou** |
-| 22/11/2026 | `apps/web`: `pnpm exec vitest run` | 8 arquivos, 34 testes, 0 falhas, duração 8,68 s | **Passou** |
-| 22/11/2026 | `apps/web`: `pnpm lint` e `pnpm exec tsc -b` | Log recebido interrompido em `$ eslint .`; sem saída final de ambos | **A confirmar nesta execução** |
+| 22/11/2026 | `apps/api`: `pnpm exec vitest run` | 8 arquivos, 73 testes, 0 falhas; tempo não informado | **Passou — confirmado pelo responsável** |
+| 22/11/2026 | `apps/api`: `pnpm exec tsc --noEmit` | Verificação de tipos confirmada pelo responsável | **Passou** |
+| 22/11/2026 | `apps/web`: `pnpm exec vitest run src/pages/secretaria/DisciplinasPage.test.tsx` | 1 arquivo, 10 testes (6 US-08 + 4 US-09), 0 falhas, duração 4,66 s | **Passou** |
+| 22/11/2026 | `apps/web`: `pnpm exec vitest run` | 8 arquivos, 40 testes, 0 falhas, duração 5,72 s | **Passou** |
+| 22/11/2026 | `apps/web`: `pnpm lint` e `pnpm exec tsc -b` | Comandos executados sem erro, conforme relato do responsável | **Passou** |
+| 22/11/2026 | US-08: 8 verificações manuais | Navegador/API/banco reais; todas funcionaram, conforme relato do responsável | **8/8 passaram — manual** |
 
-**Consolidado:** 65 + 34 = **99 testes aprovados**, 16 arquivos, 0 falhas. A execução focada de 4 testes US-08 é uma repetição parcial da suíte frontend e **não** aumenta o total de 99.
+**Consolidado:** 73 + 40 = **113 testes automatizados aprovados**, 16 arquivos, 0 falhas. A execução focada de 10 testes é uma repetição parcial da suíte frontend e **não** aumenta o total de 113; as oito verificações manuais são registradas à parte.
 
 ### Registro inicial — 21/11/2026 (histórico)
 
@@ -685,7 +704,7 @@ Cenários validados:
 
 **Pendência:** integração com o frontend React.
 
-### 8.8. US-08 — Cadastro de disciplinas — 22/11/2026
+### 8.8. US-09 — Cadastro de disciplinas (etapa parcial) — 22/11/2026
 
 **Endpoint:** `POST /api/secretaria/disciplinas`.
 
@@ -702,11 +721,30 @@ Cenários validados:
 - [x] O formulário envia um cadastro válido (CT-02 do frontend).
 - [x] O formulário apresenta erro de código duplicado (CT-03 do frontend).
 - [x] O formulário impede carga horária inválida (CT-04 do frontend).
-- [x] As suítes completas terminam sem falhas: 65 backend e 34 frontend.
+- [x] As suítes completas terminam sem falhas: 73 backend e 40 frontend no checkpoint mais recente.
 
-Os outros três testes do backend passaram, mas seus nomes não aparecem na saída resumida fornecida. Não substituir essa ausência de títulos por descrições inventadas.
+O código de teste da fase de cadastro foi fornecido com os seis casos CT-01 a CT-06; todos passaram. As verificações de consulta incluídas posteriormente foram registradas na seção 8.9.
 
-**A validar separadamente:** execução manual com o navegador conectado à API real, responsividade, acessibilidade, CSRF, observação do banco após cadastro, e eventuais requisitos de listagem/edição e outros cadastros da secretaria. Testes de componente com simulações da API não garantem integração real.
+**A validar separadamente:** edição de disciplinas (ainda necessária para concluir US-09), responsividade, acessibilidade, CSRF e outros cadastros da secretaria. A atualização manual da lista após cadastro foi confirmada; testes de componente com simulações da API não substituem integralmente testes E2E.
+
+### 8.9. US-08 — Consulta de disciplinas — 22/11/2026
+
+**Endpoint:** `GET /api/secretaria/disciplinas`, com pesquisa e paginação.
+
+**Backend:** 8 testes adicionados em `apps/api/tests/secretaria.disciplinas.test.ts`, totalizando 14 casos nesse arquivo com os 6 de cadastro da US-09.
+
+**Frontend:** 6 testes de consulta adicionados em `apps/web/src/pages/secretaria/DisciplinasPage.test.tsx`, totalizando 10 com os 4 de cadastro.
+
+- [x] Exibir as disciplinas retornadas pela API.
+- [x] Pesquisar e refletir o termo na URL.
+- [x] Avançar a página e atualizar a URL.
+- [x] Apresentar mensagem de lista vazia.
+- [x] Permitir tentar novamente após erro de rede.
+- [x] Informar carregamento durante a consulta.
+- [x] Validar acesso e paginação no backend (8 casos de consulta aprovados).
+- [x] Executar 8 verificações manuais com a aplicação real; o responsável relatou que **todas funcionaram**.
+
+**Status:** US-08 implementada e validada, com 14 testes automatizados específicos de consulta e oito verificações manuais. Permanecem a revisão de responsividade/acessibilidade e os cuidados de segurança transversais do sistema.
 
 ## 9. Priorização e riscos
 
@@ -722,7 +760,7 @@ Riscos que exigem atenção:
 
 4. **Banco de teste:** assegurar que Vitest, Prisma e o armazenamento de sessão não modifiquem `dev.db` nem o banco de sessões de desenvolvimento.
 
-5. **Cobertura falsa (exemplo histórico):** os 32 testes de um checkpoint de 21/11 cobriam autenticação/autorização, ofertas e realização de matrícula no backend, sem provar cancelamento, progresso, frontend ou secretaria naquela época. No checkpoint atual de 22/11 há 99 testes, mas ainda não há prova automática de CSRF, responsividade, carga ou MVP completo.
+5. **Cobertura falsa (exemplo histórico):** os 32 testes de um checkpoint de 21/11 cobriam autenticação/autorização, ofertas e realização de matrícula no backend, sem provar cancelamento, progresso, frontend ou secretaria naquela época. No checkpoint atual de 22/11 há 113 testes, mas ainda não há prova automática de CSRF, responsividade, carga ou MVP completo.
 
 ## 10. Manutenção
 
