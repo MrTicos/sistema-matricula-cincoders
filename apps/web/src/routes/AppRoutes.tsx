@@ -12,6 +12,7 @@ import { OfertasPage } from "../pages/aluno/OfertasPage";
 import { MatriculasPage } from "../pages/aluno/MatriculasPage";
 import { ProgressoPage } from "../pages/aluno/ProgressoPage";
 import { DisciplinasPage } from "../pages/secretaria/DisciplinasPage";
+import { ProfessoresPage } from "../pages/secretaria/ProfessoresPage";
 
 type Perfil = "ALUNO" | "SECRETARIA";
 
@@ -84,6 +85,11 @@ export function AppRoutes() {
           <Route
             path="/secretaria"
             element={<DisciplinasPage />}
+          />
+
+          <Route
+            path="/secretaria/professores"
+            element={<ProfessoresPage />}
           />
         </Route>
 

@@ -2,13 +2,13 @@
 
 ## Checkpoint atual — 22/11/2026
 
-**Fonte da evidência:** resultados de `pnpm exec vitest run` comunicados pelo responsável do projeto em `apps/api` e `apps/web`, log integral de 47 testes do frontend e **16 verificações manuais** relatadas como aprovadas: 8 da consulta (US-08) e 8 da edição (US-09).
+**Fonte da evidência:** logs de `pnpm exec vitest run` apresentados pelo responsável do projeto em `apps/api` e `apps/web`, resultados de lint/TypeScript e **24 verificações manuais** relatadas como aprovadas: 8 da consulta de disciplinas (US-08), 8 da edição de disciplinas (US-09) e 8 da consulta/cadastro de professores (US-10). Os testes de integração HTTP, testes de componentes e verificações manuais são contabilizados separadamente.
 
 | Camada | Arquivos aprovados | Testes aprovados | Reprovados | Tempo informado |
 | --- | ---: | ---: | ---: | --- |
-| Backend — Vitest + Supertest | 8 | 84 | 0 | Não informado para a execução de 84 testes |
-| Frontend — Vitest / testes de componentes | 8 | 47 | 0 | 7,00 s |
-| **Total (execuções separadas)** | **16** | **131** | **0** | Não somar durações como se fosse uma execução única |
+| Backend — Vitest + Supertest | 9 | 98 | 0 | 6,67 s |
+| Frontend — Vitest / testes de componentes | 9 | 58 | 0 | 10,32 s (última execução, após navegação US-10) |
+| **Total (execuções separadas)** | **18** | **156** | **0** | Não somar durações como se fosse uma execução única |
 
 ### Inventário de suítes — backend
 
@@ -22,7 +22,8 @@
 | `matriculas.cancelamento.test.ts` | US-06 | 10 |
 | `progresso.test.ts` | US-07 | 10 |
 | `secretaria.disciplinas.test.ts` | US-08 (8 consulta) + US-09 (6 cadastro + 11 edição) | 25 |
-| **Total** | | **84** |
+| `secretaria.professores.test.ts` | US-10 (8 consulta + 6 cadastro/autorização/validação) | 14 |
+| **Total** | | **98** |
 
 ### Inventário de suítes — frontend
 
@@ -36,9 +37,10 @@
 | `pages/aluno/MatriculasCancelamento.test.tsx` | US-06 | 4 |
 | `pages/aluno/ProgressoPage.test.tsx` | US-07 | 5 |
 | `pages/secretaria/DisciplinasPage.test.tsx` | US-08 (6 consulta) + US-09 (4 cadastro + 7 edição) | 17 |
-| **Total** | | **47** |
+| `pages/secretaria/ProfessoresPage.test.tsx` | US-10 (6 consulta + 5 cadastro) | 11 |
+| **Total** | | **58** |
 
-Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cinco testes para US-03 e mais cinco para US-04. O teste focado de `DisciplinasPage.test.tsx` foi executado separadamente com **17/17 aprovações** em 6,19 s, além de participar da suíte completa; não o contabilizar duas vezes.
+Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cinco testes para US-03 e mais cinco para US-04. Os testes focados `DisciplinasPage.test.tsx` (17/17) e `ProfessoresPage.test.tsx` (11/11) foram executados separadamente e também integram a suíte completa; **não contabilizá-los duas vezes**.
 
 ### US-08 — Consulta de disciplinas (MAT-10): evidência atual
 
@@ -50,7 +52,7 @@ Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cin
 | Frontend — `DisciplinasPage.test.tsx` | 6 cenários: renderização, busca/URL, paginação/URL, vazio, erro/nova tentativa e carregamento | **6/6 aprovados** |
 | Manual — navegador, API e banco reais | 8 verificações concluídas, incluindo pesquisa, URL, lista vazia, atualização pós-cadastro e navegação | **8/8 aprovadas, conforme relato do responsável** |
 
-**Total US-08:** 14 testes automatizados aprovados e 8 verificações manuais bem-sucedidas. Os 14 casos já integram o consolidado de 131; os testes manuais **não** aumentam a contagem de Vitest.
+**Total US-08:** 14 testes automatizados aprovados e 8 verificações manuais bem-sucedidas. Os 14 casos já integram o consolidado de 156; os testes manuais **não** aumentam a contagem de Vitest.
 
 ### US-09 — Cadastro e edição de disciplinas (MAT-13): evidência atual
 
@@ -67,7 +69,7 @@ Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cin
 | Frontend — mesmo arquivo | CT-03: mostrar erro de código duplicado | Aprovado |
 | Frontend — mesmo arquivo | CT-04: impedir cadastro com carga horária inválida | Aprovado |
 
-**Total do cadastro da US-09:** 6 testes de backend + 4 testes de frontend = **10 testes aprovados**, já incluídos nos 131 totais. O código de teste fornecido inclui os casos CT-01 a CT-06 do cadastro.
+**Total do cadastro da US-09:** 6 testes de backend + 4 testes de frontend = **10 testes aprovados**, já incluídos nos 156 totais. O código de teste fornecido inclui os casos CT-01 a CT-06 do cadastro.
 
 **Contrato de edição:** `PATCH /api/secretaria/disciplinas/:id`, apenas para `SECRETARIA`; o corpo pode conter um ou mais entre `codigo`, `nome` e `cargaHoraria`. O controller valida ID, campos enviados e CH; o service normaliza texto e trata unicidade (`409`) e inexistência (`404`). O formulário React permite salvar/cancelar, mantém as condições de busca/paginação e recarrega a listagem.
 
@@ -77,19 +79,35 @@ Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cin
 | Frontend — `DisciplinasPage.test.tsx` | 7 testes: pré-preenchimento, cancelar sem PATCH, salvar/recarregar/preservar URL, duplicidade, CH inválida, bloqueio de novo envio e nova tentativa após erro | **7/7 aprovados**, no log apresentado |
 | Manual — navegador/API/banco reais | 8 verificações de edição, incluindo cancelamento, persistência, conflito de código, CH inválida e preservação de busca/URL | **8/8 aprovadas**, conforme relato do responsável |
 
-**Total US-09:** 17 testes de backend (6 cadastro + 11 edição) e 11 de frontend (4 cadastro + 7 edição) = **28 testes automatizados aprovados**, além de **8 verificações manuais específicas da edição**. Os 28 casos já estão incluídos no total de 131. **US-09 funcionalmente concluída**, restando publicar o commit da edição e atualizar o Jira MAT-13.
+**Total US-09:** 17 testes de backend (6 cadastro + 11 edição) e 11 de frontend (4 cadastro + 7 edição) = **28 testes automatizados aprovados**, além de **8 verificações manuais específicas da edição**. Os 28 casos já estão incluídos no total de 156. **US-09 funcionalmente concluída**; o responsável informou ter feito o commit, mas ainda é necessário conferir push e Jira MAT-13.
 
-**O que esses resultados não provam isoladamente:** proteção CSRF, cookie `Secure` em HTTPS, persistência da sessão após reinício, acessibilidade, responsividade em 360px, testes de carga ou fluxos de professores, turmas e vagas. Consulta e edição de disciplinas tiveram verificações manuais bem-sucedidas, mas ainda não uma suíte E2E automatizada.
+### US-10 — Consulta e cadastro de professores (MAT-17): evidência atual
+
+**Contrato em teste:** `GET` e `POST /api/secretaria/professores`, ambos exclusivos do perfil `SECRETARIA` e protegidos por sessão. O `GET` aceita `busca` (nome/e-mail), `pagina` e `limite` e devolve `professores` e os metadados `paginacao`. O `POST` recebe `{ "nome": string, "email": string }`, exige campos válidos e persiste o e-mail normalizado; a unicidade é garantida pelo banco (`@unique`, erro `P2002` convertido em `409`).
+
+| Fonte | Casos cobertos | Resultado |
+| --- | --- | --- |
+| Backend — `secretaria.professores.test.ts` | 14 cenários: autorização, listagem, busca por nome/e-mail, paginação, parâmetros inválidos, vazio, criação válida, unicidade e validação dos campos | **14/14 aprovados** (1,97 s na execução focada) |
+| Frontend — `ProfessoresPage.test.tsx` | 5 cenários de cadastro + 6 de consulta; formulário, duplicidade, e-mail inválido, envio bloqueado, pesquisa/URL, paginação, estados de vazio, erro/nova tentativa e carregamento | **11/11 aprovados** (5,47 s na execução focada) |
+| Manual — secretaria no navegador | Navegação, listagem, busca por nome/e-mail, cadastro válido, duplicidade, validação do formulário e paginação/URL | **8/8 aprovadas**, conforme relato do responsável |
+
+**Total US-10:** **25 testes automatizados aprovados** (14 backend + 11 frontend), já incluídos nos **156 testes consolidados**, e **8 verificações manuais aprovadas**, que não integram a contagem do Vitest. Após integrar `/secretaria/professores` e a navegação entre disciplinas e professores, o responsável repetiu lint, TypeScript e suíte frontend completa, com resultado positivo.
+
+**Situação:** US-10 funcionalmente validada; registro de commit/push e atualização do Jira MAT-17 pendentes de confirmação. A seguir, US-11 (consulta/abertura de turmas) e US-12 (capacidade/vagas).
+
+**O que esses resultados não provam isoladamente:** proteção CSRF, cookie `Secure` em HTTPS, persistência da sessão após reinício, acessibilidade, responsividade em 360px, testes de carga ou fluxos de abertura de turmas e ajuste de vagas. Disciplinas e professores tiveram verificações manuais bem-sucedidas, mas ainda não uma suíte E2E automatizada reproduzível.
 
 ### Comandos para reproduzir o checkpoint
 
 ```powershell
 cd C:\dev\sistema-matricula-cincoders\apps\api
 pnpm exec tsc --noEmit
+pnpm exec vitest run tests/secretaria.professores.test.ts
 pnpm exec vitest run
 
 cd C:\dev\sistema-matricula-cincoders\apps\web
 pnpm exec vitest run src/pages/secretaria/DisciplinasPage.test.tsx
+pnpm exec vitest run src/pages/secretaria/ProfessoresPage.test.tsx
 pnpm exec vitest run
 pnpm lint
 pnpm exec tsc -b
@@ -240,8 +258,14 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 | T-42 | US-09, edição | Alterar dados válidos de disciplina, validar unicidade, carga horária e autorização | Integração/UI | P1 — aprovado |
 | T-43 | US-09, interface de edição | Pré-preenchimento, salvar/cancelar, recarga da lista e preservação de busca/página na URL | Componente/manual | P1 — aprovado |
 | T-44 | US-09, fluxo real | Edição persistida após recarregar, erro de código duplicado e de CH inválida, sem modificar registros indevidos | Manual | P1 — 8/8 verificações aprovadas |
+| T-45 | US-10, acesso a professores | Consulta/cadastro sem sessão → `401`; por aluno → `403` | Integração | P1 — aprovado |
+| T-46 | US-10, consulta de professores | Listar, buscar por nome/e-mail e paginar sem repetir resultados; validar parâmetros | Integração | P1 — aprovado |
+| T-47 | US-10, cadastro de professores | Criar e persistir professor válido, normalizar e-mail e rejeitar duplicado (`409`) | Integração | P1 — aprovado |
+| T-48 | US-10, validação | Recusar nome ausente/inválido e e-mail inválido | Integração/UI | P1 — aprovado |
+| T-49 | US-10, página React | Busca e paginação na URL, estados de carregamento/vazio/erro e tentativa novamente | Componente/manual | P1 — aprovado |
+| T-50 | US-10, fluxo manual | Navegar, pesquisar, cadastrar, observar duplicidade e consultar paginação/URL | Manual | P1 — 8/8 verificações aprovadas |
 
-**Rastreabilidade atual:** US-08 (consulta, MAT-10) tem 8 testes de API, 6 frontend e 8 verificações manuais aprovadas; US-09 (cadastro/edição, MAT-13) tem 17 testes na API e 11 frontend, além de 8 verificações manuais da edição aprovadas. O T-38 teve verificação manual de atualização da lista após cadastro; não existe ainda uma suíte E2E automatizada para ele. A matriz expressa *o que testar*, sem declarar aprovados cenários não exercitados.
+**Rastreabilidade atual:** US-08 (consulta, MAT-10) tem 8 testes API, 6 frontend e 8 manuais; US-09 (cadastro/edição, MAT-13) tem 17 API, 11 frontend e 8 manuais da edição; US-10 (professores, MAT-17) tem 14 API, 11 frontend e 8 manuais. **Total do projeto: 156 automatizados + 24 verificações manuais**, sem duplicar execuções focadas. O T-38 teve verificação manual de atualização da lista após cadastro; não existe ainda uma suíte E2E automatizada para ele. A matriz expressa *o que testar*, sem declarar aprovados cenários não exercitados.
 
 ## 6. Exemplos Gherkin prioritários
 
@@ -343,6 +367,30 @@ Funcionalidade: Progresso curricular
 
 ```
 
+```gherkin
+Funcionalidade: Consulta e cadastro de professores pela secretaria
+
+  Cenário: Pesquisar professores com paginação
+    Dado que a secretaria está autenticada e existem professores cadastrados
+    Quando pesquisar por nome ou e-mail e navegar entre páginas
+    Então a listagem apresenta os resultados esperados sem repetições
+    E a busca e a página são refletidas na URL
+
+  Cenário: Cadastrar professor sem duplicar e-mail
+    Dado que a secretaria está autenticada
+    Quando cadastrar um professor com nome e e-mail válidos e inéditos
+    Então a API persiste o professor e retorna sucesso
+    E a listagem é atualizada
+    Quando repetir o cadastro com o mesmo e-mail
+    Então a API rejeita a duplicidade
+    E a interface informa o erro sem criar outro professor
+
+  Cenário: Proteger endpoints de professores
+    Dado que o acesso ocorre sem sessão ou por um aluno autenticado
+    Quando consultar ou cadastrar professores
+    Então o sistema bloqueia a operação conforme o perfil
+```
+
 ## 7. Organização dos testes
 
 ### Estrutura efetiva do checkpoint de 22/11/2026
@@ -356,7 +404,8 @@ apps/api/tests/
   matriculas.consulta.test.ts          # 7 testes
   matriculas.cancelamento.test.ts      # 10 testes
   progresso.test.ts                    # 10 testes
-  secretaria.disciplinas.test.ts       # 6 testes
+  secretaria.disciplinas.test.ts       # 25 testes (US-08 e US-09)
+  secretaria.professores.test.ts       # 14 testes (US-10)
 
 apps/web/src/
   pages/LoginPage.test.tsx             # 4 testes
@@ -366,7 +415,8 @@ apps/web/src/
   pages/aluno/MatriculasPage.test.tsx  # 5 testes
   pages/aluno/MatriculasCancelamento.test.tsx # 4 testes
   pages/aluno/ProgressoPage.test.tsx   # 5 testes
-  pages/secretaria/DisciplinasPage.test.tsx # 4 testes
+  pages/secretaria/DisciplinasPage.test.tsx # 17 testes (US-08 e US-09)
+  pages/secretaria/ProfessoresPage.test.tsx # 11 testes (US-10)
 ```
 
 ### Proposta inicial preservada (21/11/2026)
@@ -421,7 +471,21 @@ pnpm exec vitest run
 
 ## 8. Registro de execução
 
-### Registro atual — 22/11/2026 (US-09 edição)
+### Registro atual — 22/11/2026 (US-10 professores)
+
+| Data | Verificação | Evidência observada | Resultado |
+| --- | --- | --- | --- |
+| 22/11/2026 | `apps/api`: `pnpm exec tsc --noEmit` | Compilação de tipos sem erros, conforme log do responsável | **Passou** |
+| 22/11/2026 | `apps/api`: `pnpm exec vitest run tests/secretaria.professores.test.ts` | 1 arquivo, 14 testes, 0 falhas, 1,97 s | **14/14 passaram** |
+| 22/11/2026 | `apps/api`: `pnpm exec vitest run` | 9 arquivos, 98 testes, 0 falhas, 6,67 s | **98/98 passaram** |
+| 22/11/2026 | `apps/web`: `pnpm exec vitest run src/pages/secretaria/ProfessoresPage.test.tsx` | 1 arquivo, 11 testes, 0 falhas, 5,47 s | **11/11 passaram** |
+| 22/11/2026 | `apps/web`: `pnpm lint` e `pnpm exec tsc -b` | Ambos aprovados após integração de rota e menu da secretaria | **Passou** |
+| 22/11/2026 | `apps/web`: `pnpm exec vitest run` | 9 arquivos, 58 testes, 0 falhas, 10,32 s na última execução | **58/58 passaram** |
+| 22/11/2026 | US-10: 8 verificações manuais | Lista, busca, cadastro, validações e navegação com API real, todas relatadas como corretas | **8/8 passaram — manual** |
+
+**Consolidado atual:** 98 + 58 = **156 testes automatizados aprovados**, 18 arquivos, 0 falhas; **24 verificações manuais aprovadas** (8 da US-08, 8 da US-09, 8 da US-10). Testes focados estão contidos nas suítes completas, e as verificações manuais não são contadas como testes Vitest.
+
+### Registro anterior — 22/11/2026 (US-09 edição, preservado)
 
 | Data | Verificação | Evidência observada | Resultado |
 | --- | --- | --- | --- |
@@ -433,7 +497,7 @@ pnpm exec vitest run
 | 22/11/2026 | US-08: 8 verificações manuais | Navegador/API/banco reais; todas funcionaram, conforme relato do responsável | **8/8 passaram — manual** |
 | 22/11/2026 | US-09: 8 verificações manuais | Edição no navegador real: pré-preenchimento, cancelar, salvar/persistir, duplicidade, CH inválida e preservação da URL, conforme relato do responsável | **8/8 passaram — manual** |
 
-**Consolidado:** 84 + 47 = **131 testes automatizados aprovados**, 16 arquivos, 0 falhas. A execução focada de 17 testes é uma repetição parcial da suíte frontend e **não** aumenta o total de 131. As **16 verificações manuais** (8 US-08 + 8 US-09) são registradas à parte.
+**Consolidado naquele checkpoint:** 84 + 47 = **131 testes automatizados aprovados**, 16 arquivos, 0 falhas. A execução focada de 17 testes é uma repetição parcial da suíte frontend e **não** aumenta o total de 131. As **16 verificações manuais** (8 US-08 + 8 US-09) são registradas à parte. **Esse número é histórico; o atual está na tabela imediatamente acima.**
 
 **Checkpoint imediatamente anterior — consulta US-08, também em 22/11/2026:** 73 testes backend (8 arquivos) + 40 frontend (8 arquivos) = 113 automatizados sem falhas; 10 testes focados na página (4 cadastro + 6 consulta); 8 verificações manuais de consulta aprovadas. O novo total **substitui**, não se soma ao total antigo.
 
@@ -793,6 +857,48 @@ O código de teste da fase de cadastro foi fornecido com os seis casos CT-01 a C
 
 **Status:** US-09 (cadastro + edição) funcionalmente implementada e validada; registro do commit da edição e atualização Jira MAT-13 ainda a conferir.
 
+### 8.11. US-10 — Consulta e cadastro de professores — 22/11/2026
+
+**Backend:** `apps/api/tests/secretaria.professores.test.ts`, com **14/14 testes aprovados** na suíte focada e na suíte geral (**98/98 em 9 arquivos**).
+
+- [x] CT-01 — Negar consulta sem autenticação (`401`).
+- [x] CT-02 — Impedir consulta pelo aluno (`403`).
+- [x] CT-03 — Listar professores para a secretaria.
+- [x] CT-04 — Pesquisar professor pelo nome.
+- [x] CT-05 — Pesquisar professor pelo e-mail.
+- [x] CT-06 — Paginar sem repetir professores.
+- [x] CT-07 — Rejeitar parâmetros de consulta inválidos (`400`).
+- [x] CT-08 — Retornar lista vazia sem resultados.
+- [x] CT-09 — Cadastrar professor válido e persistir no banco.
+- [x] CT-10 — Rejeitar e-mail duplicado (`409`).
+- [x] CT-11 — Rejeitar nome inválido (`400`).
+- [x] CT-12 — Rejeitar e-mail inválido (`400`).
+- [x] CT-13 — Impedir cadastro pelo aluno (`403`).
+- [x] CT-14 — Impedir cadastro sem autenticação (`401`).
+
+**Frontend:** `apps/web/src/pages/secretaria/ProfessoresPage.test.tsx`, com **11/11 testes aprovados** na suíte focada e na geral (**58/58 em 9 arquivos** após integrar a rota).
+
+Cadastro:
+
+- [x] CT-01 — Apresentar campos obrigatórios.
+- [x] CT-02 — Cadastrar professor válido e atualizar a lista.
+- [x] CT-03 — Mostrar erro de e-mail duplicado.
+- [x] CT-04 — Impedir cadastro com e-mail inválido.
+- [x] CT-05 — Impedir novo envio durante o cadastro.
+
+Consulta:
+
+- [x] CT-01 — Exibir os professores retornados.
+- [x] CT-02 — Pesquisar e refletir a busca na URL.
+- [x] CT-03 — Avançar página e atualizar a URL.
+- [x] CT-04 — Mostrar mensagem de lista vazia.
+- [x] CT-05 — Permitir tentar novamente após erro de rede.
+- [x] CT-06 — Informar estado de carregamento durante a consulta.
+
+**Verificações manuais (8/8):** o responsável informou ter concluído com sucesso a navegação para a página, consulta de professores, pesquisa por nome e por e-mail, cadastro válido, rejeição de e-mail duplicado, validação de dados e funcionamento de URL/paginação. Relato de aprovação manual não deve ser confundido com captura automática de evidências E2E.
+
+**Status:** **US-10 funcionalmente concluída e validada**; conferir publicação de código/documentação no Git e atualização Jira MAT-17. As histórias US-11/US-12 e o requisito adicional ainda não foram validados.
+
 ## 9. Priorização e riscos
 
 O prazo é curto. Priorizar **P0** no fluxo do aluno: credenciais, autorização, consulta de ofertas, matrícula, cancelamento, rematrícula, lotação, concorrência, progresso e isolamento de dados. Os testes **P1** da secretaria e do requisito extra acompanham sua implementação.
@@ -807,7 +913,7 @@ Riscos que exigem atenção:
 
 4. **Banco de teste:** assegurar que Vitest, Prisma e o armazenamento de sessão não modifiquem `dev.db` nem o banco de sessões de desenvolvimento.
 
-5. **Cobertura falsa (exemplo histórico):** os 32 testes de um checkpoint de 21/11 cobriam autenticação/autorização, ofertas e realização de matrícula no backend, sem provar cancelamento, progresso, frontend ou secretaria naquela época. No checkpoint atual de 22/11 há 131 testes, mas ainda não há prova automática de CSRF, responsividade, carga ou MVP completo.
+5. **Cobertura falsa (exemplo histórico):** os 32 testes de um checkpoint de 21/11 cobriam autenticação/autorização, ofertas e realização de matrícula no backend, sem provar cancelamento, progresso, frontend ou secretaria naquela época. No checkpoint atual de 22/11 há **156 testes**, mas ainda não há prova automática de CSRF, responsividade, carga ou MVP completo.
 
 ## 10. Manutenção
 

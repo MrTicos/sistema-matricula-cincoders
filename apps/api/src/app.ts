@@ -7,6 +7,7 @@ import { ofertasRoutes } from "./modules/ofertas/ofertas.routes";
 import { matriculasRoutes } from "./modules/matriculas/matriculas.routes";
 import { progressoRoutes } from "./modules/progresso/progresso.routes";
 import { disciplinasRoutes } from "./modules/secretaria/disciplinas/disciplinas.routes";
+import { professoresRoutes } from "./modules/secretaria/professores/professores.routes";
 
 export const app = express();
 
@@ -24,6 +25,7 @@ app.use("/api/aluno/ofertas", ofertasRoutes);
 app.use("/api/aluno/matriculas", matriculasRoutes);
 app.use("/api/aluno/progresso", progressoRoutes);
 app.use("/api/secretaria/disciplinas", disciplinasRoutes);
+app.use("/api/secretaria/professores", professoresRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.status(200).json({

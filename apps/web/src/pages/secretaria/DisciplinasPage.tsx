@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { apiRequest } from "../../api/client";
 import { LogoutButton } from "../../components/LogoutButton";
@@ -304,6 +304,15 @@ export function DisciplinasPage() {
           <span className="login-brand">CINCoders</span>
           <h1>Disciplinas</h1>
           <p>Consulte, cadastre e edite disciplinas do sistema acadêmico.</p>
+          <nav aria-label="Navegação da secretaria">
+            <Link to="/secretaria" aria-current="page">
+              Disciplinas
+            </Link>
+            {" · "}
+            <Link to="/secretaria/professores">
+              Professores
+            </Link>
+          </nav>
         </div>
         <LogoutButton />
       </header>
