@@ -1,9 +1,29 @@
 import { Router } from "express";
 
 import { exigirPerfil } from "../../../middlewares/auth.middleware";
-import { criarTurma, listarTurmas } from "./turmas.controller";
+
+import {
+  criarTurma,
+  listarTurmas,
+  atualizarCapacidadeTurma,
+} from "./turmas.controller";
 
 export const turmasRoutes = Router();
 
-turmasRoutes.get("/", exigirPerfil("SECRETARIA"), listarTurmas);
-turmasRoutes.post("/", exigirPerfil("SECRETARIA"), criarTurma);
+turmasRoutes.get(
+  "/",
+  exigirPerfil("SECRETARIA"),
+  listarTurmas
+);
+
+turmasRoutes.post(
+  "/",
+  exigirPerfil("SECRETARIA"),
+  criarTurma
+);
+
+turmasRoutes.patch(
+  "/:id/vagas",
+  exigirPerfil("SECRETARIA"),
+  atualizarCapacidadeTurma
+);

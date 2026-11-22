@@ -1,6 +1,6 @@
 # Visão geral da arquitetura — CINCoders
 
-> **Estado atualizado — 22/11/2026 (após US-11):** API Express/Prisma/SQLite e frontend React/Vite implementados para autenticação, fluxo do aluno e administração de disciplinas (US-08/US-09), professores (US-10) e **consulta/abertura de turmas (US-11)**. As suítes completas passaram com **113 testes em 10 arquivos na API** (8,28 s) e **72 em 10 arquivos no frontend** (9,10 s na última execução, sem avisos de links aninhados): **185 testes automatizados em 20 arquivos, 0 falhas**, em execuções separadas. O responsável relatou **32 verificações manuais aprovadas**: 8 da US-08, 8 da US-09, 8 da US-10 e 8 da US-11. Não há suíte E2E automatizada equivalente; segurança de produção, US-12, requisito adicional e encerramento do MVP permanecem fora dessa evidência.
+> **Estado atualizado — 22/11/2026 (após US-12):** API Express/Prisma/SQLite e frontend React/Vite implementados para autenticação, fluxo do aluno e administração de disciplinas (US-08/US-09), professores (US-10), consulta/abertura de turmas (US-11) e **alteração de capacidade de turmas (US-12)**. As suítes completas passaram com **123 testes em 10 arquivos na API** (13,07 s) e **80 em 10 arquivos no frontend** (11,63 s): **203 testes automatizados em 20 arquivos, 0 falhas**, em execuções separadas. O responsável relatou **40 verificações manuais aprovadas**: 8 em cada US-08, US-09, US-10, US-11 e US-12. Não há suíte E2E automatizada equivalente; segurança de produção, requisito funcional adicional, responsividade e encerramento do MVP permanecem fora dessa evidência.
 
 ## Situação funcional atual
 
@@ -16,7 +16,8 @@
 | US-08 — Consulta de disciplinas (MAT-10) | `GET /api/secretaria/disciplinas`, busca, paginação e lista em `DisciplinasPage` sincronizada com URL | 8 testes backend; 6 frontend; 8 verificações manuais relatadas | Consulta implementada e validada; revisar acessibilidade/responsividade |
 | US-09 — Cadastro e edição de disciplinas (MAT-13) | `POST` e `PATCH /api/secretaria/disciplinas/:id`; formulários de cadastro e edição | 17 testes backend (6 cadastro + 11 edição), 11 frontend (4 cadastro + 7 edição); 8 verificações manuais da edição | Funcionalidade implementada e validada; commit relatado como realizado, push/Jira a conferir. Exclusão não foi exigida nessa história |
 | US-10 — Consulta e cadastro de professores (MAT-17) | `GET` e `POST /api/secretaria/professores`; listagem, busca por nome/e-mail, paginação e formulário React | 14 testes backend; 11 frontend (6 consulta + 5 cadastro); 8 verificações manuais relatadas | Funcionalmente validada e publicada no GitLab (`8425521`); Jira MAT-17 a conferir. A edição de professores não integra esta história |
-| US-11 — Consulta e abertura de turmas | `GET` e `POST /api/secretaria/turmas`; pesquisa, paginação, capacidade e cadastro vinculando disciplina/professor | 15 testes backend; 14 frontend (6 consulta + 8 abertura); 8 verificações manuais relatadas | Funcionalmente validada; commit/push da US-11 ainda não realizados neste checkpoint. Ajustar capacidade pertence à US-12 |
+| US-11 — Consulta e abertura de turmas | `GET` e `POST /api/secretaria/turmas`; pesquisa, paginação, capacidade e cadastro vinculando disciplina/professor | 15 testes backend; 14 frontend (6 consulta + 8 abertura); 8 verificações manuais relatadas | Funcionalmente validada; commit/push da US-11 confirmados pelo responsável, hash ainda a registrar |
+| US-12 — Alteração de capacidade de turmas | `PATCH /api/secretaria/turmas/:id/vagas`; atualização condicional e transacional que respeita somente matrículas `ATIVA`; formulário de edição na `TurmasPage` | 10 testes backend; 8 frontend; 8 verificações manuais relatadas | Funcionalmente validada; documentação/commit/push da US-12 ainda em preparação |
 
 **Atenção à contagem:** os testes da US-02 e de páginas do aluno são contabilizados apenas uma vez no total geral. Os 5 testes de `OfertasPage.test.tsx` atendem US-03/US-04 conjuntamente.
 
@@ -40,6 +41,7 @@
 | `POST` | `/api/secretaria/professores` | `SECRETARIA` | Cadastrar professor |
 | `GET` | `/api/secretaria/turmas` | `SECRETARIA` | Consultar turmas, pesquisar, paginar e visualizar vagas ocupadas/disponíveis |
 | `POST` | `/api/secretaria/turmas` | `SECRETARIA` | Abrir turma informando disciplina, professor e vagas totais |
+| `PATCH` | `/api/secretaria/turmas/:id/vagas` | `SECRETARIA` | Ajustar vagas totais sem reduzir abaixo da quantidade de matrículas ativas |
 
 As rotas React protegem a experiência de navegação, mas os middlewares e os services da API continuam responsáveis por autenticação, autorização e integridade dos dados.
 
@@ -65,7 +67,7 @@ Ao iniciar, o `AuthProvider` consulta `GET /api/auth/me`. O formulário envia cr
 
 As requisições usam `credentials: "include"` para transportar o cookie de sessão `HttpOnly`. O frontend não armazena senha ou token no `localStorage`. A proteção de rotas React melhora a navegação, mas **a autorização de dados pertence à API**.
 
-**Validação naquele checkpoint, em `apps/web`:** 11 testes aprovados (4 login, 3 logout, 4 rotas), `pnpm lint` e `pnpm exec tsc -b` sem erros. Backend: 59 testes em execução separada; total acumulado de 70. **Checkpoint atual: 185 testes (22/11/2026, após US-11).**
+**Validação naquele checkpoint, em `apps/web`:** 11 testes aprovados (4 login, 3 logout, 4 rotas), `pnpm lint` e `pnpm exec tsc -b` sem erros. Backend: 59 testes em execução separada; total acumulado de 70. **Checkpoint atual: 203 testes (22/11/2026, após US-12).**
 
 **Pendente:** interfaces acadêmicas definitivas, responsividade em 360px, revisão de CSRF e configuração de cookies HTTPS para produção.
 
@@ -87,7 +89,7 @@ O objetivo do MVP é entregar primeiro o fluxo do aluno, os controles de acesso 
 | Persistência | SQLite local | Banco criado e seed conferido |
 | Senhas | Argon2id | Implementada e testada |
 | Sessão | `express-session`, cookie HttpOnly | Implementada |
-| Testes | Vitest, Supertest, Testing Library | 185 testes automatizados aprovados em 20 arquivos (22/11/2026) |
+| Testes | Vitest, Supertest, Testing Library | 203 testes automatizados aprovados em 20 arquivos (22/11/2026) |
 | Organização | Repositório GitLab + Jira MAT | Em uso |
 
 ## Componentes e fronteiras
@@ -353,8 +355,8 @@ A API utiliza Vitest e Supertest para testes automatizados.
 | `progresso.test.ts` | 10 |
 | `secretaria.disciplinas.test.ts` | 25 (8 consulta + 6 cadastro + 11 edição) |
 | `secretaria.professores.test.ts` | 14 (8 consulta + 6 cadastro/autorização/validação) |
-| `secretaria.turmas.test.ts` | 15 (8 consulta + 7 abertura/autorização/validação) |
-| **Total backend** | **113** |
+| `secretaria.turmas.test.ts` | 25 (15 US-11 + 10 US-12: edição de capacidade) |
+| **Total backend** | **123** |
 
 | Frontend — arquivo | Testes aprovados |
 | --- | ---: |
@@ -367,10 +369,10 @@ A API utiliza Vitest e Supertest para testes automatizados.
 | `ProgressoPage.test.tsx` | 5 |
 | `DisciplinasPage.test.tsx` | 17 (6 consulta + 4 cadastro + 7 edição) |
 | `ProfessoresPage.test.tsx` | 11 (6 consulta + 5 cadastro) |
-| `TurmasPage.test.tsx` | 14 (6 consulta + 8 abertura) |
-| **Total frontend** | **72** |
+| `TurmasPage.test.tsx` | 22 (14 US-11 + 8 US-12: edição de capacidade) |
+| **Total frontend** | **80** |
 
-**Total geral: 185/185 testes aprovados, 20 arquivos e 0 falhas.** As execuções completas de `pnpm exec vitest run` foram feitas separadamente para `apps/api` e `apps/web`: o backend (113/113, 8,28 s) e o frontend (72/72, 9,10 s) tiveram logs compartilhados. Os testes focados da US-11 também passaram (15 API e 14 frontend), mas **não são somados novamente**. `pnpm lint` e `pnpm exec tsc -b` passaram no frontend, e `pnpm exec tsc --noEmit` foi confirmado para a API na etapa de integração. Foram relatadas **32 verificações manuais aprovadas** (8 US-08 + 8 US-09 + 8 US-10 + 8 US-11), distintas de testes automatizados. O primeiro log da US-11 mostrou aviso de links HTML aninhados; a navegação foi corrigida e a última execução frontend passou sem esse aviso.
+**Total geral: 203/203 testes aprovados, 20 arquivos e 0 falhas.** As execuções completas de `pnpm exec vitest run` foram feitas separadamente para `apps/api` e `apps/web`: o backend (**123/123**, 13,07 s) e o frontend (**80/80**, 11,63 s) tiveram logs compartilhados. Os testes focados da US-12 também passaram (25/25 no arquivo API de turmas, dos quais 10 pertencem à US-12; 22/22 no arquivo frontend de turmas, dos quais 8 pertencem à US-12), mas **não são somados novamente**. `pnpm lint` e `pnpm exec tsc -b` passaram no frontend, e `pnpm exec tsc --noEmit` foi confirmado para a API. Foram relatadas **40 verificações manuais aprovadas** (8 por história entre US-08 e US-12), distintas dos testes automatizados. O aviso de links HTML aninhados do checkpoint da US-11 foi corrigido anteriormente.
 
 A aplicação utiliza bancos SQLite separados para
 
@@ -690,7 +692,7 @@ Na consulta, `paginacao` apresenta `pagina`, `limite`, `total` e `totalPaginas`.
 - **Backend:** `apps/api/tests/secretaria.professores.test.ts`, **14/14 testes aprovados**, cobrindo acesso sem sessão/aluno, listagem, pesquisa por nome/e-mail, paginação, parâmetros inválidos, lista vazia, cadastro persistido, e-mail duplicado e entradas inválidas.
 - **Frontend:** `apps/web/src/pages/secretaria/ProfessoresPage.test.tsx`, **11/11 testes aprovados** (5 de cadastro e 6 de consulta). Confirmam campos, envio, erro de duplicidade, validação de e-mail, bloqueio de envio, resultados, URL, paginação, vazio, falha/nova tentativa e carregamento.
 - **Manual:** **8/8 verificações aprovadas**, conforme confirmação do responsável, após integração da página à navegação. A execução manual não equivale a uma suíte E2E automatizada reproduzível.
-- **Escopo:** US-10 funcionalmente implementada, validada e publicada no GitLab (`8425521`). Conferir Jira MAT-17. A US-11 foi implementada e validada posteriormente; a próxima é **US-12 (ajuste de vagas)**. Também permanecem o requisito adicional, a revisão de segurança e os testes de responsividade.
+- **Escopo naquele marco:** US-10 funcionalmente implementada, validada e publicada no GitLab (`8425521`). Conferir Jira MAT-17. Depois foram concluídas funcionalmente as US-11 e US-12; permanecem o requisito adicional, a revisão de segurança e os testes de responsividade.
 
 ## Consulta e abertura de turmas pela secretaria — US-11
 
@@ -721,7 +723,37 @@ Na listagem, cada turma retorna seus identificadores, os dados da disciplina e d
 - **Backend:** `apps/api/tests/secretaria.turmas.test.ts` — **15/15 testes aprovados**. Inclui acesso, pesquisa por disciplina/professor, paginação estável, parâmetros inválidos, lista vazia, criação persistida, IDs/vagas inválidos, referências inexistentes e **exclusão das matrículas canceladas do total ocupado**.
 - **Frontend:** `apps/web/src/pages/secretaria/TurmasPage.test.tsx` — **14/14 testes aprovados**: 6 de consulta e 8 de abertura. Abrange URL, navegação, carregamento, erro/nova tentativa, validação, salvamento, prevenção de envio duplicado e busca das opções do formulário.
 - **Manual:** o responsável confirmou as **8 verificações manuais como funcionando**, incluindo consulta, busca, abertura válida, persistência e navegação; a paginação entre páginas depende da existência de registros suficientes para exercê-la. As verificações manuais não constituem evidência de E2E automatizada.
-- **Estado:** **US-11 funcionalmente implementada e validada**, com **commit/push ainda a preparar**. **US-12 — ajuste de capacidade** é distinta: deverá impedir redução de `vagasTotais` abaixo da contagem atual de matrículas ativas. Requisito adicional, avaliação a 360px e revisões de segurança continuam no plano de entrega.
+- **Estado:** **US-11 funcionalmente implementada e validada**; seu commit/push foi confirmado pelo responsável após este checkpoint, sem hash fornecido. A **US-12 — ajuste de capacidade** foi implementada posteriormente e está descrita na seção seguinte. Requisito adicional, avaliação a 360px e revisões de segurança continuam no plano de entrega.
+
+## Alteração da capacidade de turmas pela secretaria — US-12
+
+**Endpoint:** `PATCH /api/secretaria/turmas/:id/vagas`, declarado em `turmas.routes.ts` com `exigirPerfil("SECRETARIA")`. Mantém o identificador da turma, disciplina e professor; altera exclusivamente `vagasTotais`. Não foi necessária migração, pois o campo já existe no modelo Prisma `Turma`.
+
+### Contrato HTTP e integridade da capacidade
+
+| Situação | Resposta | Efeito no banco |
+| --- | --- | --- |
+| Secretaria altera `vagasTotais` para inteiro positivo válido, maior ou igual às matrículas ativas | `200` com mensagem e turma atualizada | Persiste a capacidade e recalcula vagas ocupadas/disponíveis |
+| `id` ou `vagasTotais` inválido, decimal, zero, negativo ou fora do intervalo `Int` | `400` | Nenhuma alteração |
+| Identificador de turma válido, mas inexistente | `404` | Nenhuma alteração |
+| Capacidade solicitada inferior ao número de matrículas `ATIVA` | `409` com `vagasOcupadas` | Nenhuma alteração |
+| Sem sessão ou com perfil `ALUNO` | `401` ou `403` | Nenhuma alteração |
+
+**Operação atômica:** `alterarCapacidadeTurma` usa uma transação Prisma contendo um `UPDATE` SQL parametrizado. A própria condição `WHERE` exige que `vagasTotais` solicitado seja maior ou igual à contagem de matrículas `ATIVA` da turma; uma matrícula `CANCELADA` não entra nessa contagem. Essa condição é avaliada no mesmo comando que persiste a alteração, evitando a janela entre uma consulta isolada e um `update` posterior. O retorno busca os vínculos, utiliza `_count` filtrado e calcula `vagasDisponiveis = vagasTotais - vagasOcupadas`. Não equivale a um teste de estresse concorrente com matrícula simultânea, que ainda pode ser ampliado.
+
+### Interface React e validação
+
+- `TurmasPage.tsx` adiciona **Editar vagas** em cada linha, formulário preenchido com a capacidade atual, contagem das vagas ocupadas e botões **Salvar capacidade** e **Cancelar edição**.
+- O campo numérico exige inteiro positivo até `2_147_483_647` e limita a redução com base na ocupação exibida. A API permanece responsável pela validação definitiva, inclusive quando a ocupação muda durante a edição.
+- Durante a requisição, a edição não pode ser reenviada nem cancelada; falhas preservam o formulário para nova tentativa. Um `409` apresenta mensagem de conflito.
+- Após sucesso, a tabela é recarregada por `versaoLista`, sem modificar `busca` ou `pagina` da URL; a mensagem de confirmação informa a nova capacidade.
+
+### Evidências de conclusão da US-12
+
+- **Backend:** 10 novos testes em `secretaria.turmas.test.ts` (CT-01 a CT-10), cobrindo autenticação, autorização, aumento, redução permitida, capacidade igual à ocupação, recusa de redução inferior, valores/IDs inválidos, inexistência e consulta após atualização. **25/25 no arquivo de turmas** (4,86 s) e **123/123 na API completa** (13,07 s).
+- **Frontend:** 8 novos testes em `TurmasPage.test.tsx`, cobrindo pré-preenchimento, cancelamento sem PATCH, sucesso e recarga preservando URL, validação local, conflito, bloqueio de reenvio, recuperação após erro e seleção correta da linha. **22/22 no arquivo** (7,55 s) e **80/80 no frontend completo** (11,63 s); ESLint e TypeScript aprovados.
+- **Manual:** o responsável informou que concluiu as **8 verificações propostas da US-12**. Este registro é baseado no relato, não em captura independente nem em suíte E2E automatizada.
+- **Situação:** **US-12 implementada e funcionalmente validada**; documentação atualizada nesta etapa, commit/push e chave Jira ainda a conferir. Permanecem o requisito adicional, revisão de segurança, responsividade e conferência final da entrega.
 
 ## Referências internas
 

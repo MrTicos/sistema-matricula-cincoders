@@ -1,6 +1,14 @@
 import "dotenv/config";
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "vitest";
+
 import request from "supertest";
 
 import { app } from "../src/app";
@@ -330,5 +338,283 @@ describe("US-11 — Consulta e abertura de turmas", () => {
       .post("/api/secretaria/turmas")
       .send({ disciplinaId, professorId, vagasTotais: 10 })
       .expect(403);
+  });
+});
+
+const codigoUS12 = `TUS12${Date.now()}`;
+
+let turmaIdUS12 = 0;
+let disciplinaIdUS12 = 0;
+let professorIdUS12 = 0;
+
+describe("US-12 — Alteração da capacidade das turmas", () => {
+  beforeAll(async () => {
+    exigirBancoTeste();
+
+    const alunos = await prisma.aluno.findMany({
+      select: { id: true },
+      orderBy: { id: "asc" },
+      take: 3,
+    });
+
+    if (alunos.length < 3) {
+      throw new Error(
+        "O banco de testes precisa conter pelo menos três alunos."
+      );
+    }
+
+    const disciplina = await prisma.disciplina.create({
+      data: {
+        codigo: codigoUS12,
+        nome: "Disciplina de Teste US-12",
+        cargaHoraria: 60,
+      },
+    });
+
+    disciplinaIdUS12 = disciplina.id;
+
+    const professor = await prisma.professor.create({
+      data: {
+        nome: "Professor de Teste US-12",
+        email: `${codigoUS12.toLowerCase()}@example.com`,
+      },
+    });
+
+    professorIdUS12 = professor.id;
+
+    const turma = await prisma.turma.create({
+      data: {
+        disciplinaId: disciplinaIdUS12,
+        professorId: professorIdUS12,
+        vagasTotais: 5,
+      },
+    });
+
+    turmaIdUS12 = turma.id;
+
+    // Duas matrículas ativas e uma cancelada.
+    await prisma.matricula.createMany({
+      data: [
+        {
+          alunoId: alunos[0].id,
+          turmaId: turmaIdUS12,
+          situacao: "ATIVA",
+        },
+        {
+          alunoId: alunos[1].id,
+          turmaId: turmaIdUS12,
+          situacao: "ATIVA",
+        },
+        {
+          alunoId: alunos[2].id,
+          turmaId: turmaIdUS12,
+          situacao: "CANCELADA",
+          canceladaEm: new Date(),
+        },
+      ],
+    });
+  });
+
+  beforeEach(async () => {
+    // Cada teste começa com cinco vagas.
+    if (turmaIdUS12 > 0) {
+      await prisma.turma.update({
+        where: { id: turmaIdUS12 },
+        data: { vagasTotais: 5 },
+      });
+    }
+  });
+
+  afterAll(async () => {
+    if (!/test/i.test(process.env.DATABASE_URL ?? "")) {
+      return;
+    }
+
+    if (turmaIdUS12 > 0) {
+      await prisma.matricula.deleteMany({
+        where: { turmaId: turmaIdUS12 },
+      });
+
+      await prisma.turma.deleteMany({
+        where: { id: turmaIdUS12 },
+      });
+    }
+
+    if (disciplinaIdUS12 > 0) {
+      await prisma.disciplina.deleteMany({
+        where: { id: disciplinaIdUS12 },
+      });
+    }
+
+    if (professorIdUS12 > 0) {
+      await prisma.professor.deleteMany({
+        where: { id: professorIdUS12 },
+      });
+    }
+  });
+
+  it("CT-01: deve negar alteração sem autenticação", async () => {
+    await request(app)
+      .patch(`/api/secretaria/turmas/${turmaIdUS12}/vagas`)
+      .send({ vagasTotais: 10 })
+      .expect(401);
+  });
+
+  it("CT-02: deve impedir alteração pelo aluno", async () => {
+    const agente = await agenteAutenticado("aluno.si");
+
+    await agente
+      .patch(`/api/secretaria/turmas/${turmaIdUS12}/vagas`)
+      .send({ vagasTotais: 10 })
+      .expect(403);
+  });
+
+  it("CT-03: deve aumentar a capacidade da turma", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const resposta = await agente
+      .patch(`/api/secretaria/turmas/${turmaIdUS12}/vagas`)
+      .send({ vagasTotais: 10 })
+      .expect(200);
+
+    expect(resposta.body.turma).toMatchObject({
+      id: turmaIdUS12,
+      vagasTotais: 10,
+      vagasOcupadas: 2,
+      vagasDisponiveis: 8,
+    });
+
+    const turma = await prisma.turma.findUnique({
+      where: { id: turmaIdUS12 },
+    });
+
+    expect(turma?.vagasTotais).toBe(10);
+  });
+
+  it("CT-04: deve reduzir a capacidade respeitando a ocupação", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const resposta = await agente
+      .patch(`/api/secretaria/turmas/${turmaIdUS12}/vagas`)
+      .send({ vagasTotais: 3 })
+      .expect(200);
+
+    expect(resposta.body.turma).toMatchObject({
+      vagasTotais: 3,
+      vagasOcupadas: 2,
+      vagasDisponiveis: 1,
+    });
+  });
+
+  it("CT-05: deve permitir capacidade igual às matrículas ativas", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const resposta = await agente
+      .patch(`/api/secretaria/turmas/${turmaIdUS12}/vagas`)
+      .send({ vagasTotais: 2 })
+      .expect(200);
+
+    expect(resposta.body.turma).toMatchObject({
+      vagasTotais: 2,
+      vagasOcupadas: 2,
+      vagasDisponiveis: 0,
+    });
+
+    // A matrícula cancelada não ocupa uma terceira vaga.
+  });
+
+  it("CT-06: deve impedir redução abaixo das matrículas ativas", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const resposta = await agente
+      .patch(`/api/secretaria/turmas/${turmaIdUS12}/vagas`)
+      .send({ vagasTotais: 1 })
+      .expect(409);
+
+    expect(resposta.body.vagasOcupadas).toBe(2);
+
+    const turma = await prisma.turma.findUnique({
+      where: { id: turmaIdUS12 },
+    });
+
+    // A alteração rejeitada não pode modificar o banco.
+    expect(turma?.vagasTotais).toBe(5);
+  });
+
+  it("CT-07: deve rejeitar capacidades inválidas", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const valoresInvalidos = [
+      0,
+      -1,
+      1.5,
+      "10",
+      null,
+      2_147_483_648,
+    ];
+
+    for (const vagasTotais of valoresInvalidos) {
+      await agente
+        .patch(`/api/secretaria/turmas/${turmaIdUS12}/vagas`)
+        .send({ vagasTotais })
+        .expect(400);
+    }
+
+    const turma = await prisma.turma.findUnique({
+      where: { id: turmaIdUS12 },
+    });
+
+    expect(turma?.vagasTotais).toBe(5);
+  });
+
+  it("CT-08: deve rejeitar identificadores inválidos", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    const identificadoresInvalidos = [
+      "abc",
+      "0",
+      "-1",
+      "1.5",
+      "2147483648",
+    ];
+
+    for (const id of identificadoresInvalidos) {
+      await agente
+        .patch(`/api/secretaria/turmas/${id}/vagas`)
+        .send({ vagasTotais: 10 })
+        .expect(400);
+    }
+  });
+
+  it("CT-09: deve rejeitar turma inexistente", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    await agente
+      .patch("/api/secretaria/turmas/2147483647/vagas")
+      .send({ vagasTotais: 10 })
+      .expect(404);
+  });
+
+  it("CT-10: deve refletir a capacidade atualizada na consulta", async () => {
+    const agente = await agenteAutenticado("secretaria");
+
+    await agente
+      .patch(`/api/secretaria/turmas/${turmaIdUS12}/vagas`)
+      .send({ vagasTotais: 7 })
+      .expect(200);
+
+    const resposta = await agente
+      .get("/api/secretaria/turmas")
+      .query({ busca: codigoUS12 })
+      .expect(200);
+
+    expect(resposta.body.turmas).toHaveLength(1);
+
+    expect(resposta.body.turmas[0]).toMatchObject({
+      id: turmaIdUS12,
+      vagasTotais: 7,
+      vagasOcupadas: 2,
+      vagasDisponiveis: 5,
+    });
   });
 });

@@ -425,3 +425,415 @@ describe("US-11 — Abertura de turmas", () => {
     ).toBeTruthy();
   });
 });
+
+describe("US-12 — Edição da capacidade das turmas", () => {
+  it("CT-01: deve abrir formulário preenchido com a capacidade atual", async () => {
+    const usuario = userEvent.setup();
+
+    renderizarPagina();
+
+    await screen.findByText("2/30");
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Editar vagas" })
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Editar capacidade da turma 20",
+      })
+    ).toBeTruthy();
+
+    expect(
+      screen.getByLabelText("Nova quantidade de vagas")
+    ).toHaveProperty("value", "30");
+
+    expect(
+      screen.getByText("Vagas ocupadas: 2")
+    ).toBeTruthy();
+  });
+
+  it("CT-02: deve cancelar a edição sem chamar a API", async () => {
+    const usuario = userEvent.setup();
+
+    renderizarPagina();
+
+    await screen.findByText("2/30");
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Editar vagas" })
+    );
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Cancelar edição" })
+    );
+
+    expect(
+      screen.queryByLabelText("Nova quantidade de vagas")
+    ).toBeNull();
+
+    const chamadasPatch = vi.mocked(apiRequest).mock.calls.filter(
+      ([, opcoes]) => opcoes?.method === "PATCH"
+    );
+
+    expect(chamadasPatch).toHaveLength(0);
+  });
+
+  it("CT-03: deve salvar, atualizar a lista e preservar a URL", async () => {
+    let capacidadeAtual = 30;
+
+    configurarApi((endpoint, options) => {
+      if (
+        endpoint === "/api/secretaria/turmas/20/vagas" &&
+        options?.method === "PATCH"
+      ) {
+        const corpo = JSON.parse(String(options.body)) as {
+          vagasTotais: number;
+        };
+
+        capacidadeAtual = corpo.vagasTotais;
+
+        return {
+          message: "Capacidade da turma atualizada com sucesso.",
+          turma: {
+            ...turma,
+            vagasTotais: capacidadeAtual,
+            vagasDisponiveis: capacidadeAtual - 2,
+          },
+        };
+      }
+
+      if (endpoint.startsWith("/api/secretaria/turmas?")) {
+        return {
+          turmas: [
+            {
+              ...turma,
+              vagasTotais: capacidadeAtual,
+              vagasDisponiveis: capacidadeAtual - 2,
+            },
+          ],
+          paginacao: {
+            pagina: 2,
+            limite: 10,
+            total: 11,
+            totalPaginas: 2,
+          },
+        };
+      }
+
+      return respostaPadrao;
+    });
+
+    const usuario = userEvent.setup();
+
+    renderizarPagina(
+      "/secretaria/turmas?busca=CIN0100&pagina=2"
+    );
+
+    await screen.findByText("2/30");
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Editar vagas" })
+    );
+
+    const campo = screen.getByLabelText(
+      "Nova quantidade de vagas"
+    );
+
+    await usuario.clear(campo);
+    await usuario.type(campo, "40");
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Salvar capacidade" })
+    );
+
+    await waitFor(() => {
+      expect(apiRequest).toHaveBeenCalledWith(
+        "/api/secretaria/turmas/20/vagas",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({
+            vagasTotais: 40,
+          }),
+        })
+      );
+    });
+
+    expect(
+      await screen.findByText("2/40")
+    ).toBeTruthy();
+
+    expect(
+      await screen.findByText(
+        "Capacidade da turma 20 atualizada para 40 vagas!"
+      )
+    ).toBeTruthy();
+
+    const url = screen.getByTestId("url-atual").textContent;
+
+    expect(url).toContain("busca=CIN0100");
+    expect(url).toContain("pagina=2");
+  });
+
+  it("CT-04: deve impedir capacidade inferior à ocupação", async () => {
+    const usuario = userEvent.setup();
+
+    renderizarPagina();
+
+    await screen.findByText("2/30");
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Editar vagas" })
+    );
+
+    const campo = screen.getByLabelText(
+      "Nova quantidade de vagas"
+    ) as HTMLInputElement;
+
+    await usuario.clear(campo);
+    await usuario.type(campo, "1");
+
+    expect(campo.validity.valid).toBe(false);
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Salvar capacidade" })
+    );
+
+    const chamadasPatch = vi.mocked(apiRequest).mock.calls.filter(
+      ([, opcoes]) => opcoes?.method === "PATCH"
+    );
+
+    expect(chamadasPatch).toHaveLength(0);
+  });
+
+  it("CT-05: deve mostrar erro 409 sem perder o formulário", async () => {
+    configurarApi((endpoint, options) => {
+      if (
+        endpoint === "/api/secretaria/turmas/20/vagas" &&
+        options?.method === "PATCH"
+      ) {
+        return Promise.reject(
+          new Error(
+            "A capacidade não pode ser inferior ao número de matrículas ativas."
+          )
+        );
+      }
+
+      return respostaPadrao;
+    });
+
+    const usuario = userEvent.setup();
+
+    renderizarPagina();
+
+    await screen.findByText("2/30");
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Editar vagas" })
+    );
+
+    const campo = screen.getByLabelText(
+      "Nova quantidade de vagas"
+    );
+
+    await usuario.clear(campo);
+    await usuario.type(campo, "3");
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Salvar capacidade" })
+    );
+
+    expect(
+      await screen.findByRole("alert")
+    ).toHaveProperty(
+      "textContent",
+      "A capacidade não pode ser inferior ao número de matrículas ativas."
+    );
+
+    expect(
+      screen.getByLabelText("Nova quantidade de vagas")
+    ).toHaveProperty("value", "3");
+  });
+
+  it("CT-06: deve bloquear reenvio e cancelamento enquanto salva", async () => {
+    let concluirAtualizacao!: (valor: unknown) => void;
+
+    const respostaPendente = new Promise<unknown>((resolve) => {
+      concluirAtualizacao = resolve;
+    });
+
+    configurarApi((endpoint, options) => {
+      if (
+        endpoint === "/api/secretaria/turmas/20/vagas" &&
+        options?.method === "PATCH"
+      ) {
+        return respostaPendente;
+      }
+
+      return respostaPadrao;
+    });
+
+    const usuario = userEvent.setup();
+
+    renderizarPagina();
+
+    await screen.findByText("2/30");
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Editar vagas" })
+    );
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Salvar capacidade" })
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "Salvando capacidade...",
+      })
+    ).toHaveProperty("disabled", true);
+
+    expect(
+      screen.getByRole("button", { name: "Cancelar edição" })
+    ).toHaveProperty("disabled", true);
+
+    expect(
+      screen.getByLabelText("Nova quantidade de vagas")
+    ).toHaveProperty("disabled", true);
+
+    concluirAtualizacao({
+      message: "Capacidade da turma atualizada com sucesso.",
+      turma,
+    });
+
+    expect(
+      await screen.findByText(
+        "Capacidade da turma 20 atualizada para 30 vagas!"
+      )
+    ).toBeTruthy();
+  });
+
+  it("CT-07: deve permitir nova tentativa após erro na edição", async () => {
+    let tentativas = 0;
+
+    configurarApi((endpoint, options) => {
+      if (
+        endpoint === "/api/secretaria/turmas/20/vagas" &&
+        options?.method === "PATCH"
+      ) {
+        tentativas++;
+
+        if (tentativas === 1) {
+          return Promise.reject(
+            new Error("Falha temporária ao atualizar a turma.")
+          );
+        }
+
+        return {
+          message: "Capacidade da turma atualizada com sucesso.",
+          turma: {
+            ...turma,
+            vagasTotais: 35,
+            vagasDisponiveis: 33,
+          },
+        };
+      }
+
+      return respostaPadrao;
+    });
+
+    const usuario = userEvent.setup();
+
+    renderizarPagina();
+
+    await screen.findByText("2/30");
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Editar vagas" })
+    );
+
+    const campo = screen.getByLabelText(
+      "Nova quantidade de vagas"
+    );
+
+    await usuario.clear(campo);
+    await usuario.type(campo, "35");
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Salvar capacidade" })
+    );
+
+    expect(
+      await screen.findByRole("alert")
+    ).toHaveProperty(
+      "textContent",
+      "Falha temporária ao atualizar a turma."
+    );
+
+    await usuario.click(
+      screen.getByRole("button", { name: "Salvar capacidade" })
+    );
+
+    expect(
+      await screen.findByText(
+        "Capacidade da turma 20 atualizada para 35 vagas!"
+      )
+    ).toBeTruthy();
+
+    expect(tentativas).toBe(2);
+  });
+
+  it("CT-08: deve editar a turma selecionada na tabela", async () => {
+    const outraTurma = {
+      ...turma,
+      id: 21,
+      vagasTotais: 15,
+      vagasOcupadas: 3,
+      vagasDisponiveis: 12,
+    };
+
+    configurarApi((endpoint) => {
+      if (endpoint.startsWith("/api/secretaria/turmas?")) {
+        return {
+          turmas: [turma, outraTurma],
+          paginacao: {
+            pagina: 1,
+            limite: 10,
+            total: 2,
+            totalPaginas: 1,
+          },
+        };
+      }
+
+      return respostaPadrao;
+    });
+
+    const usuario = userEvent.setup();
+
+    renderizarPagina();
+
+    await screen.findByText("3/15");
+
+    const botoes = screen.getAllByRole("button", {
+      name: "Editar vagas",
+    });
+
+    expect(botoes).toHaveLength(2);
+
+    await usuario.click(botoes[1]);
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Editar capacidade da turma 21",
+      })
+    ).toBeTruthy();
+
+    expect(
+      screen.getByLabelText("Nova quantidade de vagas")
+    ).toHaveProperty("value", "15");
+
+    expect(
+      screen.getByText("Vagas ocupadas: 3")
+    ).toBeTruthy();
+  });
+});

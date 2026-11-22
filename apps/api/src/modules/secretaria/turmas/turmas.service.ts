@@ -168,3 +168,91 @@ export async function abrirTurma(dados: AbrirTurmaInput) {
     throw erro;
   }
 }
+
+interface AlterarCapacidadeInput {
+  turmaId: number;
+  vagasTotais: number;
+}
+
+export async function alterarCapacidadeTurma(
+  dados: AlterarCapacidadeInput
+) {
+  return prisma.$transaction(async (tx) => {
+    // A condição de ocupação é verificada no mesmo
+    // comando SQL que altera a capacidade da turma.
+    const linhasAtualizadas = await tx.$executeRaw`
+      UPDATE "Turma"
+      SET "vagasTotais" = ${dados.vagasTotais}
+      WHERE "id" = ${dados.turmaId}
+        AND (
+          SELECT COUNT(*)
+          FROM "Matricula"
+          WHERE "turmaId" = ${dados.turmaId}
+            AND "situacao" = 'ATIVA'
+        ) <= ${dados.vagasTotais}
+    `;
+
+    const turma = await tx.turma.findUnique({
+      where: {
+        id: dados.turmaId,
+      },
+      select: {
+        id: true,
+        disciplinaId: true,
+        professorId: true,
+        vagasTotais: true,
+        disciplina: {
+          select: {
+            id: true,
+            codigo: true,
+            nome: true,
+            cargaHoraria: true,
+          },
+        },
+        professor: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: {
+            matriculas: {
+              where: {
+                situacao: "ATIVA",
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!turma) {
+      return {
+        tipo: "TURMA_NAO_ENCONTRADA" as const,
+      };
+    }
+
+    if (linhasAtualizadas === 0) {
+      return {
+        tipo: "CAPACIDADE_INSUFICIENTE" as const,
+        vagasOcupadas: turma._count.matriculas,
+      };
+    }
+
+    const { _count, ...dadosTurma } = turma;
+
+    const vagasOcupadas = _count.matriculas;
+
+    return {
+      tipo: "ATUALIZADA" as const,
+      turma: {
+        ...dadosTurma,
+        vagasOcupadas,
+        vagasDisponiveis:
+          dadosTurma.vagasTotais - vagasOcupadas,
+      },
+    };
+  });
+}

@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { abrirTurma, consultarTurmas } from "./turmas.service";
+import { abrirTurma, consultarTurmas, alterarCapacidadeTurma } from "./turmas.service";
 
 const MAIOR_INTEIRO_PRISMA = 2_147_483_647;
 
@@ -128,5 +128,69 @@ export async function criarTurma(
   } catch (erro) {
     console.error("Erro ao abrir turma:", erro);
     res.status(500).json({ message: "Não foi possível abrir a turma." });
+  }
+}
+
+export async function atualizarCapacidadeTurma(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const idParametro = req.params.id;
+
+  const turmaId =
+    typeof idParametro === "string" &&
+    /^[1-9]\d*$/.test(idParametro)
+      ? Number(idParametro)
+      : NaN;
+
+  const vagasTotais = req.body?.vagasTotais;
+
+  if (
+    !inteiroValido(turmaId) ||
+    !inteiroValido(vagasTotais)
+  ) {
+    res.status(400).json({
+      message:
+        "ID da turma e quantidade de vagas devem ser inteiros positivos.",
+    });
+    return;
+  }
+
+  try {
+    const resultado = await alterarCapacidadeTurma({
+      turmaId,
+      vagasTotais,
+    });
+
+    if (resultado.tipo === "TURMA_NAO_ENCONTRADA") {
+      res.status(404).json({
+        message: "Turma não encontrada.",
+      });
+      return;
+    }
+
+    if (resultado.tipo === "CAPACIDADE_INSUFICIENTE") {
+      res.status(409).json({
+        message:
+          "A capacidade não pode ser inferior ao número de matrículas ativas.",
+        vagasOcupadas: resultado.vagasOcupadas,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Capacidade da turma atualizada com sucesso.",
+      turma: resultado.turma,
+    });
+  } catch (erro) {
+    console.error(
+      "Erro ao atualizar capacidade da turma:",
+      erro
+    );
+
+    res.status(500).json({
+      message:
+        "Não foi possível atualizar a capacidade da turma.",
+    });
   }
 }

@@ -2,13 +2,13 @@
 
 ## Checkpoint atual — 22/11/2026
 
-**Fonte da evidência:** logs de `pnpm exec vitest run` apresentados pelo responsável do projeto em `apps/api` e `apps/web`, resultados de lint/TypeScript e **32 verificações manuais** relatadas como aprovadas: 8 da consulta de disciplinas (US-08), 8 da edição de disciplinas (US-09), 8 da consulta/cadastro de professores (US-10) e 8 da consulta/abertura de turmas (US-11). Os testes de integração HTTP, testes de componentes e verificações manuais são contabilizados separadamente. A US-10 também tem commit/push confirmado: `8425521`.
+**Fonte da evidência:** logs de `pnpm exec vitest run` apresentados pelo responsável do projeto em `apps/api` e `apps/web`, resultados de lint/TypeScript e **40 verificações manuais** relatadas como aprovadas: 8 da consulta de disciplinas (US-08), 8 da edição de disciplinas (US-09), 8 de professores (US-10), 8 da consulta/abertura de turmas (US-11) e 8 do ajuste de capacidade (US-12). Os testes de integração HTTP, de componentes e as verificações manuais são contabilizados separadamente. A US-10 possui commit/push confirmado (`8425521`); o responsável também confirmou commit/push da US-11, sem fornecer hash.
 
 | Camada | Arquivos aprovados | Testes aprovados | Reprovados | Tempo informado |
 | --- | ---: | ---: | ---: | --- |
-| Backend — Vitest + Supertest | 10 | 113 | 0 | 8,28 s |
-| Frontend — Vitest / testes de componentes | 10 | 72 | 0 | 9,10 s (última execução, sem avisos HTML) |
-| **Total (execuções separadas)** | **20** | **185** | **0** | Não somar durações como se fosse uma execução única |
+| Backend — Vitest + Supertest | 10 | 123 | 0 | 13,07 s |
+| Frontend — Vitest / testes de componentes | 10 | 80 | 0 | 11,63 s |
+| **Total (execuções separadas)** | **20** | **203** | **0** | Não somar durações como se fosse uma execução única |
 
 ### Inventário de suítes — backend
 
@@ -23,8 +23,8 @@
 | `progresso.test.ts` | US-07 | 10 |
 | `secretaria.disciplinas.test.ts` | US-08 (8 consulta) + US-09 (6 cadastro + 11 edição) | 25 |
 | `secretaria.professores.test.ts` | US-10 (8 consulta + 6 cadastro/autorização/validação) | 14 |
-| `secretaria.turmas.test.ts` | US-11 (8 consulta + 7 abertura/autorização/validação) | 15 |
-| **Total** | | **113** |
+| `secretaria.turmas.test.ts` | US-11 (15 consulta/abertura) + US-12 (10 alteração de capacidade) | 25 |
+| **Total** | | **123** |
 
 ### Inventário de suítes — frontend
 
@@ -39,10 +39,10 @@
 | `pages/aluno/ProgressoPage.test.tsx` | US-07 | 5 |
 | `pages/secretaria/DisciplinasPage.test.tsx` | US-08 (6 consulta) + US-09 (4 cadastro + 7 edição) | 17 |
 | `pages/secretaria/ProfessoresPage.test.tsx` | US-10 (6 consulta + 5 cadastro) | 11 |
-| `pages/secretaria/TurmasPage.test.tsx` | US-11 (6 consulta + 8 abertura) | 14 |
-| **Total** | | **72** |
+| `pages/secretaria/TurmasPage.test.tsx` | US-11 (6 consulta + 8 abertura) + US-12 (8 edição) | 22 |
+| **Total** | | **80** |
 
-Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cinco testes para US-03 e mais cinco para US-04. Os testes focados `DisciplinasPage.test.tsx` (17/17), `ProfessoresPage.test.tsx` (11/11) e `TurmasPage.test.tsx` (14/14), assim como os 15 testes focados da API de turmas, também integram as suítes completas; **não contabilizá-los duas vezes**.
+Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cinco testes para US-03 e mais cinco para US-04. Os testes focados `DisciplinasPage.test.tsx` (17/17), `ProfessoresPage.test.tsx` (11/11) e `TurmasPage.test.tsx` (22/22), assim como os 25 testes focados da API de turmas, também integram as suítes completas; **não contabilizá-los duas vezes**.
 
 ### US-08 — Consulta de disciplinas (MAT-10): evidência atual
 
@@ -54,7 +54,7 @@ Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cin
 | Frontend — `DisciplinasPage.test.tsx` | 6 cenários: renderização, busca/URL, paginação/URL, vazio, erro/nova tentativa e carregamento | **6/6 aprovados** |
 | Manual — navegador, API e banco reais | 8 verificações concluídas, incluindo pesquisa, URL, lista vazia, atualização pós-cadastro e navegação | **8/8 aprovadas, conforme relato do responsável** |
 
-**Total US-08:** 14 testes automatizados aprovados e 8 verificações manuais bem-sucedidas. Os 14 casos já integram o consolidado de 185; os testes manuais **não** aumentam a contagem de Vitest.
+**Total US-08:** 14 testes automatizados aprovados e 8 verificações manuais bem-sucedidas. Os 14 casos já integram o consolidado de 203; os testes manuais **não** aumentam a contagem de Vitest.
 
 ### US-09 — Cadastro e edição de disciplinas (MAT-13): evidência atual
 
@@ -71,7 +71,7 @@ Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cin
 | Frontend — mesmo arquivo | CT-03: mostrar erro de código duplicado | Aprovado |
 | Frontend — mesmo arquivo | CT-04: impedir cadastro com carga horária inválida | Aprovado |
 
-**Total do cadastro da US-09:** 6 testes de backend + 4 testes de frontend = **10 testes aprovados**, já incluídos nos 185 totais. O código de teste fornecido inclui os casos CT-01 a CT-06 do cadastro.
+**Total do cadastro da US-09:** 6 testes de backend + 4 testes de frontend = **10 testes aprovados**, já incluídos nos 203 totais. O código de teste fornecido inclui os casos CT-01 a CT-06 do cadastro.
 
 **Contrato de edição:** `PATCH /api/secretaria/disciplinas/:id`, apenas para `SECRETARIA`; o corpo pode conter um ou mais entre `codigo`, `nome` e `cargaHoraria`. O controller valida ID, campos enviados e CH; o service normaliza texto e trata unicidade (`409`) e inexistência (`404`). O formulário React permite salvar/cancelar, mantém as condições de busca/paginação e recarrega a listagem.
 
@@ -81,7 +81,7 @@ Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cin
 | Frontend — `DisciplinasPage.test.tsx` | 7 testes: pré-preenchimento, cancelar sem PATCH, salvar/recarregar/preservar URL, duplicidade, CH inválida, bloqueio de novo envio e nova tentativa após erro | **7/7 aprovados**, no log apresentado |
 | Manual — navegador/API/banco reais | 8 verificações de edição, incluindo cancelamento, persistência, conflito de código, CH inválida e preservação de busca/URL | **8/8 aprovadas**, conforme relato do responsável |
 
-**Total US-09:** 17 testes de backend (6 cadastro + 11 edição) e 11 de frontend (4 cadastro + 7 edição) = **28 testes automatizados aprovados**, além de **8 verificações manuais específicas da edição**. Os 28 casos já estão incluídos no total de 185. **US-09 funcionalmente concluída**; o responsável informou ter feito o commit, mas ainda é necessário conferir push e Jira MAT-13.
+**Total US-09:** 17 testes de backend (6 cadastro + 11 edição) e 11 de frontend (4 cadastro + 7 edição) = **28 testes automatizados aprovados**, além de **8 verificações manuais específicas da edição**. Os 28 casos já estão incluídos no total de 203. **US-09 funcionalmente concluída**; o responsável informou ter feito o commit, mas ainda é necessário conferir push e Jira MAT-13.
 
 ### US-10 — Consulta e cadastro de professores (MAT-17): evidência atual
 
@@ -93,9 +93,9 @@ Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cin
 | Frontend — `ProfessoresPage.test.tsx` | 5 cenários de cadastro + 6 de consulta; formulário, duplicidade, e-mail inválido, envio bloqueado, pesquisa/URL, paginação, estados de vazio, erro/nova tentativa e carregamento | **11/11 aprovados** (5,47 s na execução focada) |
 | Manual — secretaria no navegador | Navegação, listagem, busca por nome/e-mail, cadastro válido, duplicidade, validação do formulário e paginação/URL | **8/8 aprovadas**, conforme relato do responsável |
 
-**Total US-10:** **25 testes automatizados aprovados** (14 backend + 11 frontend), já incluídos nos **185 testes consolidados**, e **8 verificações manuais aprovadas**, que não integram a contagem do Vitest. Após integrar `/secretaria/professores` e a navegação entre disciplinas e professores, o responsável repetiu lint, TypeScript e suíte frontend completa, com resultado positivo.
+**Total US-10:** **25 testes automatizados aprovados** (14 backend + 11 frontend), já incluídos nos **203 testes consolidados**, e **8 verificações manuais aprovadas**, que não integram a contagem do Vitest. Após integrar `/secretaria/professores` e a navegação entre disciplinas e professores, o responsável repetiu lint, TypeScript e suíte frontend completa, com resultado positivo.
 
-**Situação:** US-10 funcionalmente validada e **publicada no GitLab** (`8425521`); atualização do Jira MAT-17 a conferir. A US-11 foi validada posteriormente; a próxima história é US-12 (capacidade/vagas).
+**Situação:** US-10 funcionalmente validada e **publicada no GitLab** (`8425521`); atualização do Jira MAT-17 a conferir. As US-11 e US-12 foram validadas posteriormente.
 
 ### US-11 — Consulta e abertura de turmas: evidência atual
 
@@ -107,11 +107,25 @@ Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cin
 | Frontend — `TurmasPage.test.tsx` | 6 cenários de consulta: tabela/capacidade, busca/URL, paginação, vazio, erro/nova tentativa e carregamento; 8 cenários de abertura: campos, envio/recarga/URL, validação de vagas e seletores, erro, bloqueio de reenvio, busca e recuperação de opções | **14/14 aprovados** (3,90 s focados após correção; conjunto web 72/72 em 9,10 s) |
 | Manual — navegador, API e banco real | 8 verificações propostas: acesso e listagem, busca, paginação quando aplicável, abertura, validações, ausência de resultados e persistência após recarregar | **8/8 relatadas como aprovadas pelo responsável** |
 
-**Total US-11:** **29 testes automatizados** (15 backend + 14 frontend) incluídos nos **185 do projeto**; **8 verificações manuais**, somadas às 24 anteriores para **32 verificações relatadas**. O teste inicial do React emitiu aviso de `<a>` aninhado; o responsável corrigiu a navegação e repetiu as execuções focadas e a suíte frontend completa sem esse aviso. Testes manuais e de componentes não substituem E2E automatizado; a paginação manual entre páginas requer registros suficientes.
+**Total US-11:** **29 testes automatizados** (15 backend + 14 frontend) incluídos nos **203 do projeto**; **8 verificações manuais**, somadas às 24 anteriores para **32 verificações relatadas naquele checkpoint**. O teste inicial do React emitiu aviso de `<a>` aninhado; o responsável corrigiu a navegação e repetiu as execuções focadas e a suíte frontend completa sem esse aviso. Testes manuais e de componentes não substituem E2E automatizado; a paginação manual entre páginas requer registros suficientes.
 
-**Situação:** **US-11 funcionalmente concluída e validada**, aguardando commit/push e eventual atualização da história no Jira. A US-12 ainda deve implementar a regra de **não permitir diminuir `vagasTotais` abaixo do número de matrículas ativas**.
+**Situação:** **US-11 funcionalmente concluída e validada**, com commit/push confirmado posteriormente pelo responsável, hash e Jira ainda a conferir. A US-12 foi implementada depois, conforme seção seguinte.
 
-**O que esses resultados não provam isoladamente:** proteção CSRF, cookie `Secure` em HTTPS, persistência da sessão após reinício, acessibilidade, responsividade do aluno em 360px, testes de carga, edição de capacidade (US-12) ou requisito adicional. Ainda não há uma suíte E2E automatizada reproduzível para os fluxos da secretaria.
+### US-12 — Alteração da capacidade de turmas: evidência atual
+
+**Contrato em teste:** `PATCH /api/secretaria/turmas/:id/vagas`, exclusivo de `SECRETARIA` (sem sessão `401`, perfil `ALUNO` `403`). Corpo `{ "vagasTotais": number }`, inteiro positivo dentro do limite `Int`; `id` também deve ser inteiro positivo. Retorna `200` com `turma` e vagas atualizadas; `400` para entrada inválida, `404` para turma inexistente e `409` com `vagasOcupadas` quando a capacidade desejada é inferior às matrículas `ATIVA`. Matrículas `CANCELADA` não impedem redução; a recusa deve preservar o valor anterior. O service realiza `UPDATE` condicional numa transação, com ocupação verificada no mesmo comando de escrita.
+
+| Fonte | Casos cobertos | Resultado |
+| --- | --- | --- |
+| Backend — `secretaria.turmas.test.ts` | 10 testes: negação de acesso sem sessão/aluno, aumentar capacidade, reduzir acima/até a ocupação, bloquear redução inferior com banco inalterado, recusar vagas e IDs inválidos, turma inexistente e GET após atualização | **10/10 aprovados**; arquivo de turmas **25/25** (4,86 s); API completa **123/123** em 10 arquivos (13,07 s) |
+| Frontend — `TurmasPage.test.tsx` | 8 testes: abrir formulário com dados atuais, cancelar sem PATCH, salvar e recarregar sem perder URL, impedir valor inferior à ocupação, mostrar `409` preservando edição, bloquear reenvio/cancelamento enquanto salva, recuperar de erro e selecionar turma correta | **8/8 aprovados**; página de turmas **22/22** (7,55 s); web completa **80/80** em 10 arquivos (11,63 s) |
+| Manual — secretaria no navegador | 8 verificações propostas: acessar a edição, pré-preenchimento, cancelar, aumentar, reduzir com folga, reduzir até a ocupação, bloquear capacidade inferior e preservar URL/recarga | **8 verificações informadas como concluídas pelo responsável** |
+
+**Total US-12:** **18 testes automatizados novos** (10 backend + 8 frontend), incluídos nos **203 do projeto**, e **8 verificações manuais informadas como concluídas**, somadas às 32 anteriores para **40**. Os resultados de lint e TypeScript foram aprovados nas duas aplicações. A aprovação manual é relatada pelo responsável, não equivale a gravação de navegador nem a automação E2E.
+
+**Situação:** **US-12 funcionalmente concluída e validada**; documentação, commit/push e chave Jira ainda a conferir. O requisito funcional adicional continua pendente.
+
+**O que esses resultados não provam isoladamente:** proteção CSRF, cookie `Secure` em HTTPS, persistência da sessão após reinício, acessibilidade, responsividade a 360px, testes de carga ou uma disputa concorrente ampliada entre matrícula e ajuste de capacidade. Ainda não há uma suíte E2E automatizada reproduzível para os fluxos da secretaria.
 
 ### Comandos para reproduzir o checkpoint
 
@@ -289,8 +303,15 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 | T-55 | US-11, validações | Recusar vagas inválidas, IDs inválidos e disciplina ou professor inexistente sem criar turma | Integração/UI | P1 — aprovado |
 | T-56 | US-11, página React | Carregamento, lista vazia, erro e nova tentativa; busca/página refletidas na URL; abertura atualiza a listagem | Componente | P1 — aprovado |
 | T-57 | US-11, fluxo manual | Consultar, filtrar, paginar, abrir turma, validar erros e conferir vagas/atualização com API real | Manual | P1 — 8 verificações relatadas como aprovadas |
+| T-58 | US-12, acesso | Sem sessão → `401`; aluno → `403` ao alterar capacidade | Integração | P1 — aprovado |
+| T-59 | US-12, alteração válida | Aumentar vagas, reduzir acima da ocupação ou igual à ocupação; persistir e recalcular disponíveis | Integração/UI | P1 — aprovado |
+| T-60 | US-12, ocupação e conflito | Contar somente `ATIVA`; tentativa abaixo da ocupação → `409` sem atualizar o banco | Integração | P0 — aprovado |
+| T-61 | US-12, validação | Rejeitar ID/vagas inválidos (`400`) e turma inexistente (`404`) | Integração | P1 — aprovado |
+| T-62 | US-12, consistência de leitura | Nova capacidade aparece no GET subsequente com contagem correta de vagas | Integração | P1 — aprovado |
+| T-63 | US-12, página React | Formulário correto, cancelar sem PATCH, bloquear envio inválido/repetido, tratar `409`, permitir recuperação e preservar URL | Componente | P1 — aprovado |
+| T-64 | US-12, fluxo manual | Acessar edição, pré-preenchimento, cancelar, aumentar, reduzir, bloquear redução indevida e conservar busca/página | Manual | P1 — 8 verificações informadas como concluídas |
 
-**Rastreabilidade atual:** US-08 (consulta, MAT-10) tem 8 testes API, 6 frontend e 8 manuais; US-09 (cadastro/edição, MAT-13) tem 17 API, 11 frontend e 8 manuais da edição; US-10 (professores, MAT-17) tem 14 API, 11 frontend e 8 manuais; US-11 (turmas) tem 15 API, 14 frontend e 8 manuais relatados. **Total do projeto: 185 testes automatizados + 32 verificações manuais**, sem duplicar execuções focadas. O T-38 teve verificação manual de atualização da lista após cadastro; não existe ainda uma suíte E2E automatizada para ele. A matriz expressa *o que testar*, sem declarar aprovados cenários não exercitados.
+**Rastreabilidade atual:** US-08 (consulta, MAT-10) tem 8 testes API, 6 frontend e 8 manuais; US-09 (cadastro/edição, MAT-13) tem 17 API, 11 frontend e 8 manuais da edição; US-10 (professores, MAT-17) tem 14 API, 11 frontend e 8 manuais; US-11 (turmas) tem 15 API, 14 frontend e 8 manuais; US-12 (edição de vagas) tem 10 API, 8 frontend e 8 manuais informados. **Total do projeto: 203 testes automatizados + 40 verificações manuais**, sem duplicar execuções focadas. O T-38 teve verificação manual de atualização da lista após cadastro; não existe ainda uma suíte E2E automatizada para ele. A matriz expressa *o que testar*, sem declarar aprovados cenários não exercitados.
 
 ## 6. Exemplos Gherkin prioritários
 
@@ -445,6 +466,37 @@ Funcionalidade: Consulta e abertura de turmas pela secretaria
     Então o sistema bloqueia o acesso de acordo com o perfil
 ```
 
+```gherkin
+Funcionalidade: Ajuste de capacidade de turmas pela secretaria
+
+  Cenário: Atualizar capacidade sem ultrapassar a ocupação
+    Dado que a turma tem 5 vagas, 2 matrículas ativas e 1 cancelada
+    Quando a secretaria alterar a capacidade para 3 vagas
+    Então a API persiste 3 vagas totais e 1 disponível
+    Quando alterar a capacidade para 2 vagas
+    Então a API permite o limite exato e retorna 0 vagas disponíveis
+
+  Cenário: Impedir redução que exclua vagas ocupadas
+    Dado que a turma possui 2 matrículas ativas
+    Quando a secretaria solicitar apenas 1 vaga
+    Então a API retorna 409 com a ocupação atual
+    E a capacidade persistida não se altera
+
+  Cenário: Impedir acesso e entradas inválidas
+    Quando alguém sem sessão ou com perfil ALUNO tentar ajustar a capacidade
+    Então a API nega a operação
+    Quando a secretaria informar ID ou quantidade inválida
+    Então a API retorna 400
+    E retorna 404 para uma turma inexistente
+
+  Cenário: Editar pela página de turmas
+    Quando a secretaria abrir o formulário de uma turma
+    Então a capacidade atual e a ocupação aparecem preenchidas
+    Quando salvar uma capacidade válida
+    Então a listagem é atualizada preservando a URL
+    E uma falha mantém o formulário para nova tentativa
+```
+
 ## 7. Organização dos testes
 
 ### Estrutura efetiva do checkpoint de 22/11/2026
@@ -460,7 +512,7 @@ apps/api/tests/
   progresso.test.ts                    # 10 testes
   secretaria.disciplinas.test.ts       # 25 testes (US-08 e US-09)
   secretaria.professores.test.ts       # 14 testes (US-10)
-  secretaria.turmas.test.ts            # 15 testes (US-11)
+  secretaria.turmas.test.ts            # 25 testes (15 US-11 + 10 US-12)
 
 apps/web/src/
   pages/LoginPage.test.tsx             # 4 testes
@@ -472,7 +524,7 @@ apps/web/src/
   pages/aluno/ProgressoPage.test.tsx   # 5 testes
   pages/secretaria/DisciplinasPage.test.tsx # 17 testes (US-08 e US-09)
   pages/secretaria/ProfessoresPage.test.tsx # 11 testes (US-10)
-  pages/secretaria/TurmasPage.test.tsx      # 14 testes (US-11)
+  pages/secretaria/TurmasPage.test.tsx      # 22 testes (14 US-11 + 8 US-12)
 ```
 
 ### Proposta inicial preservada (21/11/2026)
@@ -527,7 +579,21 @@ pnpm exec vitest run
 
 ## 8. Registro de execução
 
-### Registro atual — 22/11/2026 (US-11 consulta e abertura de turmas)
+### Registro atual — 22/11/2026 (US-12 alteração de capacidade de turmas)
+
+| Data | Verificação | Evidência observada | Resultado |
+| --- | --- | --- | --- |
+| 22/11/2026 | `apps/api`: `pnpm exec tsc --noEmit` | Comando executado sem erros, conforme log enviado pelo responsável | **Passou** |
+| 22/11/2026 | `apps/api`: `pnpm exec vitest run tests/secretaria.turmas.test.ts` | 1 arquivo, 25 testes (15 US-11 + 10 US-12), 0 falhas, 4,86 s | **25/25 passaram** |
+| 22/11/2026 | `apps/api`: `pnpm exec vitest run` | 10 arquivos, 123 testes, 0 falhas, 13,07 s | **123/123 passaram** |
+| 22/11/2026 | `apps/web`: `pnpm exec vitest run src/pages/secretaria/TurmasPage.test.tsx` | 1 arquivo, 22 testes (14 US-11 + 8 US-12), 0 falhas, 7,55 s | **22/22 passaram** |
+| 22/11/2026 | `apps/web`: `pnpm lint` e `pnpm exec tsc -b` | ESLint e TypeScript executados sem erro, conforme log enviado | **Passou** |
+| 22/11/2026 | `apps/web`: `pnpm exec vitest run` | 10 arquivos, 80 testes, 0 falhas, 11,63 s | **80/80 passaram** |
+| 22/11/2026 | US-12: validação manual | O responsável informou ter concluído as verificações do roteiro de edição de capacidade | **8 verificações relatadas como concluídas** |
+
+**Consolidado atual:** 123 + 80 = **203 testes automatizados aprovados em 20 arquivos**, 0 falhas; **40 verificações manuais relatadas** (8 cada em US-08, US-09, US-10, US-11 e US-12). Os testes focados integram as suítes completas e não aumentam a contagem total. O banco de testes foi configurado explicitamente após um bloqueio de segurança por `DATABASE_URL` não apontar inicialmente para `test.db`; o responsável corrigiu o ambiente e reexecutou as suítes com sucesso. Não se removeu a proteção de banco de testes. A US-12 aguarda commit/push e registro da chave Jira.
+
+### Registro anterior — 22/11/2026 (US-11 consulta e abertura de turmas, preservado)
 
 | Data | Verificação | Evidência observada | Resultado |
 | --- | --- | --- | --- |
@@ -539,7 +605,7 @@ pnpm exec vitest run
 | 22/11/2026 | `apps/web`: `pnpm exec vitest run` | 10 arquivos, 72 testes, 0 falhas, 9,10 s; sem os avisos de `<a>` aninhado das execuções anteriores | **72/72 passaram** |
 | 22/11/2026 | US-11: verificações manuais | O responsável confirmou que os fluxos manuais de consulta e abertura funcionaram | **8 verificações relatadas como aprovadas** |
 
-**Consolidado atual:** 113 + 72 = **185 testes automatizados em 20 arquivos, sem falhas**; **32 verificações manuais relatadas como aprovadas** (8 cada em US-08, US-09, US-10 e US-11). Os testes focados integram as suítes completas e não são somados novamente. A aprovação manual é evidência relatada pelo responsável, não uma suíte E2E automatizada. O backend também foi verificado com `pnpm exec tsc --noEmit` durante a implementação da US-11. A US-11 aguarda commit/push do código e da documentação.
+**Consolidado naquele checkpoint:** 113 + 72 = **185 testes automatizados em 20 arquivos, sem falhas**; **32 verificações manuais relatadas como aprovadas** (8 cada em US-08, US-09, US-10 e US-11). Os testes focados integram as suítes completas e não são somados novamente. A aprovação manual é evidência relatada pelo responsável, não uma suíte E2E automatizada. O backend também foi verificado com `pnpm exec tsc --noEmit` durante a implementação da US-11. O commit/push da US-11 ainda estava pendente neste checkpoint; foi confirmado posteriormente pelo responsável.
 
 **Observação sobre o aviso de navegação:** uma execução inicial de frontend mostrou `<a>` dentro de `<a>` em TurmasPage e ProfessoresPage, embora todos os testes passassem. Depois da correção, ambas as suítes focadas e a suíte completa passaram sem o aviso; os resultados finais acima correspondem à versão corrigida.
 
@@ -969,7 +1035,7 @@ Consulta:
 
 **Verificações manuais (8/8):** o responsável informou ter concluído com sucesso a navegação para a página, consulta de professores, pesquisa por nome e por e-mail, cadastro válido, rejeição de e-mail duplicado, validação de dados e funcionamento de URL/paginação. Relato de aprovação manual não deve ser confundido com captura automática de evidências E2E.
 
-**Status:** **US-10 funcionalmente concluída, validada e publicada no GitLab**, commit `8425521`; atualização Jira MAT-17 a conferir. A US-11 foi validada posteriormente; US-12 e o requisito adicional permanecem pendentes.
+**Status naquele checkpoint:** **US-10 funcionalmente concluída, validada e publicada no GitLab**, commit `8425521`; atualização Jira MAT-17 a conferir. A US-11 e a US-12 foram validadas posteriormente; o requisito adicional permanece pendente.
 
 ### 8.12. US-11 — Consulta e abertura de turmas — 22/11/2026
 
@@ -1022,7 +1088,39 @@ Abertura:
 
 **Ajuste de semântica HTML:** nas primeiras execuções, o React alertou que existiam links `<a>` aninhados nas páginas de turmas e professores. A navegação foi corrigida e as suítes focadas e geral foram reexecutadas sem o aviso.
 
-**Status:** **US-11 funcionalmente concluída e validada**; commit/push e atualização da história no Jira a conferir. **US-12 ainda pendente**, especialmente a regra de não reduzir `vagasTotais` abaixo da contagem de matrículas ativas. O requisito extra, validações de segurança de produção e QA responsivo também seguem pendentes.
+**Status:** **US-11 funcionalmente concluída e validada**; o responsável confirmou posteriormente commit/push, mas ainda falta registrar o hash e conferir a história no Jira. A US-12 foi implementada e validada após esse checkpoint; o requisito extra, segurança de produção e QA responsivo ainda exigem atenção.
+
+### 8.13. US-12 — Alteração da capacidade das turmas — 22/11/2026
+
+**Backend:** 10 novos testes em `apps/api/tests/secretaria.turmas.test.ts`. Log focado **25/25 testes aprovados** (15 da US-11 e 10 da US-12) em 4,86 s; log da API completa **123/123 em 10 arquivos** (13,07 s). TypeScript aprovado.
+
+- [x] CT-01 — Negar alteração de vagas sem autenticação (`401`).
+- [x] CT-02 — Impedir alteração pelo perfil `ALUNO` (`403`).
+- [x] CT-03 — Aumentar capacidade e confirmar persistência e vagas disponíveis.
+- [x] CT-04 — Reduzir capacidade sem ultrapassar a ocupação ativa.
+- [x] CT-05 — Permitir capacidade igual ao número de matrículas ativas (disponíveis = 0; canceladas não ocupam vagas).
+- [x] CT-06 — Rejeitar capacidade inferior à ocupação (`409`), informando `vagasOcupadas` e preservando o valor persistido.
+- [x] CT-07 — Rejeitar valores inválidos de capacidade: zero, negativo, decimal, string, `null` e fora do limite `Int` (`400`).
+- [x] CT-08 — Rejeitar identificadores de turma inválidos (`400`).
+- [x] CT-09 — Responder `404` para turma inexistente.
+- [x] CT-10 — Refletir capacidade e vagas atualizadas na consulta GET posterior.
+
+**Frontend:** 8 novos testes em `apps/web/src/pages/secretaria/TurmasPage.test.tsx`. Log focado **22/22 aprovados** (14 US-11 + 8 US-12) em 7,55 s; log web completo **80/80 em 10 arquivos** (11,63 s), com lint e TypeScript aprovados.
+
+- [x] CT-01 — Abrir formulário com a capacidade atual e a ocupação da turma selecionada.
+- [x] CT-02 — Cancelar edição sem chamar PATCH.
+- [x] CT-03 — Salvar alteração, atualizar listagem e preservar busca/página na URL.
+- [x] CT-04 — Impedir envio com capacidade inferior à ocupação exibida.
+- [x] CT-05 — Exibir erro de conflito `409` sem perder os dados do formulário.
+- [x] CT-06 — Bloquear reenvio e cancelamento enquanto salva.
+- [x] CT-07 — Permitir nova tentativa após erro temporário.
+- [x] CT-08 — Editar a turma correta quando há mais de uma linha na tabela.
+
+**Verificações manuais:** roteiro de 8 casos (acesso à edição, formulário preenchido, cancelamento, aumento, redução permitida, igualdade com ocupação, impedimento de redução indevida e preservação de URL/recarga) informado pelo responsável como concluído. Sem captura independente, não tratar o relato como E2E automatizado.
+
+**Validação adicional recomendada antes da entrega:** ensaio concorrente envolvendo aumento de matrículas e redução de vagas, revisão de responsividade a 360px e proteção CSRF. O `UPDATE` condicional na transação fornece defesa de integridade na operação de alteração, mas os dez testes atuais não são um teste de estresse ou simulação de todos os interleavings possíveis.
+
+**Status:** **US-12 funcionalmente implementada, testada e validada manualmente conforme relato**. Commit/push da US-12 e chave Jira ainda a registrar; requisito funcional adicional e revisão final do MVP permanecem pendentes.
 
 ## 9. Priorização e riscos
 
@@ -1038,7 +1136,7 @@ Riscos que exigem atenção:
 
 4. **Banco de teste:** assegurar que Vitest, Prisma e o armazenamento de sessão não modifiquem `dev.db` nem o banco de sessões de desenvolvimento.
 
-5. **Cobertura falsa (exemplo histórico):** os 32 testes de um checkpoint de 21/11 cobriam autenticação/autorização, ofertas e realização de matrícula no backend, sem provar cancelamento, progresso, frontend ou secretaria naquela época. No checkpoint atual de 22/11 há **185 testes**, mas ainda não há prova automática de CSRF, responsividade, carga ou MVP completo.
+5. **Cobertura falsa (exemplo histórico):** os 32 testes de um checkpoint de 21/11 cobriam autenticação/autorização, ofertas e realização de matrícula no backend, sem provar cancelamento, progresso, frontend ou secretaria naquela época. No checkpoint atual de 22/11 há **203 testes**, mas ainda não há prova automática de CSRF, responsividade, carga ou MVP completo.
 
 ## 10. Manutenção
 

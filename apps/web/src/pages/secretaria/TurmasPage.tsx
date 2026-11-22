@@ -59,6 +59,11 @@ interface RespostaAbertura {
   turma: Turma;
 }
 
+interface RespostaAtualizacaoCapacidade {
+  message: string;
+  turma: Turma;
+}
+
 function lerPagina(valor: string | null): number {
   if (!valor || !/^[1-9]\d*$/.test(valor)) return 1;
 
@@ -107,6 +112,11 @@ export function TurmasPage() {
   const [salvando, setSalvando] = useState(false);
   const [mensagemSucesso, setMensagemSucesso] = useState("");
   const [mensagemErro, setMensagemErro] = useState("");
+  const [turmaEmEdicao, setTurmaEmEdicao] = useState<Turma | null>(null);
+  const [vagasEmEdicao, setVagasEmEdicao] = useState("");
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+  const [erroEdicao, setErroEdicao] = useState("");
+  const [sucessoEdicao, setSucessoEdicao] = useState("");
 
   useEffect(() => {
     if (parametros.get("pagina") !== String(paginaAtual)) {
@@ -331,6 +341,94 @@ export function TurmasPage() {
     }
   }
 
+  function iniciarEdicao(turma: Turma) {
+  if (salvandoEdicao) {
+    return;
+  }
+
+  setTurmaEmEdicao(turma);
+  setVagasEmEdicao(String(turma.vagasTotais));
+
+  setErroEdicao("");
+  setSucessoEdicao("");
+}
+
+function cancelarEdicao() {
+  if (salvandoEdicao) {
+    return;
+  }
+
+  setTurmaEmEdicao(null);
+  setVagasEmEdicao("");
+  setErroEdicao("");
+}
+
+async function salvarCapacidade(
+  evento: FormEvent<HTMLFormElement>
+) {
+  evento.preventDefault();
+
+  if (!turmaEmEdicao || salvandoEdicao) {
+    return;
+  }
+
+  setErroEdicao("");
+  setSucessoEdicao("");
+
+  const novaCapacidade = Number(vagasEmEdicao);
+
+  if (
+    !Number.isSafeInteger(novaCapacidade) ||
+    novaCapacidade < 1 ||
+    novaCapacidade > MAIOR_INTEIRO_PRISMA
+  ) {
+    setErroEdicao(
+      "A quantidade de vagas deve ser um inteiro positivo."
+    );
+    return;
+  }
+
+  if (novaCapacidade < turmaEmEdicao.vagasOcupadas) {
+    setErroEdicao(
+      "A capacidade não pode ser inferior ao número de matrículas ativas."
+    );
+    return;
+  }
+
+  setSalvandoEdicao(true);
+
+  try {
+    const resposta =
+      await apiRequest<RespostaAtualizacaoCapacidade>(
+        `/api/secretaria/turmas/${turmaEmEdicao.id}/vagas`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            vagasTotais: novaCapacidade,
+          }),
+        }
+      );
+
+    setSucessoEdicao(
+      `Capacidade da turma ${resposta.turma.id} atualizada para ${resposta.turma.vagasTotais} vagas!`
+    );
+
+    setTurmaEmEdicao(null);
+    setVagasEmEdicao("");
+
+    // Atualiza os dados preservando busca e paginação.
+    setVersaoLista((anterior) => anterior + 1);
+  } catch (erro) {
+    setErroEdicao(
+      erro instanceof Error
+        ? erro.message
+        : "Não foi possível atualizar a capacidade da turma."
+    );
+  } finally {
+    setSalvandoEdicao(false);
+  }
+}
+
   return (
     <main className="secretaria-page">
       <header className="secretaria-header">
@@ -403,6 +501,7 @@ export function TurmasPage() {
                   <th scope="col">Professor</th>
                   <th scope="col">Vagas ocupadas/total</th>
                   <th scope="col">Disponíveis</th>
+                  <th scope="col">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -417,6 +516,15 @@ export function TurmasPage() {
                       {turma.vagasOcupadas}/{turma.vagasTotais}
                     </td>
                     <td>{turma.vagasDisponiveis}</td>
+                    <td>
+                      <button
+                        type="button"
+                        onClick={() => iniciarEdicao(turma)}
+                        disabled={salvandoEdicao || salvando}
+                      >
+                        Editar vagas
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -450,6 +558,76 @@ export function TurmasPage() {
             )}
           </div>
         )}
+
+      {sucessoEdicao && (
+        <p className="mensagem-sucesso" role="status">
+          {sucessoEdicao}
+        </p>
+      )}
+
+      {turmaEmEdicao && (
+        <div className="secretaria-edicao-turma">
+          <h3>
+            Editar capacidade da turma {turmaEmEdicao.id}
+          </h3>
+
+          <p>
+            Disciplina: {turmaEmEdicao.disciplina.codigo}
+            {" — "}
+            {turmaEmEdicao.disciplina.nome}
+          </p>
+
+          <p>
+            Vagas ocupadas: {turmaEmEdicao.vagasOcupadas}
+          </p>
+
+          <form onSubmit={salvarCapacidade}>
+            <label htmlFor="vagasEdicaoTurma">
+              Nova quantidade de vagas
+            </label>
+
+            <input
+              id="vagasEdicaoTurma"
+              type="number"
+              min={Math.max(1, turmaEmEdicao.vagasOcupadas)}
+              max={MAIOR_INTEIRO_PRISMA}
+              step={1}
+              value={vagasEmEdicao}
+              onChange={(evento) =>
+                setVagasEmEdicao(evento.target.value)
+              }
+              required
+              disabled={salvandoEdicao}
+            />
+
+            {erroEdicao && (
+              <p className="mensagem-erro" role="alert">
+                {erroEdicao}
+              </p>
+            )}
+
+            <div className="secretaria-busca-controles">
+              <button
+                type="submit"
+                disabled={salvandoEdicao}
+              >
+                {salvandoEdicao
+                  ? "Salvando capacidade..."
+                  : "Salvar capacidade"}
+              </button>
+
+              <button
+                type="button"
+                onClick={cancelarEdicao}
+                disabled={salvandoEdicao}
+              >
+                Cancelar edição
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       </section>
 
       <section className="secretaria-card" aria-labelledby="titulo-abertura-turma">
