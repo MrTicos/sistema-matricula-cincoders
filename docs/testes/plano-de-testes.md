@@ -1,97 +1,103 @@
 # Plano de Testes — Sistema de Matrícula CINCoders
 
-> **Checkpoint consolidado — 21/11/2026:** 59 testes de backend (7 arquivos) e 30 de frontend (7 arquivos), total acumulado de **89 testes aprovados**, sem falhas reportadas. As suítes foram executadas separadamente. Resultados menores abaixo são checkpoints históricos.
+## Checkpoint atual — 22/11/2026
 
-## Frontend — US-05, US-06 e US-07
+**Fonte da evidência:** saídas completas de `pnpm exec vitest run` enviadas pelo responsável do projeto, uma em `apps/api` e outra em `apps/web`.
 
-**Ferramentas:** Vitest, React Testing Library e jsdom. **Jira:** MAT-8, MAT-15 e MAT-12.
+| Camada | Arquivos aprovados | Testes aprovados | Reprovados | Tempo informado |
+| --- | ---: | ---: | ---: | --- |
+| Backend — Vitest + Supertest | 8 | 65 | 0 | 5,64 s |
+| Frontend — Vitest / testes de componentes | 8 | 34 | 0 | 8,68 s |
+| **Total (execuções separadas)** | **16** | **99** | **0** | Não somar durações como se fosse uma execução única |
 
-| História | Arquivo | Cenários automatizados | Resultado |
-| --- | --- | ---: | --- |
-| US-05 — Consultar matrículas ativas | `MatriculasPage.test.tsx` | 5 | Aprovados |
-| US-06 — Cancelamento | `MatriculasCancelamento.test.tsx` | 4 | Aprovados |
-| US-07 — Progresso curricular | `ProgressoPage.test.tsx` | 5 | Aprovados, conforme confirmação do desenvolvedor |
+### Inventário de suítes — backend
 
-### Cenários US-05
+| Arquivo em `apps/api/tests` | História | Testes aprovados |
+| --- | --- | ---: |
+| `auth.test.ts` | US-01 | 8 |
+| `auth.middleware.test.ts` | US-01 | 3 |
+| `ofertas.test.ts` | US-03 | 9 |
+| `matriculas.test.ts` | US-04 | 12 |
+| `matriculas.consulta.test.ts` | US-05 | 7 |
+| `matriculas.cancelamento.test.ts` | US-06 | 10 |
+| `progresso.test.ts` | US-07 | 10 |
+| `secretaria.disciplinas.test.ts` | US-08 | 6 |
+| **Total** | | **65** |
 
-- [x] CT-01 — Exibir matrículas ativas.
-- [x] CT-02 — Exibir disciplina, professor, turma, carga horária e situação.
-- [x] CT-03 — Exibir estado vazio quando não houver matrículas.
-- [x] CT-04 — Apresentar erro de consulta.
-- [x] CT-05 — Exibir indicador de carregamento.
+### Inventário de suítes — frontend
 
-### Cenários US-06
+| Arquivo de teste em `apps/web/src` | História | Testes aprovados |
+| --- | --- | ---: |
+| `pages/LoginPage.test.tsx` | US-02 | 4 |
+| `components/LogoutButton.test.tsx` | US-02 | 3 |
+| `routes/AppRoutes.test.tsx` | US-02 | 4 |
+| `pages/aluno/OfertasPage.test.tsx` | US-03 e US-04 (compartilhados) | 5 |
+| `pages/aluno/MatriculasPage.test.tsx` | US-05 | 5 |
+| `pages/aluno/MatriculasCancelamento.test.tsx` | US-06 | 4 |
+| `pages/aluno/ProgressoPage.test.tsx` | US-07 | 5 |
+| `pages/secretaria/DisciplinasPage.test.tsx` | US-08 | 4 |
+| **Total** | | **34** |
 
-- [x] CT-01 — Exigir confirmação antes de cancelar.
-- [x] CT-02 — Permitir desistência sem cancelar.
-- [x] CT-03 — Confirmar cancelamento e retirar a matrícula da lista.
-- [x] CT-04 — Exibir erro sem remover a matrícula quando a API falhar.
+Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cinco testes para US-03 e mais cinco para US-04. O teste focado de `DisciplinasPage.test.tsx` também foi executado separadamente com **4/4 aprovações**, além de participar da suíte completa com o mesmo total; não o contabilizar duas vezes.
 
-### Cenários US-07
+### US-08 — Cadastro de disciplinas: evidência nova
 
-- [x] CT-01 — Consultar o progresso do aluno.
-- [x] CT-02 — Exibir categorias obrigatória, perfil e livre.
-- [x] CT-03 — Exibir percentual total retornado pela API.
-- [x] CT-04 — Apresentar horas em andamento separadas das integralizadas.
-- [x] CT-05 — Exibir erro de consulta.
+**Contrato em teste:** `POST /api/secretaria/disciplinas`, acessível apenas ao perfil `SECRETARIA`; entrada `{ "codigo": string, "nome": string, "cargaHoraria": number }`. Código obrigatório e único, normalizado em maiúsculas; nome obrigatório; carga horária inteira de 15 a 120 e múltipla de 15. O frontend apresenta os mesmos campos e feedback de validação/erro.
 
-### Evidências e limites
-
-- **Execução automatizada:** 30 testes de frontend em 7 arquivos e 59 de backend em 7 arquivos, total acumulado de 89, em execuções separadas.
-- **Verificações de qualidade:** ESLint e TypeScript sem erros, conforme resultados informados.
-- **Teste manual US-05:** listagem real de matrícula do aluno `aluno.si2` exibida na interface.
-- **Teste manual US-06:** cancelamento confirmado e vaga liberada na oferta correspondente.
-- **Teste manual US-07:** página de progresso renderizada corretamente com a API real.
-- **Limitações:** testes de componente simulam respostas HTTP e não equivalem a testes ponta a ponta; testar responsividade em 360px, navegação completa e cenários de sessão/CSRF no ambiente de entrega.
-
-## Frontend — US-03 (MAT-16) e US-04 (MAT-11)
-
-**Ferramentas:** Vitest 5.1.1, React Testing Library, user-event e jsdom.
-**Arquivo:** `apps/web/src/pages/aluno/OfertasPage.test.tsx`.
-
-| Caso | Critério | Resultado |
+| Fonte | Cenário explicitamente visível no log | Resultado |
 | --- | --- | --- |
-| CT-01 | Exibir oferta e professor | Aprovado |
-| CT-02 | Pesquisar disciplina por código | Aprovado |
-| CT-03 | Enviar a turma para o serviço de matrícula e mostrar sucesso | Aprovado |
-| CT-04 | Exibir erro quando matrícula for rejeitada | Aprovado |
-| CT-05 | Desabilitar matrícula em turma lotada | Aprovado |
+| Backend — `secretaria.disciplinas.test.ts` | CT-02: aluno não pode cadastrar | Aprovado |
+| Backend — mesmo arquivo | CT-03: cadastro válido | Aprovado |
+| Backend — mesmo arquivo | CT-04: código duplicado | Aprovado |
+| Backend — suíte completa | 6 casos no arquivo; os demais nomes não aparecem no trecho resumido do log | **6/6 aprovados** |
+| Frontend — `DisciplinasPage.test.tsx` | CT-01: campos obrigatórios | Aprovado |
+| Frontend — mesmo arquivo | CT-02: cadastrar disciplina válida | Aprovado |
+| Frontend — mesmo arquivo | CT-03: mostrar erro de código duplicado | Aprovado |
+| Frontend — mesmo arquivo | CT-04: impedir cadastro com carga horária inválida | Aprovado |
 
-**Resultado automatizado:** 5/5 aprovados. Suíte completa de frontend: 16/16 em 4 arquivos; `pnpm lint` e `pnpm exec tsc -b` sem erros.
+**Total US-08:** 6 testes de backend + 4 testes de frontend = **10 testes aprovados**, já incluídos nos 99 totais. Os títulos dos três casos adicionais do backend não foram exibidos; não atribuir a eles resultados específicos sem consultar o arquivo completo.
 
-**Evidência manual:** login com `aluno.si` e tentativa de matrícula em CIN0002 impedida por aprovação anterior; com `aluno.si2`, matrícula realizada e atualização de vagas confirmada sem recarregar a página.
+**O que esses resultados não provam isoladamente:** integração real navegador/API/banco, proteção CSRF, cookie `Secure` em HTTPS, persistência da sessão após reinício, acessibilidade, responsividade em 360px, testes de carga ou fluxos administrativos de listagem/edição de disciplinas, professores, turmas e vagas.
 
-**Limites:** os cinco testes da interface simulam respostas da API; não validam a persistência real. Os 59 testes de backend foram executados separadamente. Ainda faltam testes automatizados da paginação da interface, atualização do contador após POST, responsividade em 360px e fluxos integrados de consulta/cancelamento.
-> **Checkpoint consolidado — 21/11/2026:**_ 59 testes do backend (7 arquivos) e 11 do frontend (3 arquivos), total acumulado de _**70 testes aprovados**_, sem falhas. As suítes foram executadas separadamente. Seções históricas abaixo preservam resultados de checkpoints anteriores._
+### Comandos para reproduzir o checkpoint
+
+```powershell
+cd C:\dev\sistema-matricula-cincoders\apps\api
+pnpm exec vitest run
+
+cd C:\dev\sistema-matricula-cincoders\apps\web
+pnpm exec vitest run src/pages/secretaria/DisciplinasPage.test.tsx
+pnpm exec vitest run
+pnpm lint
+pnpm exec tsc -b
+```
+
+**Importante:** somente os comandos Vitest têm saídas completas confirmadas neste checkpoint. O último log compartilhado de lint/TypeScript termina em `$ eslint .`, sem resultado de término. Os arquivos de banco e variáveis de ambiente devem permanecer segregados entre desenvolvimento e testes.
+
+---
+
+## Registro histórico: checkpoints de 21/11/2026
+
+O material abaixo mantém critérios, Gherkin e evidências de marcos anteriores. Contagens de 11, 20, 32, 39, 49, 59 ou 70 testes são **marcos históricos**, não o total atual. Frases sobre módulos "planejados" ou "frontend pendente" descrevem aquele momento; o estado de 22/11 está consolidado acima.
+
+> **Checkpoint histórico — 21/11/2026:** 59 testes de backend (7 arquivos) e 11 de frontend (3 arquivos), 70 testes aprovados, sem falhas, em execuções separadas. As seções históricas abaixo preservam os resultados anteriores.
 
 ## US-02 — Interface de autenticação (MAT-7)
 
 **Estado:** implementada e testada no frontend React + TypeScript.
 
 | Caso | Cenário | Resultado |
-
 | --- | --- | --- |
-
 | CT-01 | Exibir campos de usuário e senha | Aprovado |
-
 | CT-02 | Enviar credenciais do formulário | Aprovado |
-
 | CT-03 | Exibir erro de login | Aprovado |
-
 | CT-04 | Impedir novo envio enquanto autentica | Aprovado |
-
 | CT-05 | Exibir botão de logout | Aprovado |
-
 | CT-06 | Efetuar logout e redirecionar | Aprovado |
-
 | CT-07 | Exibir erro quando logout falhar | Aprovado |
-
 | CT-08 | Redirecionar visitante à tela de login | Aprovado |
-
 | CT-09 | Impedir acesso do aluno à secretaria | Aprovado |
-
 | CT-10 | Impedir acesso da secretaria à área do aluno | Aprovado |
-
 | CT-11 | Permitir acesso autorizado do aluno | Aprovado |
 
 **Comandos (em `apps/web`):** `pnpm exec vitest run`, `pnpm lint` e `pnpm exec tsc -b`. Resultado: 3 arquivos, **11 testes aprovados**, ESLint e TypeScript sem erros. Login e logout também foram verificados manualmente com a API real.
@@ -117,15 +123,10 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 ## 2. Escopo e estratégia
 
 | Nível | O que valida | Ferramenta / situação |
-
 | --- | --- | --- |
-
 | Unidade | Cálculo de progresso, classificação curricular, validações e regras isoladas | Vitest |
-
 | Integração | Rotas HTTP, autenticação, Prisma/SQLite, transações e efeitos persistidos | Vitest + Supertest + SQLite; executado para US-01, US-03 e US-04 |
-
 | Ponta a ponta/manual | Fluxos completos no navegador e estados visuais | Navegador; registrar evidências no PR/README |
-
 | Responsividade | Telas do aluno utilizáveis em largura de 360px | DevTools do navegador |
 
 **Princípio:** testes de regras não devem depender de uma interface visual pronta; as regras críticas devem ser cobertas primeiro na API. Testes devem validar estado persistido, não apenas código HTTP.
@@ -171,72 +172,47 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 **Legenda:** P0 = bloqueia o MVP; P1 = importante; P2 = se houver tempo. A execução dos casos é indicada na seção 8; a presença de um cenário nesta matriz não implica sua aprovação.
 
 | ID | Requisito/regra | Cenário a testar | Nível | Prioridade |
-
 | --- | --- | --- | --- | --- |
-
 | T-01 | US-01, autenticação | Usuário válido autentica; sessão criada; perfil correto | Integração | P0 |
-
 | T-02 | US-01, autenticação | Senha errada ou usuário inexistente → `401` genérico, sem sessão | Integração | P0 |
-
 | T-03 | US-01, autorização | Sem sessão → `401`; aluno na rota da secretaria → `403` | Integração | P0 |
-
 | T-04 | US-01, logout | Logout invalida sessão; `/me` posterior → `401` | Integração | P0 |
-
 | T-05 | US-01, privacidade | Usuário não acessa histórico/matrículas de outro aluno | Integração | P0 |
-
 | T-06 | Ofertas | Listagem, filtros, paginação e indicação de vagas disponíveis | Integração/UI | P0 |
-
 | T-07 | Estrutura curricular | Mesma disciplina recebe classificações distintas em cursos distintos | Unidade/integração | P0 |
-
 | T-08 | Disciplina | Código duplicado é recusado; CH fora de 15–120 ou não múltipla de 15 é recusada | Integração | P1 |
-
 | T-09 | Professor | E-mail duplicado é recusado | Integração | P1 |
-
 | T-10 | Turma | Abrir turma sem disciplina/professor ou com menos de uma vaga é recusado | Integração | P1 |
-
 | T-11 | Turma | Redução de vagas abaixo do número de matrículas ativas é recusada | Integração | P1 |
-
 | T-12 | Matrícula | Aluno elegível ocupa uma vaga; nova matrícula fica `ATIVA` | Integração | P0 |
-
 | T-13 | Matrícula | Matrícula em turma lotada é recusada sem exceder capacidade | Integração | P0 |
-
 | T-14 | Matrícula | Disciplina já aprovada não admite nova matrícula | Integração | P0 |
-
 | T-15 | Matrícula/ADR-0002 | Aluno já matriculado na disciplina não pode entrar em outra turma da mesma disciplina | Integração | P0 |
-
 | T-16 | Matrícula | Reprovação anterior não impede nova tentativa | Integração | P0 |
-
 | T-17 | Cancelamento | Apenas titular cancela matrícula ativa; vaga é liberada | Integração | P0 |
-
 | T-18 | Rematrícula/ADR-0001 | Após cancelar, nova matrícula recebe outro ID; anterior permanece `CANCELADA` com data | Integração | P0 |
-
 | T-19 | Concorrência | Duas solicitações disputam última vaga; no máximo uma é confirmada | Integração | P0 |
-
 | T-20 | Concorrência/ADR-0002 | Duas solicitações simultâneas para turmas da mesma disciplina não geram duas matrículas ativas | Integração | P0 |
-
 | T-21 | Progresso | Apenas histórico `APROVADA` integraliza CH; reprovadas não contam | Unidade/integração | P0 |
-
 | T-22 | Progresso | CH de eletiva de perfil além do mínimo conta como livre, conforme regra | Unidade | P0 |
-
 | T-23 | Progresso | Percentual é limitado a 100%; CH faltante nunca é negativa; CH ativa aparece separada | Unidade | P0 |
-
 | T-24 | API/UX | Erros de rede, carregamento, vazio, sem resultados e ação de tentar novamente | Manual/UI | P1 |
-
 | T-25 | Mobile | Fluxo do aluno utilizável a 360px sem perda dos comandos críticos | Manual/UI | P0 |
-
 | T-26 | Extra | Requisito funcional adicional escolhido possui cenário completo de sucesso e falha | Integração/UI | P1 |
-
 | T-27 | US-01, cookie | Login define cookie com `HttpOnly` e `SameSite=Lax` | Integração | P0 |
-
 | T-28 | US-01, sessão | Novo login regenera o identificador da sessão | Integração | P0 |
-
 | T-29 | US-01, logout | Logout envia instrução para limpar o cookie da sessão | Integração | P0 |
-
 | T-30 | US-01, persistência | Sessão continua válida após reinício da API sem novo login, dentro do prazo de expiração | Manual/integração | P1 |
-
 | T-31 | US-01, HTTPS | Cookie contém `Secure` em ambiente HTTPS de produção | Integração/manual | P1 |
-
 | T-32 | US-01, CSRF | Requisições que alteram dados são protegidas contra CSRF | Integração | P0 |
+| T-33 | US-08, acesso | Requisição não autenticada não cadastra disciplina; aluno autenticado é bloqueado | Integração | P0 |
+| T-34 | US-08, cadastro | Secretaria cria disciplina com código, nome e CH válidos | Integração | P1 |
+| T-35 | US-08, unicidade | Código já existente, inclusive após normalização, não produz novo cadastro | Integração | P1 |
+| T-36 | US-08, validação | Código/nome obrigatórios, CH inteira de 15–120 e múltipla de 15 | Integração/UI | P1 |
+| T-37 | US-08, formulário | Campos, envio válido, erro de duplicidade e bloqueio de CH inválida | Componente | P1 |
+| T-38 | US-08, integração | Cadastro pela interface real atualiza o banco via API com sessão da secretaria | Ponta a ponta/manual | P1 |
+
+**Rastreabilidade da US-08:** os testes automatizados do checkpoint de 22/11 comprovam seis casos no backend e quatro no frontend; o T-38 continua pendente de uma evidência ponta a ponta. A matriz expressa *o que testar*, não autoriza marcar como aprovado todo cenário cujos detalhes não estejam demonstrados.
 
 ## 6. Exemplos Gherkin prioritários
 
@@ -244,39 +220,39 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 
 Funcionalidade: Autenticação e sessão
 
-  Cenário: Login válido cria sessão protegida
+  Cenário: Login válido cria sessão protegida
 
-    Dado que existe um aluno com credenciais válidas
+    Dado que existe um aluno com credenciais válidas
 
-    Quando ele realiza login
+    Quando ele realiza login
 
-    Então a API retorna seu perfil sem senhaHash
+    Então a API retorna seu perfil sem senhaHash
 
-    E cria uma sessão acessível por cookie HttpOnly e SameSite=Lax
+    E cria uma sessão acessível por cookie HttpOnly e SameSite=Lax
 
-  Cenário: Usuário inexistente
+  Cenário: Usuário inexistente
 
-    Quando alguém tenta login com um username inexistente
+    Quando alguém tenta login com um username inexistente
 
-    Então a API responde 401 com mensagem genérica
+    Então a API responde 401 com mensagem genérica
 
-  Cenário: Logout invalida sessão
+  Cenário: Logout invalida sessão
 
-    Dado que um aluno está autenticado
+    Dado que um aluno está autenticado
 
-    Quando ele solicita logout
+    Quando ele solicita logout
 
-    Então a API invalida sua sessão e limpa o cookie
+    Então a API invalida sua sessão e limpa o cookie
 
-    E uma consulta posterior a /api/auth/me retorna 401
+    E uma consulta posterior a /api/auth/me retorna 401
 
-  Cenário: Sessão persiste após reinício
+  Cenário: Sessão persiste após reinício
 
-    Dado que o aluno realizou login e possui cookie válido
+    Dado que o aluno realizou login e possui cookie válido
 
-    Quando a API é reiniciada mantendo o mesmo segredo e banco de sessões
+    Quando a API é reiniciada mantendo o mesmo segredo e banco de sessões
 
-    Então a consulta a /api/auth/me permanece autenticada sem novo login
+    Então a consulta a /api/auth/me permanece autenticada sem novo login
 
 ```
 
@@ -284,41 +260,41 @@ Funcionalidade: Autenticação e sessão
 
 Funcionalidade: Matrícula em turma
 
-  Cenário: Uma matrícula ativa por disciplina
+  Cenário: Uma matrícula ativa por disciplina
 
-    Dado que o aluno possui matrícula ativa na turma A da disciplina X
+    Dado que o aluno possui matrícula ativa na turma A da disciplina X
 
-    E existe outra turma B da mesma disciplina X com vagas
+    E existe outra turma B da mesma disciplina X com vagas
 
-    Quando o aluno solicita matrícula na turma B
+    Quando o aluno solicita matrícula na turma B
 
-    Então a solicitação deve ser rejeitada
+    Então a solicitação deve ser rejeitada
 
-    E deve continuar existindo somente uma matrícula ativa em X
+    E deve continuar existindo somente uma matrícula ativa em X
 
-  Cenário: Rematrícula após cancelamento
+  Cenário: Rematrícula após cancelamento
 
-    Dado que o aluno cancelou sua matrícula na disciplina X
+    Dado que o aluno cancelou sua matrícula na disciplina X
 
-    E não possui outra matrícula ativa em X
+    E não possui outra matrícula ativa em X
 
-    E existe vaga disponível
+    E existe vaga disponível
 
-    Quando solicita matrícula novamente
+    Quando solicita matrícula novamente
 
-    Então deve ser criado um novo registro de matrícula ativa
+    Então deve ser criado um novo registro de matrícula ativa
 
-    E o registro anterior deve permanecer cancelado
+    E o registro anterior deve permanecer cancelado
 
-  Cenário: Vaga única disputada
+  Cenário: Vaga única disputada
 
-    Dado que uma turma possui uma vaga restante
+    Dado que uma turma possui uma vaga restante
 
-    Quando dois alunos elegíveis tentam se matricular simultaneamente
+    Quando dois alunos elegíveis tentam se matricular simultaneamente
 
-    Então no máximo uma solicitação deve ser confirmada
+    Então no máximo uma solicitação deve ser confirmada
 
-    E o total de matrículas ativas não deve exceder a capacidade
+    E o total de matrículas ativas não deve exceder a capacidade
 
 ```
 
@@ -326,45 +302,71 @@ Funcionalidade: Matrícula em turma
 
 Funcionalidade: Progresso curricular
 
-  Cenário: Reprovação e matrícula ativa não integralizam CH
+  Cenário: Reprovação e matrícula ativa não integralizam CH
 
-    Dado que um aluno possui histórico aprovado, histórico reprovado e matrícula ativa
+    Dado que um aluno possui histórico aprovado, histórico reprovado e matrícula ativa
 
-    Quando solicita o progresso curricular
+    Quando solicita o progresso curricular
 
-    Então somente as disciplinas aprovadas devem compor a CH integralizada
+    Então somente as disciplinas aprovadas devem compor a CH integralizada
 
-    E a CH das matrículas ativas deve ser apresentada separadamente
+    E a CH das matrículas ativas deve ser apresentada separadamente
 
 ```
 
 ## 7. Organização dos testes
 
+### Estrutura efetiva do checkpoint de 22/11/2026
+
+```text
+apps/api/tests/
+  auth.test.ts                         # 8 testes
+  auth.middleware.test.ts              # 3 testes
+  ofertas.test.ts                      # 9 testes
+  matriculas.test.ts                   # 12 testes
+  matriculas.consulta.test.ts          # 7 testes
+  matriculas.cancelamento.test.ts      # 10 testes
+  progresso.test.ts                    # 10 testes
+  secretaria.disciplinas.test.ts       # 6 testes
+
+apps/web/src/
+  pages/LoginPage.test.tsx             # 4 testes
+  components/LogoutButton.test.tsx     # 3 testes
+  routes/AppRoutes.test.tsx            # 4 testes
+  pages/aluno/OfertasPage.test.tsx     # 5 testes
+  pages/aluno/MatriculasPage.test.tsx  # 5 testes
+  pages/aluno/MatriculasCancelamento.test.tsx # 4 testes
+  pages/aluno/ProgressoPage.test.tsx   # 5 testes
+  pages/secretaria/DisciplinasPage.test.tsx # 4 testes
+```
+
+### Proposta inicial preservada (21/11/2026)
+
 ```text
 
 apps/api/
 
-  tests/
+  tests/
 
-    auth.test.ts                  # Implementado: 8 testes
+    auth.test.ts                  # Implementado: 8 testes
 
-    auth.middleware.test.ts       # Implementado: 3 testes
+    auth.middleware.test.ts       # Implementado: 3 testes
 
-    ofertas.test.ts               # Implementado: 9 testes
+    ofertas.test.ts               # Implementado: 9 testes
 
-    matriculas.test.ts            # Implementado: 12 testes
+    matriculas.test.ts            # Implementado: 12 testes
 
-    progresso.test.ts             # Planejado
+    progresso.test.ts             # Planejado
 
-    secretaria.test.ts            # Planejado
+    secretaria.test.ts            # Planejado
 
-    helpers/
+    helpers/
 
-      banco-teste.ts              # Estrutura sugerida, se necessária
+      banco-teste.ts              # Estrutura sugerida, se necessária
 
 ```
 
-Os quatro arquivos de autenticação/autorização, ofertas e matrículas já existem; os demais nomes são sugestões para módulos futuros. Para Supertest, importar `app` de `src/app.ts` sem iniciar `server.ts`. Usar `request.agent(app)` nos cenários que precisam reutilizar cookies. A autorização da secretaria foi exercitada por rota exclusiva do ambiente de teste, não por um endpoint administrativo já entregue na API.
+**Contexto histórico:** naquele momento só os quatro arquivos de autenticação/autorização, ofertas e matrículas estavam concluídos; os demais nomes eram sugestões. Em 22/11/2026, `progresso.test.ts` e `secretaria.disciplinas.test.ts` já aparecem nas suítes reais, juntamente com os testes de consulta e cancelamento. Para Supertest, importar `app` de `src/app.ts` sem iniciar `server.ts`. Usar `request.agent(app)` nos cenários que precisam reutilizar cookies. A autorização da secretaria foi inicialmente exercitada por rota exclusiva de teste; posteriormente a US-08 implementou uma rota administrativa real.
 
 ### Comandos de verificação
 
@@ -390,48 +392,40 @@ pnpm exec vitest run
 
 ## 8. Registro de execução
 
+### Registro atual — 22/11/2026
+
 | Data | Verificação | Evidência observada | Resultado |
-
 | --- | --- | --- | --- |
+| 22/11/2026 | `apps/api`: `pnpm exec vitest run` | 8 arquivos, 65 testes, 0 falhas, duração 5,64 s | **Passou** |
+| 22/11/2026 | `apps/web`: `pnpm exec vitest run src/pages/secretaria/DisciplinasPage.test.tsx` | 1 arquivo, 4 testes da US-08, 0 falhas, duração 5,78 s | **Passou** |
+| 22/11/2026 | `apps/web`: `pnpm exec vitest run` | 8 arquivos, 34 testes, 0 falhas, duração 8,68 s | **Passou** |
+| 22/11/2026 | `apps/web`: `pnpm lint` e `pnpm exec tsc -b` | Log recebido interrompido em `$ eslint .`; sem saída final de ambos | **A confirmar nesta execução** |
 
+**Consolidado:** 65 + 34 = **99 testes aprovados**, 16 arquivos, 0 falhas. A execução focada de 4 testes US-08 é uma repetição parcial da suíte frontend e **não** aumenta o total de 99.
+
+### Registro inicial — 21/11/2026 (histórico)
+
+| Data | Verificação | Evidência observada | Resultado |
+| --- | --- | --- | --- |
 | 21/11/2026 | `prisma validate` | Schema declarado válido | Passou |
-
 | 21/11/2026 | `prisma migrate status` | Uma migração aplicada, banco em dia | Passou |
-
 | 21/11/2026 | `prisma db seed` (duas execuções) | Ambas terminaram sem erros | Passou |
-
 | 21/11/2026 | Contagem do banco com Prisma Client | Quantidades esperadas conferidas pelo responsável | Passou — conferência manual |
-
 | 21/11/2026 | `GET /api/health` | Resposta JSON esperada informada pelo responsável | Passou — teste manual |
-
 | 21/11/2026 | Login manual `aluno.si` | HTTP 200 e perfil `ALUNO`; `/api/auth/me` respondeu autenticado | Passou — manual |
-
 | 21/11/2026 | Logout manual | `/api/auth/me` passou a responder `401` após logout | Passou — manual |
-
 | 21/11/2026 | Criação do armazenamento SQLite de sessões | `Test-Path .\sessions.db` → `True` | Passou — verificação de arquivo |
-
 | 21/11/2026 | Separação do arquivo de sessões de teste | `Test-Path .\sessions.test.db` → `True` | Passou — verificação de arquivo |
-
 | 21/11/2026 | `pnpm exec vitest run tests/auth.test.ts` | 1 arquivo, 8 testes, 0 falhas; duração 2,83 s | Passou |
-
 | 21/11/2026 | `pnpm exec vitest run` | 2 arquivos, 11 testes (8 autenticação + 3 autorização), 0 falhas; duração 2,18 s | Passou |
-
 | 21/11/2026 | US-03 — `pnpm exec vitest run` | 3 arquivos, 20 testes (11 anteriores + 9 ofertas), 0 falhas | Passou |
-
 | 21/11/2026 | `prisma migrate status` com `DATABASE_URL=file:./test.db` | Banco `test.db` identificado; schema atualizado | Passou |
-
 | 21/11/2026 | `pnpm exec vitest run tests/matriculas.test.ts` | 12 casos aprovados, incluindo concorrência por última vaga | Passou |
-
 | 21/11/2026 | `pnpm exec vitest run` | **4 arquivos, 32 testes (11 autenticação/autorização + 9 ofertas + 12 matrículas), 0 falhas; duração 2,55 s** | **Passou** |
-
 | A confirmar | Sessão mantida após reiniciar a API | Registrar resposta de `/api/auth/me` sem novo login | Pendente de evidência explícita |
-
 | — | CSRF e atributo `Secure` em HTTPS | Ainda não testados | Pendente |
-
 | — | Isolamento acadêmico entre alunos | Ofertas e matrícula derivam identidade da sessão; testes de titularidade de registros privados ainda pendentes | Parcial |
-
 | — | Cancelamento via API, progresso e demais regras de negócio | Matrícula testada; demais módulos ainda pendentes | Pendente |
-
 | — | Interface em largura de 360px | Frontend ainda não validado | Pendente |
 
 ### 8.1. Evidências detalhadas da US-01 — 21/11/2026
@@ -439,29 +433,17 @@ pnpm exec vitest run
 **Resultado da suíte completa:** 11 testes aprovados, 0 reprovados, em 2 arquivos de teste (Vitest 5.1.1 + Supertest).
 
 | ID de teste | Cenário automatizado | Evidência |
-
 | --- | --- | --- |
-
 | T-03 | `GET /api/auth/me` sem autenticação | HTTP 401 |
-
 | T-02 | Senha incorreta | HTTP 401 com mensagem genérica |
-
 | T-01 | Login válido e manutenção da sessão de `aluno.si` | HTTP 200; perfil `ALUNO`; resposta sem `senhaHash`; `/me` autenticado |
-
 | T-04 | Logout invalida sessão | `/me` após logout → HTTP 401 |
-
 | T-02 | Username inexistente | HTTP 401 com mensagem genérica |
-
 | T-27 | Cookie de sessão | `HttpOnly` e `SameSite=Lax` presentes |
-
 | T-28 | Novo login na mesma sessão de cliente | Identificador de sessão alterado |
-
 | T-29 | Logout limpa cookie | Resposta de logout envia cookie vazio; `/me` → HTTP 401 |
-
 | T-03 | Cliente sem sessão em rota restrita à secretaria | HTTP 401 |
-
 | T-03 | Aluno em rota restrita à secretaria | HTTP 403 |
-
 | T-03 | Secretaria em rota autorizada | HTTP 200 |
 
 Os três testes de autorização por perfil utilizam uma **rota exclusiva do ambiente de testes**. Eles validam o middleware, mas não representam a implementação dos futuros endpoints administrativos.
@@ -561,31 +543,18 @@ Cenários validados:
 **Resultado:** 12 testes aprovados, 0 falhas.
 
 | Caso | Cenário | Evidência |
-
 | --- | --- | --- |
-
 | CT-01 | Matrícula de aluno elegível | HTTP `201`, registro `ATIVA` |
-
 | CT-02 | Cliente sem autenticação | HTTP `401` |
-
 | CT-03 | Secretaria acessa operação de aluno | HTTP `403` |
-
 | CT-04 | Turma inexistente | HTTP `404` |
-
 | CT-05 | `turmaId` inválido | HTTP `400` |
-
 | CT-06 | Disciplina previamente aprovada | HTTP `409` |
-
 | CT-07 | Duas turmas da mesma disciplina | Segunda matrícula rejeitada com `409` |
-
 | CT-08 | Turma lotada | HTTP `409` |
-
 | CT-09 | Rematrícula após cancelamento | Dois registros distintos; anterior `CANCELADA`, novo `ATIVA` |
-
 | CT-10 | Dois alunos concorrem pela última vaga | Um `201`, um `409`, ocupação final igual a 1 |
-
 | CT-11 | Disciplina anteriormente reprovada | HTTP `201` |
-
 | CT-12 | Consulta de ofertas após matrícula | Vagas ocupadas e disponíveis atualizadas |
 
 **Limites da evidência:**
@@ -716,6 +685,29 @@ Cenários validados:
 
 **Pendência:** integração com o frontend React.
 
+### 8.8. US-08 — Cadastro de disciplinas — 22/11/2026
+
+**Endpoint:** `POST /api/secretaria/disciplinas`.
+
+**Arquivo backend:** `apps/api/tests/secretaria.disciplinas.test.ts` — **6 testes aprovados**.
+
+**Arquivo frontend:** `apps/web/src/pages/secretaria/DisciplinasPage.test.tsx` — **4 testes aprovados**.
+
+**Aspectos verificados nos logs:**
+
+- [x] Aluno não possui autorização para cadastrar disciplina (caso CT-02 do backend).
+- [x] Secretaria cadastra disciplina válida (CT-03 do backend).
+- [x] Código duplicado é recusado (CT-04 do backend).
+- [x] A página apresenta código, nome e carga horária (CT-01 do frontend).
+- [x] O formulário envia um cadastro válido (CT-02 do frontend).
+- [x] O formulário apresenta erro de código duplicado (CT-03 do frontend).
+- [x] O formulário impede carga horária inválida (CT-04 do frontend).
+- [x] As suítes completas terminam sem falhas: 65 backend e 34 frontend.
+
+Os outros três testes do backend passaram, mas seus nomes não aparecem na saída resumida fornecida. Não substituir essa ausência de títulos por descrições inventadas.
+
+**A validar separadamente:** execução manual com o navegador conectado à API real, responsividade, acessibilidade, CSRF, observação do banco após cadastro, e eventuais requisitos de listagem/edição e outros cadastros da secretaria. Testes de componente com simulações da API não garantem integração real.
+
 ## 9. Priorização e riscos
 
 O prazo é curto. Priorizar **P0** no fluxo do aluno: credenciais, autorização, consulta de ofertas, matrícula, cancelamento, rematrícula, lotação, concorrência, progresso e isolamento de dados. Os testes **P1** da secretaria e do requisito extra acompanham sua implementação.
@@ -730,8 +722,8 @@ Riscos que exigem atenção:
 
 4. **Banco de teste:** assegurar que Vitest, Prisma e o armazenamento de sessão não modifiquem `dev.db` nem o banco de sessões de desenvolvimento.
 
-5. **Cobertura falsa:** os 32 testes aprovados cobrem autenticação/autorização, ofertas e realização de matrícula no backend; não implicam aprovação de cancelamento, progresso, frontend, secretaria, CSRF ou MVP completo.
+5. **Cobertura falsa (exemplo histórico):** os 32 testes de um checkpoint de 21/11 cobriam autenticação/autorização, ofertas e realização de matrícula no backend, sem provar cancelamento, progresso, frontend ou secretaria naquela época. No checkpoint atual de 22/11 há 99 testes, mas ainda não há prova automática de CSRF, responsividade, carga ou MVP completo.
 
 ## 10. Manutenção
 
-Atualizar este documento quando novos critérios Gherkin forem acordados, quando uma regra mudar, **a cada conclusão de User Story** e antes do commit final. Registrar data, comando executado, resultado e pendências reais na seção 8. Atualizar a Sprint correspondente e o item no Jira MAT.
+Atualizar este documento quando novos critérios Gherkin forem acordados, quando uma regra mudar, **a cada conclusão de User Story** e antes do commit final. Registrar data, comando executado, resultado e pendências reais na seção 8. Atualizar a Sprint correspondente e o item no Jira MAT. Manter checkpoints históricos identificados e não somar execuções focadas aos resultados consolidados da mesma suíte.

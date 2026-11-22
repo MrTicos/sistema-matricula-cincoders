@@ -11,6 +11,7 @@ import { LoginPage } from "../pages/LoginPage";
 import { OfertasPage } from "../pages/aluno/OfertasPage";
 import { MatriculasPage } from "../pages/aluno/MatriculasPage";
 import { ProgressoPage } from "../pages/aluno/ProgressoPage";
+import { DisciplinasPage } from "../pages/secretaria/DisciplinasPage";
 
 type Perfil = "ALUNO" | "SECRETARIA";
 
@@ -82,7 +83,7 @@ export function AppRoutes() {
         <Route element={<RotaProtegida perfil="SECRETARIA" />}>
           <Route
             path="/secretaria"
-            element={<h1>Painel da secretaria</h1>}
+            element={<DisciplinasPage />}
           />
         </Route>
 
