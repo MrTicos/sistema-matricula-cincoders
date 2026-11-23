@@ -1,8 +1,41 @@
 # Visão geral da arquitetura — CINCoders
 
-> **Estado atualizado — 22/11/2026 (após US-12):** API Express/Prisma/SQLite e frontend React/Vite implementados para autenticação, fluxo do aluno e administração de disciplinas (US-08/US-09), professores (US-10), consulta/abertura de turmas (US-11) e **alteração de capacidade de turmas (US-12)**. As suítes completas passaram com **123 testes em 10 arquivos na API** (13,07 s) e **80 em 10 arquivos no frontend** (11,63 s): **203 testes automatizados em 20 arquivos, 0 falhas**, em execuções separadas. O responsável relatou **40 verificações manuais aprovadas**: 8 em cada US-08, US-09, US-10, US-11 e US-12. Não há suíte E2E automatizada equivalente; segurança de produção, requisito funcional adicional, responsividade e encerramento do MVP permanecem fora dessa evidência.
+> **Estado documental final — 23/11/2026:** US-01 a US-13 implementadas e validadas conforme os registros do responsável, incluindo o requisito adicional **US-13 — histórico de matrículas canceladas**. A navegação ganhou componentes compartilhados para aluno e secretaria, e o CSS recebeu ajustes de identidade visual e largura das listagens. A suíte completa da API passou com **133/133 testes em 11 arquivos** (28,94 s, banco `test.db`) e TypeScript aprovado; `DATABASE_URL` foi restaurada para `dev.db`. O frontend passou com **95/95 testes em 12 arquivos**, incluindo os casos do cliente HTTP, com lint e TypeScript aprovados. Total: **228 testes automatizados**, em duas suítes, e **48 verificações manuais** informadas como aprovadas (US-08 a US-13). O `schema.prisma` integral foi conferido com a modelagem física. O avaliador `selecaogersist` **aceitou o convite ao GitLab**, conforme Thiago; a publicação dos documentos finais é a próxima operação de Git.
 
-## Situação funcional atual
+## Evolução desde o checkpoint US-12 — requisito adicional e navegação
+
+### US-13 — Histórico de matrículas canceladas (requisito à escolha)
+
+- **Motivação:** dar ao aluno rastreabilidade dos cancelamentos realizados, sem misturar matrículas canceladas com as matrículas ativas. O registro permanece no banco mesmo após uma nova matrícula, de acordo com a decisão de rematrícula por novo registro (ADR-0001).
+- **API:** `GET /api/aluno/matriculas/historico?pagina=1&limite=10`, protegida para `ALUNO`, consulta apenas matrículas com situação `CANCELADA` pertencentes ao aluno da **sessão**, com ordenação e metadados de paginação. Não aceitar uma identidade de aluno fornecida pelo cliente como critério de titularidade.
+- **Frontend:** aba **Histórico de cancelamentos** na página `/aluno/matriculas`, implementada em `HistoricoMatriculas.tsx`. O componente é carregado ao selecionar a aba e apresenta registros cancelados, datas, estados de carregamento, vazio, erro/nova tentativa e paginação. A aba **Matrículas ativas** preserva consulta e cancelamento existentes.
+- **Validação:** nove testes de `HistoricoMatriculas.test.tsx` aprovados no log do usuário; dez cenários API da US-13 incluídos no log integral **133/133 em 11 arquivos**; oito verificações manuais da US-13 aprovadas conforme relato do responsável. A nova tela de histórico constitui o requisito extra do enunciado e está explicada no **README revisado** com motivação e regras.
+
+### Evolução da identidade visual e da navegação
+
+- **Identidade em evolução:** azul-marinho, verde-petróleo/teal e fundo cinza-claro nos componentes e em `apps/web/src/index.css`. As referências visuais de **Classter** (secretaria) e **Aprova Total** (área do aluno) foram selecionadas apenas como inspiração para uma etapa posterior; não afirmar que o redesign completo já foi entregue.
+- **Navegação administrativa:** componente compartilhado `SecretariaNav.tsx` com links para **Disciplinas**, **Professores** e **Turmas**. Corrigiu-se o problema relatado de a aba Turmas desaparecer ao acessar Disciplinas, e a estrutura não deve produzir links `<a>` aninhados.
+- **Navegação do aluno:** `AlunoNav.tsx` reúne **Ofertas**, **Minhas matrículas** e **Progresso curricular** em todas as páginas, corrigindo a ausência de abas na tela de ofertas.
+- **Layout administrativo:** estilos de listagem de largura ampliada para evitar tabelas confinadas em cartões estreitos. O responsável informou ter concluído as verificações manuais, inclusive **360px nas telas do aluno**.
+
+### Checklist de fechamento técnico
+
+- [x] `OfertasPage`, `MatriculasPage` e `ProgressoPage` oferecem nova tentativa após falha de comunicação, conforme testes automatizados e manuais.
+- [x] Respostas `401` de chamadas protegidas são tratadas pelo cliente HTTP, com retorno ao login; reteste de sessão invalidada em outra aba aprovado.
+- [x] Seed validado em banco novo com três cursos, disciplinas compartilhadas, secretaria e alunos com aprovações/reprovações.
+- [x] Interface do aluno em 360px, URL de busca/paginação e estados de falha conferidos conforme relato.
+- [x] README revisado; `schema.prisma` integral conferido com `docs/modelagem-fisica.md`.
+- [x] Convite do GitLab aceito pelo avaliador `selecaogersist`, conforme confirmação do responsável.
+
+**Publicação restante:** copiar os documentos para o repositório Windows e conferir o último commit/push. Os detalhes constam no [checklist de entrega](../entrega-checklist.md). Isso não corresponde a uma funcionalidade pendente.
+
+---
+
+## Checkpoint histórico — 22/11/2026 (após US-12)
+
+**No encerramento da US-12**, a API Express/Prisma/SQLite e o frontend React/Vite cobriam autenticação, fluxo do aluno e administração de disciplinas (US-08/US-09), professores (US-10), consulta/abertura de turmas (US-11) e alteração de capacidade de turmas (US-12). As suítes completas passaram com **123 testes em 10 arquivos na API** (13,07 s) e **80 em 10 arquivos no frontend** (11,63 s): **203 testes automatizados em 20 arquivos, 0 falhas**, em execuções separadas. O responsável havia relatado **40 verificações manuais aprovadas** (8 por US-08 a US-12). Os números abaixo descrevem esse marco e não incluem a US-13.
+
+## Situação funcional naquele checkpoint (22/11/2026)
 
 | História | Entrega observada | Evidência automatizada | Limites / próximos cuidados |
 | --- | --- | --- | --- |
@@ -18,6 +51,7 @@
 | US-10 — Consulta e cadastro de professores (MAT-17) | `GET` e `POST /api/secretaria/professores`; listagem, busca por nome/e-mail, paginação e formulário React | 14 testes backend; 11 frontend (6 consulta + 5 cadastro); 8 verificações manuais relatadas | Funcionalmente validada e publicada no GitLab (`8425521`); Jira MAT-17 a conferir. A edição de professores não integra esta história |
 | US-11 — Consulta e abertura de turmas | `GET` e `POST /api/secretaria/turmas`; pesquisa, paginação, capacidade e cadastro vinculando disciplina/professor | 15 testes backend; 14 frontend (6 consulta + 8 abertura); 8 verificações manuais relatadas | Funcionalmente validada; commit/push da US-11 confirmados pelo responsável, hash ainda a registrar |
 | US-12 — Alteração de capacidade de turmas | `PATCH /api/secretaria/turmas/:id/vagas`; atualização condicional e transacional que respeita somente matrículas `ATIVA`; formulário de edição na `TurmasPage` | 10 testes backend; 8 frontend; 8 verificações manuais relatadas | Funcionalmente validada; documentação/commit/push da US-12 ainda em preparação |
+| US-13 — Histórico de cancelamentos | `GET /api/aluno/matriculas/historico`, aba dedicada e preservação de registros `CANCELADA` | 10 cenários API incluídos no consolidado 133/133; 9 testes web com log; 8 manuais relatados | Requisito extra implementado; publicação final a confirmar |
 
 **Atenção à contagem:** os testes da US-02 e de páginas do aluno são contabilizados apenas uma vez no total geral. Os 5 testes de `OfertasPage.test.tsx` atendem US-03/US-04 conjuntamente.
 
@@ -32,6 +66,7 @@
 | `GET` | `/api/aluno/ofertas` | `ALUNO` | Buscar e paginar turmas ofertadas |
 | `POST` | `/api/aluno/matriculas` | `ALUNO` | Realizar matrícula |
 | `GET` | `/api/aluno/matriculas` | `ALUNO` | Consultar matrículas ativas |
+| `GET` | `/api/aluno/matriculas/historico` | `ALUNO` | Consultar histórico paginado de cancelamentos próprios (US-13) |
 | `PATCH` | `/api/aluno/matriculas/:matriculaId/cancelar` | `ALUNO` | Cancelar matrícula própria |
 | `GET` | `/api/aluno/progresso` | `ALUNO` | Consultar progresso curricular |
 | `GET` | `/api/secretaria/disciplinas` | `SECRETARIA` | Listar, pesquisar e paginar disciplinas |
@@ -662,7 +697,7 @@ No `PATCH`, o sucesso retorna `200 OK` com a disciplina atualizada. O código `4
 - **API:** `apps/api/tests/secretaria.disciplinas.test.ts`, 6 testes de cadastro e 11 de edição aprovados. A edição cobre atualização integral/parcial, autorização, ID inválido, inexistência, duplicidade, CH inválida, corpo sem alterações e manutenção do próprio código.
 - **Frontend:** `apps/web/src/pages/secretaria/DisciplinasPage.test.tsx`, 4 testes de cadastro e 7 de edição aprovados. Os novos testes cobrem formulário preenchido, cancelamento, `PATCH`/atualização da lista e da URL, duplicidade, CH inválida, envio pendente e nova tentativa após falha.
 - **Manual:** o responsável informou **8/8 verificações da edição aprovadas**, incluindo cancelamento, persistência após recarregar, erro de código duplicado, carga horária inválida e preservação da busca; somam-se às 8/8 verificações da consulta (US-08).
-- **Escopo:** US-09 funcionalmente concluída e validada. O responsável confirmou o versionamento da etapa; a atualização do Jira MAT-13 ainda precisa ser conferida. O cadastro de professores foi entregue posteriormente na US-10; abertura de turmas, ajuste de vagas e requisito adicional seguem pendentes. Testes de componente e manuais não substituem automaticamente uma suíte E2E reproduzível.
+- **Escopo naquele checkpoint:** US-09 funcionalmente concluída e validada. O responsável confirmou o versionamento da etapa; o cadastro de professores, a abertura/ajuste de turmas e o requisito adicional foram concluídos **posteriormente** nas US-10 a US-13. Testes de componente e manuais não substituem automaticamente uma suíte E2E reproduzível.
 
 ## Consulta e cadastro de professores pela secretaria — US-10 (MAT-17)
 

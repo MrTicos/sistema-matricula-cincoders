@@ -1,29 +1,37 @@
 # Autenticação e autorização — CINCoders
 
-**US-01:** Jira MAT-6
+**Histórias relacionadas:** US-01 (autenticação, Jira MAT-6) e US-02 (interface e controle de acesso, Jira MAT-7)
+**Atualizado em:** 23/11/2026
+**Estado funcional:** implementado e testado; há verificações de segurança complementares ainda não comprovadas
+**ADR:** [0003 — Autenticação por sessão](../adr/0003-autenticacao-por-sessao.md) — decisão técnica adotada e limites de segurança registrados.
 
-**Estado:** Em implementação — login, sessão armazenada em SQLite e autorização por perfil implementados e testados.
+> **Atualização em relação à versão de 21/11:** o React **não está mais planejado**: há login, rotas por perfil, tratamento de sessão expirada e logout na interface. Os endpoints acadêmicos já exercitam autorização por perfil e titularidade. A existência desses controles não implica que os testes específicos de CSRF, HTTPS e reinício de processo tenham sido executados.
 
-**Validação automatizada:** 11 testes aprovados em 21/11/2026 (8 de autenticação e 3 de autorização).
+## 1. Requisito e atores
 
-**ADR relacionada:** `docs/adr/0003-autenticacao-por-sessao.md` (status: **Proposta**).
+O usuário informa `username` e senha. O backend verifica a identidade e cria uma sessão; o frontend o encaminha à área do perfil `ALUNO` ou `SECRETARIA`. Operações protegidas exigem autenticação, e cada perfil só acessa funções autorizadas.
 
-**Atualizado em:** 21/11/2026.
+- **ALUNO:** consulta ofertas, matrículas próprias e histórico de cancelamentos, realiza/cancela matrículas e acompanha o progresso de seu curso.
+- **SECRETARIA:** consulta e administra disciplinas, professores e turmas, inclusive a capacidade das turmas.
+- Um aluno não pode selecionar outro `alunoId` para acessar dados privados; a identidade acadêmica é derivada do usuário autenticado na sessão.
 
-## Requisito
+## 2. Identidades e dados iniciais
 
-O sistema deve autenticar usuários por `username` e senha e diferenciar `ALUNO` de `SECRETARIA`. Usuários não autenticados não podem acessar rotas protegidas. Cada aluno só pode acessar seus próprios dados acadêmicos.
+O modelo `Usuario` registra `id`, `username` único, `nome`, `senhaHash` e `perfil`. Um usuário `ALUNO` possui associação ao seu registro acadêmico e curso.
 
-## Dados e credenciais
+O seed inclui:
 
-O modelo `Usuario` tem `id`, `username` único, `nome`, `senhaHash` e `perfil`. Quando o perfil é `ALUNO`, o registro `Aluno` relaciona esse usuário a um curso. O identificador acadêmico é um ID interno numérico, não o `username`.
+| Perfil | Usuários de desenvolvimento |
+| --- | --- |
+| Secretaria | `secretaria` |
+| Aluno | `aluno.si`, `aluno.cc`, `aluno.ec` e `aluno.si2` |
 
-- O seed cria `secretaria`, `aluno.si`, `aluno.cc`, `aluno.ec` e `aluno.si2`.
-- A senha de desenvolvimento vem da variável local `SEED_PASSWORD` e não deve constar neste documento ou no Git.
-- O seed usa `argon2.hash()` (Argon2id); o login usa `argon2.verify(hash, senha)`.
-- `senhaHash` jamais deve ser enviado ao frontend.
+- A senha comum de desenvolvimento é definida em `SEED_PASSWORD` no `apps/api/.env` local, com no mínimo 12 caracteres.
+- As senhas são derivadas com Argon2id no seed e verificadas com `argon2.verify()` durante o login.
+- Não inserir senha real, `SESSION_SECRET` ou `senhaHash` em documentação, testes versionados, capturas ou logs.
+- O arquivo `.env.example` serve de modelo e deixa as variáveis sensíveis vazias.
 
-## Fluxo de autenticação implementado
+## 3. Fluxo implementado
 
 ```mermaid
 sequenceDiagram
@@ -32,193 +40,201 @@ sequenceDiagram
     participant A as Express
     participant D as Prisma/SQLite
     participant S as Sessões SQLite
-    U->>W: Informa usuário e senha
+    U->>W: Preenche login
     W->>A: POST /api/auth/login
-    A->>D: Busca username
-    D-->>A: Usuário e senhaHash
-    A->>A: argon2.verify()
+    A->>D: Busca usuário
+    D-->>A: Perfil e hash
+    A->>A: Verifica Argon2id
     alt Credenciais válidas
-        A->>A: Regenera o identificador
-        A->>S: Persiste a sessão autenticada
-        A-->>W: Cookie HttpOnly e perfil
+        A->>A: Regenera ID da sessão
+        A->>S: Persiste usuário autenticado
+        A-->>W: 200 + cookie HttpOnly + perfil
+        W-->>U: Abre a área autorizada
     else Credenciais inválidas
         A-->>W: 401 genérico
+        W-->>U: Mostra erro de login
     end
 ```
 
-O diagrama resume o fluxo implementado e parcialmente validado pelos testes HTTP. O React ainda está planejado; os testes atuais exercitam diretamente a API com Supertest. A persistência do registro de sessão em SQLite foi configurada, mas a evidência explícita de continuidade após reiniciar o processo ainda deve ser registrada.
+Após login, requisições autenticadas incluem o cookie de sessão. O servidor obtém a identidade da sessão e o middleware exige o perfil correspondente. O logout destrói a sessão no armazenamento, limpa o cookie e encerra o acesso.
 
-## Endpoints implementados
+### Sessão expirada ou invalidada
 
-| Método | Endpoint | Entrada/saída resumida | Situação |
+Foi corrigido um comportamento observado manualmente: ao sair da conta em uma aba e tentar usar outra aba, a segunda ainda renderizava a área autenticada e exibia `Usuário não autenticado.`. O cliente HTTP compartilhado (`apps/web/src/api/client.ts`) passou a tratar respostas `401` de chamadas protegidas, encaminhando à tela de login.
+
+**Exceções importantes:** o próprio `/api/auth/login` e a verificação inicial `/api/auth/me` precisam tratar `401` conforme seu contexto; a implementação deve preservar essas exceções para não provocar navegação indevida.
+
+A correção foi informada como aprovada nos testes manuais e em três testes adicionais dedicados ao cliente HTTP. Não confundir essa evidência com um teste temporizado real de expiração do cookie após oito horas.
+
+## 4. Contratos HTTP
+
+| Método | Rota | Objetivo | Resultado esperado |
 | --- | --- | --- | --- |
-| `POST` | `/api/auth/login` | Recebe `{ username, senha }`; em sucesso, cria sessão e retorna objeto `usuario` com `{ id, username, nome, perfil }` | Implementado e testado |
-| `GET` | `/api/auth/me` | Retorna a identidade da sessão (`id`, `username`, `perfil`) ou `401` | Implementado e testado |
-| `POST` | `/api/auth/logout` | Destrói sessão, instrui a limpeza do cookie e responde `204` | Implementado e testado |
-| `GET` | `/api/health` | Verificação pública do servidor | Implementado e verificado manualmente |
+| `POST` | `/api/auth/login` | Recebe `username` e `senha` | Em sucesso, cria sessão e retorna identidade/perfil sem `senhaHash`; credenciais inválidas geram `401` |
+| `GET` | `/api/auth/me` | Consulta sessão atual | Identidade autorizada ou `401` |
+| `POST` | `/api/auth/logout` | Invalida sessão e cookie | `204` |
+| `GET` | `/api/health` | Consulta pública de saúde da API | Endpoint público de verificação |
 
-Eventuais mudanças nesses contratos devem ser acompanhadas de atualização dos testes e da documentação. As respostas não devem expor `senhaHash` nem indicar se um `username` existe.
+As rotas das funcionalidades acadêmicas são documentadas em [visão geral da arquitetura](visao-geral.md) e no [README](../../README.md). Os endpoints são protegidos conforme o perfil e a titularidade dos dados.
 
-## Estrutura e responsabilidades
+### Regras de resposta
 
-| Arquivo | Responsabilidade | Estado conhecido |
-| --- | --- | --- |
-| `src/config/database.ts` | Cria e exporta o Prisma Client com adaptador SQLite | Implementado |
-| `src/modules/auth/auth.service.ts` | Busca `username`, verifica senha com Argon2id e retorna dados não sensíveis | Implementado e exercitado pelos testes de integração |
-| `src/config/session.ts` | Configura cookies e armazenamento de sessões em SQLite | Implementado; persistência após reinício requer evidência específica |
-| `src/modules/auth/auth.controller.ts` | Valida entrada HTTP, gerencia sessão e status | Implementado e testado |
-| `src/modules/auth/auth.routes.ts` | Expõe as rotas de login, identidade e logout | Implementado e testado |
-| `src/middlewares/auth.middleware.ts` | Exige autenticação e verifica perfil autorizado | Implementado e testado |
-| `src/types/express-session.d.ts` | Define o formato de `req.session.usuario` no TypeScript | Implementado |
-| `tests/auth.test.ts` | Testes de login, sessão, cookies e logout | 8 testes aprovados |
-| `tests/auth.middleware.test.ts` | Testes de autorização por perfil | 3 testes aprovados |
+1. Rejeitar usuário não autenticado com `401`.
+2. Rejeitar usuário autenticado com perfil não autorizado com `403`.
+3. Evitar diferenciar “usuário inexistente” de “senha incorreta” na resposta de login.
+4. Não expor `senhaHash`, tokens, segredos, stack traces ou dados acadêmicos de terceiros.
+5. Validar propriedades de registros no backend, independentemente do estado dos botões no frontend.
 
-## Controles de segurança
+## 5. Componentes e responsabilidades
 
-1. **Hash:** comparar senhas com `argon2.verify`; não salvar nem registrar senhas em logs.
-2. **Falha genérica:** retornar `401` para credenciais inválidas; não diferenciar usuário inexistente de senha errada.
-3. **Sessão:** cookie `HttpOnly`, `SameSite=Lax` e `Secure` em HTTPS; configurar tempo limite e segredo por ambiente.
-4. **Fixação de sessão:** regenerar identificador após login bem-sucedido.
-5. **Logout:** destruir a sessão no armazenamento e limpar o cookie com opções compatíveis.
-6. **Persistência:** `express-session` utiliza `@bleed-believer/connect-sqlite3` com `better-sqlite3`, substituindo o `MemoryStore`. Os dados acadêmicos não são armazenados no banco de sessões.
-7. **CSRF:** avaliar proteção de requisições mutáveis que usam cookies, além de `SameSite`.
-8. **Autorização:** verificar perfil (`SECRETARIA`/`ALUNO`) em todas as rotas protegidas; recuperar o `alunoId` a partir da sessão e nunca confiar no ID fornecido pelo cliente para consultar dados privados.
-9. **CORS:** permitir explicitamente a origem do frontend e credenciais; não usar `*` com cookies.
-10. **Erros e observabilidade:** não expor stack traces, segredos nem hashes em respostas.
+| Arquivo | Responsabilidade |
+| --- | --- |
+| `apps/api/src/config/database.ts` | Inicializa Prisma com adaptador SQLite |
+| `apps/api/src/config/session.ts` | Configura cookie, segredo e armazenamento persistente de sessões |
+| `apps/api/src/modules/auth/auth.service.ts` | Verifica credenciais usando Argon2id |
+| `apps/api/src/modules/auth/auth.controller.ts` | Controla login, sessão atual e logout |
+| `apps/api/src/modules/auth/auth.routes.ts` | Define rotas de autenticação |
+| `apps/api/src/middlewares/auth.middleware.ts` | Aplica autenticação e autorização por perfil |
+| `apps/api/src/types/express-session.d.ts` | Tipagem de `req.session.usuario` |
+| `apps/web/src/api/client.ts` | Cliente HTTP compartilhado e tratamento de `401` |
+| `apps/web/src/pages/LoginPage.tsx` | Formulário de login e apresentação de erros |
+| `apps/web/src/routes/AppRoutes.tsx` | Navegação e proteção de áreas por perfil |
+| `apps/web/src/components/LogoutButton.tsx` | Encerramento de sessão pela interface |
 
-### Armazenamento das sessões
+Verificar nomes e caminhos na cópia do repositório caso haja refatoração posterior.
 
-- `sessions.db`: sessões do ambiente de desenvolvimento.
-- `sessions.test.db`: sessões utilizadas nos testes automatizados (`NODE_ENV=test`).
-- O cookie `cincoders.sid` armazena o identificador da sessão; os dados autenticados permanecem no servidor.
-- `SESSION_SECRET` é configurado por variável de ambiente e precisa permanecer constante durante reinícios para que cookies anteriores possam ser validados.
-- O cookie expira em oito horas conforme a configuração atual (`maxAge`).
-- Os arquivos `.db` e auxiliares (`.db-wal`, `.db-shm`, `.db-journal`), bem como `.env`, não devem ser versionados.
+## 6. Cookies, armazenamento e variáveis
 
-**Observação:** a criação de `sessions.db` e `sessions.test.db` foi confirmada com `Test-Path`, mas a criação dos arquivos, isoladamente, não demonstra persistência da sessão após reinício. A comprovação exige login, reinício da API e consulta a `/api/auth/me` usando o mesmo cookie sem novo login.
+Conforme a configuração compartilhada de `apps/api/src/config/session.ts`:
 
-### Segurança: o que falta verificar
+| Item | Configuração |
+| --- | --- |
+| Nome do cookie | `cincoders.sid` |
+| `httpOnly` | `true` |
+| `sameSite` | `lax` |
+| `secure` | `true` quando `NODE_ENV=production` |
+| Validade máxima | 8 horas |
+| Armazenamento em desenvolvimento | `sessions.db`, no diretório de execução da API |
+| Armazenamento em testes | `sessions.test.db` quando `NODE_ENV=test` |
+| Segredo | `SESSION_SECRET`, mínimo de 32 caracteres, configurado localmente |
 
-- O atributo `Secure` está configurado para `NODE_ENV=production`, mas ainda não foi validado em HTTPS; em HTTP local não se espera esse atributo.
-- `SameSite=Lax` reduz alguns riscos, porém não substitui uma proteção contra CSRF nas operações que alteram dados.
-- A autorização por **propriedade dos registros acadêmicos** depende dos futuros endpoints de matrícula, histórico e progresso; verificar o `alunoId` obtido do usuário autenticado, não apenas um ID fornecido pelo cliente.
+O cookie armazena uma referência à sessão, enquanto os dados autenticados ficam no servidor. O armazenamento é SQLite, por meio de `express-session` e `@bleed-believer/connect-sqlite3`; não usar `MemoryStore` como solução persistente.
 
-## Critérios Gherkin
+**Observação:** a presença de `sessions.db` e `sessions.test.db` não comprova, por si só, que uma sessão continua válida depois de encerrar e reiniciar o processo da API. Esse cenário requer ensaio específico com o mesmo cookie.
+
+## 7. Segurança e limites conhecidos
+
+### Controles implementados e evidenciados
+
+- [x] Senhas armazenadas com Argon2id e conferidas no login.
+- [x] Mensagem genérica para credenciais inválidas.
+- [x] Middleware protegendo rotas por autenticação e perfil.
+- [x] Sessões armazenadas em SQLite e regeneração de identificador após login.
+- [x] Cookie com atributos `HttpOnly` e `SameSite=Lax` testados.
+- [x] Logout destruindo sessão e enviando limpeza de cookie.
+- [x] Autorização por titularidade nas rotas acadêmicas, contemplada nas suítes de matrícula/consulta/cancelamento/progresso/histórico.
+- [x] Tratamento de `401` pelo cliente web, com redirecionamento ao login conforme validação relatada.
+
+### Recomendações para implantação futura
+
+- **Reinício:** demonstrar persistência da mesma sessão depois de reiniciar a API com banco e segredo intactos.
+- **HTTPS:** conferir emissão e envio do cookie `Secure` em ambiente HTTPS real.
+- **CSRF:** definir/testar mitigação para requisições mutáveis autenticadas por cookie; `SameSite=Lax` não é proteção completa.
+- **Expiração por tempo:** automatizar o cenário de cookie efetivamente expirado após o prazo.
+- **Cobertura adicional:** testar individualmente todos os usuários do seed, se necessário.
+
+Essas verificações **não foram declaradas como executadas**. Constituem limites transparentes de uma entrega acadêmica funcional, não checkboxes esquecidos de uma User Story.
+
+## 8. Critérios de aceitação em Gherkin
 
 ```gherkin
-Funcionalidade: Login e controle de acesso
-
+Funcionalidade: Autenticação e autorização
   Cenário: Login válido
-    Dado que existe um usuário com senha cadastrada
-    Quando informa username e senha corretos
-    Então a API cria uma sessão válida
-    E retorna seu perfil sem senhaHash
+    Dado que existe um usuário cadastrado com senha válida
+    Quando informa seu username e sua senha
+    Então a API cria uma sessão
+    E devolve perfil e identidade sem senhaHash
 
-  Cenário: Login inválido
-    Quando informa credenciais incorretas
-    Então a API responde com status 401
-    E não informa qual credencial está incorreta
+  Cenário: Credenciais inválidas
+    Quando informa um username inexistente ou senha incorreta
+    Então a API responde 401 sem identificar qual credencial falhou
 
-  Cenário: Usuário inexistente
-    Quando informa um username inexistente e qualquer senha
-    Então a API responde com status 401
-    E apresenta a mesma mensagem genérica de credenciais inválidas
+  Cenário: Acesso sem sessão
+    Dado que não estou autenticado
+    Quando solicito um endpoint acadêmico protegido
+    Então recebo 401
 
-  Cenário: Usuário não autenticado
-    Dado que não existe uma sessão válida
-    Quando solicita uma rota protegida
-    Então a API responde com status 401
+  Cenário: Acesso com perfil incorreto
+    Dado que estou autenticado como aluno
+    Quando tento executar uma operação exclusiva da secretaria
+    Então recebo 403
 
-  Cenário: Aluno tenta acessar registros de outro aluno
-    Dado que um aluno está autenticado
-    Quando solicita um registro acadêmico pertencente a outro aluno
-    Então a API nega o acesso
+  Cenário: Acesso aos dados de outro aluno
+    Dado que estou autenticado como aluno A
+    Quando tento consultar ou alterar um registro pertencente ao aluno B
+    Então o servidor não expõe nem altera esse registro
 
   Cenário: Logout
-    Dado que o usuário está autenticado
-    Quando solicita o logout
+    Dado que estou autenticado
+    Quando aciono sair
     Então a sessão é invalidada
-    E uma nova chamada a /api/auth/me retorna 401
+    E a próxima consulta autenticada não é autorizada
 
-  Cenário: Cookie protegido
-    Dado que existe um usuário com credenciais válidas
-    Quando realiza login
-    Então o cookie da sessão possui HttpOnly e SameSite=Lax
+  Cenário: Sessão invalidada em outra aba
+    Dado que tenho duas abas autenticadas
+    Quando saio do sistema em uma delas
+    E realizo uma consulta protegida na segunda
+    Então sou encaminhado ao login
 
-  Cenário: Sessão após reinício da API
-    Dado que o usuário realizou login e recebeu um cookie válido
-    Quando a API é reiniciada mantendo o segredo e o banco de sessões
-    Então /api/auth/me continua autenticado sem um novo login
+  Cenário: Sessão após reinício (ainda requer evidência)
+    Dado que realizei login e preservei o cookie
+    Quando a API reinicia com o mesmo banco de sessões e segredo
+    Então posso consultar /api/auth/me sem fazer novo login
 ```
 
-## Testes de autenticação e autorização
+## 9. Evidências de testes
 
-### Evidência automatizada — 21/11/2026
+| Camada | Arquivo / conjunto | Evidência |
+| --- | --- | --- |
+| API | `tests/auth.test.ts` | 8 testes aprovados |
+| API | `tests/auth.middleware.test.ts` | 3 testes aprovados |
+| Web | `src/pages/LoginPage.test.tsx` | 4 testes aprovados |
+| Web | `src/routes/AppRoutes.test.tsx` | 4 testes aprovados |
+| Web | `src/components/LogoutButton.test.tsx` | 3 testes aprovados |
+| Web | `src/api/client.test.ts` | 3 testes adicionados para comportamento de `401`; incluídos nos 95 |
 
-Executados com Vitest 5.1.1 e Supertest, utilizando o banco SQLite de teste:
+**Escopo da contagem:** os 11 primeiros são os testes diretos de autenticação/autorização da API. Os testes de rotas, logout e cliente HTTP fazem parte da suíte web geral. As verificações de titularidade também aparecem em outras suítes API. Não somar subconjuntos novamente ao total de **133 testes API + 95 testes web**.
 
-| Arquivo / categoria | Testes | Resultado |
-| --- | ---: | --- |
-| `tests/auth.test.ts` — autenticação, sessão e cookies | 8 | Aprovados |
-| `tests/auth.middleware.test.ts` — autorização por perfil | 3 | Aprovados |
-| **Total** | **11** | **11 aprovados; 0 falhas** |
+### Execução recomendada
 
-**Comando da suíte completa:** `pnpm exec vitest run`.
+Em `apps/api/`, usar **somente um banco de teste preparado**:
 
-### Cenários automatizados aprovados
+```powershell
+$env:DATABASE_URL = "file:./test.db"
+pnpm exec tsc --noEmit
+pnpm exec vitest run --no-file-parallelism
+Remove-Item Env:DATABASE_URL
+```
 
-- [x] `/api/auth/me` sem autenticação retorna `401`.
-- [x] Senha incorreta retorna `401` com mensagem genérica.
-- [x] Login de `aluno.si` retorna perfil `ALUNO`, sem `senhaHash`, e mantém sessão válida.
-- [x] Logout invalida a sessão; `/me` posterior retorna `401`.
-- [x] Username inexistente retorna `401` com a mesma mensagem genérica.
-- [x] Cookie criado no login inclui `HttpOnly` e `SameSite=Lax`.
-- [x] Novo login regenera o identificador da sessão (comparação entre dois logins).
-- [x] Logout envia instrução de limpeza do cookie.
-- [x] Cliente não autenticado recebe `401` em rota protegida.
-- [x] Aluno recebe `403` em rota exclusiva da secretaria.
-- [x] Secretaria recebe `200` em rota autorizada.
+Em `apps/web/`:
 
-**Limite da evidência de autorização:** os três últimos cenários usam uma rota criada somente para os testes; os endpoints administrativos de produção ainda não foram validados.
+```powershell
+pnpm lint
+pnpm exec tsc -b
+pnpm exec vitest run
+```
 
-### Testes manuais e configuração
+**Resultados comunicados em 23/11/2026:** API **133/133** (11 arquivos), web **95/95** (12 arquivos), além de validações manuais do logout e sessão invalidada em outra aba. As duas suítes são independentes e não constituem teste E2E.
 
-| Teste | Evidência / resultado |
-| --- | --- |
-| Login de `aluno.si` | HTTP 200 e perfil `ALUNO` |
-| Consulta a `/api/auth/me` com cookie válido | Usuário autenticado retornado |
-| Logout e nova consulta a `/me` | Acesso negado corretamente (`401`) |
-| `Test-Path .\sessions.db` | `True` — arquivo criado |
-| `Test-Path .\sessions.test.db` | `True` — arquivo de testes criado |
-| Consulta a `/me` depois de reiniciar a API | Aguardando registro explícito do resultado sem novo login |
+## 10. Encerramento documental
 
-### Testes e verificações pendentes
+A autenticação e o controle de acesso estão **funcionalmente implementados e testados**. Revisão documental concluída:
 
-- [ ] Login automatizado com `aluno.cc`, `aluno.ec` e `aluno.si2`.
-- [ ] Confirmar persistência da sessão após reiniciar a API usando o mesmo cookie.
-- [ ] Verificar `Secure` em ambiente HTTPS de produção.
-- [ ] Definir e validar proteção contra CSRF nas requisições que alteram estado.
-- [ ] Testar expiração da sessão e impossibilidade de reutilizar o cookie expirado.
-- [ ] Impedir que um aluno consulte registros acadêmicos de outro aluno quando os endpoints existirem.
+- [x] ADR-0003 atualizada para descrever a estratégia adotada e suas limitações.
+- [x] Evidências de segurança que foram realmente testadas separadas das recomendações futuras.
+- [x] README e documentação das rotas de autenticação atualizados.
+- [x] Correção de navegação ao login após `401` registrada junto aos testes do cliente HTTP.
 
-## Resultados da implementação — 21/11/2026
+**Commit/push e Jira:** são atos de publicação/acompanhamento, a verificar depois do envio dos arquivos ao repositório; não foram executados nesta revisão.
 
-**Funcionalidades comprovadas:** validação Argon2id, login, consulta de sessão, logout, autorização por perfil, atributos `HttpOnly`/`SameSite=Lax`, troca de ID entre logins e limpeza de cookie.
-
-**Situação:** autenticação com 11 testes aprovados; o armazenamento persistente SQLite está integrado e os arquivos de sessão foram criados, mas os controles de CSRF/HTTPS e a autorização por propriedade acadêmica ainda não foram integralmente validados.
-
-## Pendências para a entrega e Definition of Done
-
-- [x] Endpoints de login, `/me` e logout implementados.
-- [x] Middleware de autenticação e autorização por perfil implementado.
-- [x] Testes automatizados de autenticação e autorização aprovados (11/11).
-- [x] Armazenamento de sessões em SQLite configurado, sem `MemoryStore`.
-- [x] Testes de `HttpOnly`, `SameSite=Lax`, regeneração do ID e limpeza de cookie aprovados.
-- [ ] Registrar evidência do cenário de reinício do servidor.
-- [ ] Revisar e testar CSRF nas rotas mutáveis.
-- [ ] Validar `Secure` em HTTPS e testar os demais usuários do seed.
-- [ ] Verificar isolamento de dados acadêmicos quando as rotas correspondentes estiverem implementadas.
-- [ ] Atualizar `docs/testes/plano-de-testes.md`, Sprint 1 e ADR-0003 conforme as decisões finais.
-- [ ] Verificar commit, push e atualização do Jira MAT-6.
-
-**Status da US-01:** em andamento. A ADR-0003 permanece **Proposta** até a conclusão da revisão de segurança.
+Consultar [plano de testes](../testes/plano-de-testes.md) para a matriz completa.

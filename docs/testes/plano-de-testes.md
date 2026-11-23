@@ -1,6 +1,67 @@
 # Plano de Testes — Sistema de Matrícula CINCoders
 
-## Checkpoint atual — 22/11/2026
+**Estado em 23/11/2026:** testes e validações funcionais informados como concluídos; **133/133 testes API**, **95/95 testes web** e **48 verificações manuais** aprovadas. Este documento mantém os checkpoints anteriores como registro histórico, não como tarefas ainda abertas.
+
+## Checkpoint de entrega — após US-13 e ajustes de navegação
+
+**Fonte:** logs de terminal e verificações manuais compartilhados pelo responsável. A US-13 acrescentou o histórico de matrículas canceladas e foi validada com **9 testes frontend dedicados** (`HistoricoMatriculas.test.tsx`, log 9/9), **10 testes backend** incluídos na suíte integral **133/133 em 11 arquivos** e **8 verificações manuais** informadas como aprovadas. No frontend, houve log integral de **92/92 em 11 arquivos** (após CT-06 de Ofertas, Matrículas e Progresso) e, posteriormente, **três novos testes dedicados ao cliente HTTP**, com aprovação geral informada como **95 testes em 12 arquivos**. O histórico manual informado totaliza **48 verificações** (8 para cada US-08 a US-13).
+
+**Validação de instalação do banco:** o responsável criou o arquivo isolado `readme-validacao.db` via `DATABASE_URL=file:./readme-validacao.db` em `apps/api`, executou `pnpm exec prisma migrate deploy` (criação do SQLite e aplicação de `20261121010456_init`), `pnpm exec prisma generate` (Client 7.10.1 gerado) e `pnpm exec prisma db seed` (3 cursos, 4 alunos, 1 secretaria, 6 disciplinas, 2 professores e 7 turmas), todos com conclusão positiva nos logs compartilhados. **Esse ensaio valida o banco novo e não representa um clone/instalação integral nem garante o início dos servidores.** O banco `dev.db` não foi selecionado nesses comandos.
+
+**Validação de inicialização local:** após remover a substituição de `DATABASE_URL`, o usuário confirmou que a configuração voltou a `file:./dev.db` e que tanto `http://localhost:3001/api/health` quanto `http://localhost:5173` funcionaram. Resultado: health check e apresentação da tela de login aprovados conforme relato. Em seguida, o responsável confirmou os testes manuais das telas do aluno em **360px**, a recuperação após falhas de rede e o redirecionamento após sessão invalidada. O teste de responsividade não foi automatizado.
+
+**Correção de falhas temporárias de rede:** o teste offline de Ofertas mostrou `Failed to fetch` sem ação de **Tentar novamente**. Após implementar mensagem amigável, retry e CT-06, o responsável confirmou aprovação dos testes focados, lint, TypeScript **e reteste manual offline/online**. O mesmo tratamento foi incluído em Matrículas e Progresso. Os três CT-06 passaram primeiro na suíte web **92/92** (10,48 s) e, com os testes do cliente HTTP adicionados, na confirmação posterior de **95/95**. A imagem inicial com possível recorte do botão de pesquisa não demonstrou um bug reproduzível após a validação manual em 360px.
+
+**Regressão manual de expiração da sessão (23/11/2026): falha reproduzida e corrigida.** O responsável abriu a aplicação autenticado em duas abas, encerrou a sessão em uma delas e navegou na aba antiga sem recarregá-la. Inicialmente, as áreas de Ofertas, Matrículas e Progresso exibiram `Usuário não autenticado.` e **Tentar novamente**, sem redirecionamento. O cliente HTTP passou a distinguir `401` de falhas de rede, redirecionando endpoints protegidos para `/login` e preservando os erros de autenticação do formulário. **O responsável confirmou aprovação dos testes manuais e automatizados após a correção**, inclusive dos **três novos cenários de `client.test.ts`**. Uma captura do log integral atualizado pode ser arquivada como evidência adicional.
+
+| Evidência | Situação | Cuidados |
+| --- | --- | --- |
+| Backend completo após US-13 | **133/133 em 11 arquivos aprovados** (28,94 s) | `pnpm exec vitest run --no-file-parallelism` em `test.db`, 23/11/2026; TypeScript aprovado e configuração `dev.db` restaurada |
+| Backend US-13 isolada | **10 cenários em `matriculas.historico.test.ts`** | Incluídos nos 133, não somar novamente |
+| Frontend completo após sessão expirada | **95 testes em 12 arquivos aprovados, conforme relato** | Inclui três novos testes do cliente HTTP; último log integral apresentado em texto na conversa: 92/92 em 11 arquivos (10,48 s) |
+| Frontend US-13 isolada | **9/9 aprovados** | Incluídos nos 92, não somar novamente |
+| Manuais US-08 a US-13 | **48 verificações aprovadas conforme relato** | Oito por história, não somar aos testes Vitest |
+
+### US-13 — Histórico de matrículas canceladas (requisito adicional)
+
+**Objetivo:** comprovar que o aluno vê somente suas próprias matrículas `CANCELADA`, preservadas mesmo quando se matricula novamente, e que a interface mostra as informações com paginação sem confundir com matrículas `ATIVA`.
+
+| Camada | Evidência e cobertura | Estado |
+| --- | --- | --- |
+| API — `tests/matriculas.historico.test.ts` | Dez novos cenários: autenticação, autorização de perfil, titularidade, filtro por `CANCELADA`, paginação/ordem, situações vazias e parâmetros inválidos; conferir os nomes exatos no arquivo ao revisar o repositório | **10/10 aprovados**, incluídos na suíte API completa **133/133** |
+| Web — `src/pages/aluno/HistoricoMatriculas.test.tsx` | CT-01 consultar/exibir; CT-02 carregamento; CT-03 vazio; CT-04 erro; CT-05 tentar novamente; CT-06 avançar/voltar; CT-07 esconder paginação com uma página; CT-08 data ausente; CT-09 carregar somente ao selecionar a aba | **9/9 aprovados**, 2,53 s (focado); incluídos nos 89/89 |
+| Manual — navegador | Oito cenários de acesso à aba, dados do histórico, navegação, erro, estados vazios, isolamento e consistência informados como verificados | **8/8 aprovadas conforme relato** |
+
+### Regressão de navegação e visual — resultados comunicados
+
+- [x] **Disciplinas, Professores e Turmas** permanecem visíveis nas páginas administrativas, com item ativo destacado; âncoras `<a>` aninhadas foram corrigidas.
+- [x] **Ofertas, Minhas matrículas e Progresso** estão presentes na navegação do aluno; verificação em 360px informada como aprovada.
+- [x] Tabelas e cartões administrativos tiveram sua largura revista para permitir a consulta adequada, conforme validação manual.
+- [x] Falhas de comunicação em **Ofertas, Minhas matrículas e Progresso** exibem mensagem e permitem tentar novamente; testes automatizados e manuais aprovados.
+- [x] Sessão invalidada em outra aba leva à tela de login numa requisição protegida; testes do cliente HTTP e reteste manual aprovados.
+
+**Melhoria futura independente:** ampliar testes automatizados de navegação por teclado e acessibilidade, que não foram declarados como realizados.
+
+### Comandos de reprodução das suítes aprovadas
+
+```powershell
+cd C:\dev\sistema-matricula-cincoders\apps\api
+$env:DATABASE_URL = "file:./test.db"
+pnpm exec tsc --noEmit
+pnpm exec vitest run --no-file-parallelism
+Remove-Item Env:DATABASE_URL
+
+cd C:\dev\sistema-matricula-cincoders\apps\web
+pnpm lint
+pnpm exec tsc -b
+pnpm exec vitest run
+```
+
+**Banco seguro:** conferir que `DATABASE_URL` aponta explicitamente para o SQLite de **testes** antes de rodar as suítes que criam e excluem registros. O teste abortar quando a URL não contém `test` é proteção intencional; não desativá-la. Registrar os totais reais e o commit exato da versão validada.
+
+---
+
+## Checkpoint histórico — 22/11/2026 (após US-12)
 
 **Fonte da evidência:** logs de `pnpm exec vitest run` apresentados pelo responsável do projeto em `apps/api` e `apps/web`, resultados de lint/TypeScript e **40 verificações manuais** relatadas como aprovadas: 8 da consulta de disciplinas (US-08), 8 da edição de disciplinas (US-09), 8 de professores (US-10), 8 da consulta/abertura de turmas (US-11) e 8 do ajuste de capacidade (US-12). Os testes de integração HTTP, de componentes e as verificações manuais são contabilizados separadamente. A US-10 possui commit/push confirmado (`8425521`); o responsável também confirmou commit/push da US-11, sem fornecer hash.
 
@@ -123,7 +184,7 @@ Os cinco testes de ofertas/matrícula são uma única suíte: **não** somar cin
 
 **Total US-12:** **18 testes automatizados novos** (10 backend + 8 frontend), incluídos nos **203 do projeto**, e **8 verificações manuais informadas como concluídas**, somadas às 32 anteriores para **40**. Os resultados de lint e TypeScript foram aprovados nas duas aplicações. A aprovação manual é relatada pelo responsável, não equivale a gravação de navegador nem a automação E2E.
 
-**Situação:** **US-12 funcionalmente concluída e validada**; documentação, commit/push e chave Jira ainda a conferir. O requisito funcional adicional continua pendente.
+**Situação naquele checkpoint (22/11):** US-12 funcionalmente concluída e validada; o requisito adicional **ainda não estava entregue naquela data**. A US-13 foi concluída depois e aparece no consolidado final do início deste documento.
 
 **O que esses resultados não provam isoladamente:** proteção CSRF, cookie `Secure` em HTTPS, persistência da sessão após reinício, acessibilidade, responsividade a 360px, testes de carga ou uma disputa concorrente ampliada entre matrícula e ajuste de capacidade. Ainda não há uma suíte E2E automatizada reproduzível para os fluxos da secretaria.
 
@@ -226,19 +287,19 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 
 **Entrada:** schema válido, migrações aplicadas no banco de teste, Prisma Client gerado, API inicializada e fixtures disponíveis.
 
-**Saída/Definition of Done de cada User Story:**
+**Saída/Definition of Done funcional — consolidado em 23/11/2026:**
 
-- [ ] Critérios de aceitação Gherkin exercitados.
+- [x] Critérios de aceitação Gherkin relevantes exercitados nas suítes e validações manuais informadas.
 
-- [ ] Casos felizes e principais falhas/limites cobertos.
+- [x] Casos felizes e principais falhas/limites cobertos.
 
-- [ ] Nenhum teste crítico falha.
+- [x] Nenhum teste crítico falha nas execuções compartilhadas (133 API e 95 web).
 
-- [ ] Rotas não vazam `senhaHash`, dados de outro aluno ou segredos.
+- [x] Rotas testadas não expõem `senhaHash` ou dados acadêmicos de outro aluno.
 
-- [ ] Documentação e evidências atualizadas.
+- [x] Documentação e evidências consolidadas com a modelagem física conferida.
 
-- [ ] Commit/push verificados e Jira atualizado.
+**Publicação e gestão:** commit/push da versão final e atualização Jira são verificações operacionais independentes, a conferir após copiar os documentos. Não são testes funcionais em aberto.
 
 ## 5. Matriz de rastreabilidade
 
@@ -658,11 +719,11 @@ pnpm exec vitest run
 | 21/11/2026 | `prisma migrate status` com `DATABASE_URL=file:./test.db` | Banco `test.db` identificado; schema atualizado | Passou |
 | 21/11/2026 | `pnpm exec vitest run tests/matriculas.test.ts` | 12 casos aprovados, incluindo concorrência por última vaga | Passou |
 | 21/11/2026 | `pnpm exec vitest run` | **4 arquivos, 32 testes (11 autenticação/autorização + 9 ofertas + 12 matrículas), 0 falhas; duração 2,55 s** | **Passou** |
-| A confirmar | Sessão mantida após reiniciar a API | Registrar resposta de `/api/auth/me` sem novo login | Pendente de evidência explícita |
-| — | CSRF e atributo `Secure` em HTTPS | Ainda não testados | Pendente |
-| — | Isolamento acadêmico entre alunos | Ofertas e matrícula derivam identidade da sessão; testes de titularidade de registros privados ainda pendentes | Parcial |
-| — | Cancelamento via API, progresso e demais regras de negócio | Matrícula testada; demais módulos ainda pendentes | Pendente |
-| — | Interface em largura de 360px | Frontend ainda não validado | Pendente |
+| Evolução futura | Sessão mantida após reiniciar a API | Registro não apresentado | Não testado especificamente |
+| Evolução futura | CSRF e atributo `Secure` em HTTPS | Verificação destinada à implantação em produção | Não testado especificamente |
+| Concluído após 21/11 | Isolamento acadêmico entre alunos | Coberto posteriormente nas suítes de matrículas, cancelamento, progresso e US-13 | **Aprovado posteriormente** |
+| Concluído após 21/11 | Cancelamento via API, progresso e demais regras de negócio | US-06/US-07/US-13 implementadas e testadas | **Aprovado posteriormente** |
+| Concluído após 21/11 | Interface em largura de 360px | Validação manual confirmada pelo responsável | **Aprovado posteriormente** |
 
 ### 8.1. Evidências detalhadas da US-01 — 21/11/2026
 
@@ -694,7 +755,7 @@ Os três testes de autorização por perfil utilizam uma **rota exclusiva do amb
 
 - `SameSite=Lax` não é prova suficiente de proteção contra CSRF; o cenário T-32 permanece aberto.
 
-- Não há cobertura de autorização por propriedade dos dados acadêmicos (T-05) enquanto os endpoints correspondentes não existirem.
+- **Nota histórica (21/11):** naquele momento não havia cobertura de titularidade acadêmica. Os testes das US-05, US-06, US-07 e US-13 acrescentaram essa verificação posteriormente.
 
 ### 8.3. Situação da Definition of Done da US-01
 
@@ -710,19 +771,14 @@ Os três testes de autorização por perfil utilizam uma **rota exclusiva do amb
 
 - [x] Atributos `HttpOnly` e `SameSite=Lax`, regeneração do ID e limpeza do cookie testados.
 
-- [ ] Evidência formal da sessão após reinício da API.
-
-- [ ] Proteção contra CSRF revisada e validada.
-
-- [ ] Atributo `Secure` validado em HTTPS.
-
-- [ ] Isolamento de dados acadêmicos validado quando as rotas estiverem disponíveis.
+- [x] Isolamento de dados acadêmicos validado posteriormente nas suítes de matrículas, cancelamento, progresso e histórico de cancelamentos.
 
 - [x] Commit/push da autenticação verificados no GitLab (`847ddc8`).
 
-- [ ] Jira MAT-6 atualizado e demais critérios pendentes encerrados.
+- **Segurança além do escopo validado:** continuidade da sessão após reinício, CSRF e `Secure` sob HTTPS são verificações futuras descritas na ADR-0003; não foram apresentadas como testes aprovados.
+- **Jira MAT-6:** estado do ticket não foi verificado nesta revisão documental.
 
-**Status da US-01:** em andamento; não marcar como concluída apenas pelo resultado de 11/11 testes.
+**Status da US-01:** funcionalmente implementada e testada; este bloco contém os resultados da etapa original, complementados pelas suítes posteriores. A publicação inicial de autenticação foi registrada no GitLab (`847ddc8`).
 
 ### US-03 — Consulta de ofertas — 21/11/2026
 
@@ -764,7 +820,7 @@ Cenários validados:
 
 - [x] Validar a atualização da ocupação após matrícula (CT-12 da US-04).
 
-- [ ] Validar a liberação da vaga após cancelamento via API (US-06).
+- [x] Liberação de vaga após cancelamento validada na suíte de API da US-06 (CT-08).
 
 ### 8.4. US-04 — Realização de matrícula — 21/11/2026
 
@@ -795,7 +851,7 @@ Cenários validados:
 
 **Limites da evidência:**
 
-- O CT-09 simula o cancelamento por atualização direta do registro no SQLite; **não** valida um endpoint HTTP de cancelamento, ainda pendente na US-06.
+- No checkpoint da US-04, o CT-09 simulava cancelamento diretamente no SQLite e **não** testava o endpoint HTTP. A US-06 implementou e validou posteriormente esse endpoint, incluindo a liberação da vaga (CT-08).
 
 - O CT-10 passou em uma disputa simultânea de duas requisições. Não representa testes prolongados de concorrência/carga ou múltiplas instâncias da API.
 
@@ -1035,7 +1091,7 @@ Consulta:
 
 **Verificações manuais (8/8):** o responsável informou ter concluído com sucesso a navegação para a página, consulta de professores, pesquisa por nome e por e-mail, cadastro válido, rejeição de e-mail duplicado, validação de dados e funcionamento de URL/paginação. Relato de aprovação manual não deve ser confundido com captura automática de evidências E2E.
 
-**Status naquele checkpoint:** **US-10 funcionalmente concluída, validada e publicada no GitLab**, commit `8425521`; atualização Jira MAT-17 a conferir. A US-11 e a US-12 foram validadas posteriormente; o requisito adicional permanece pendente.
+**Status naquele checkpoint:** **US-10 funcionalmente concluída, validada e publicada no GitLab**, commit `8425521`; atualização Jira MAT-17 a conferir. A US-11, a US-12 e o requisito adicional US-13 foram concluídos posteriormente, conforme consolidado do início do documento.
 
 ### 8.12. US-11 — Consulta e abertura de turmas — 22/11/2026
 
@@ -1120,7 +1176,7 @@ Abertura:
 
 **Validação adicional recomendada antes da entrega:** ensaio concorrente envolvendo aumento de matrículas e redução de vagas, revisão de responsividade a 360px e proteção CSRF. O `UPDATE` condicional na transação fornece defesa de integridade na operação de alteração, mas os dez testes atuais não são um teste de estresse ou simulação de todos os interleavings possíveis.
 
-**Status:** **US-12 funcionalmente implementada, testada e validada manualmente conforme relato**. Commit/push da US-12 e chave Jira ainda a registrar; requisito funcional adicional e revisão final do MVP permanecem pendentes.
+**Status naquele checkpoint:** US-12 funcionalmente implementada, testada e validada manualmente. Posteriormente, a US-13, os testes finais e a revisão documental foram concluídos conforme o consolidado de 23/11/2026. O estado do último commit/push é verificado na publicação, fora deste plano de testes.
 
 ## 9. Priorização e riscos
 

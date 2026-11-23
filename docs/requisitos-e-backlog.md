@@ -1,163 +1,203 @@
-# Sistema de Matrícula CINCoders — requisitos e backlog inicial
+# Sistema de Matrícula CINCoders — Requisitos e backlog
 
-**Versão:** 0.1 (21/11/2026)  
-**Responsável:** Thiago Silva  
-**Origem:** teste prático da Seleção nº 5/2026, CIn-UFPE  
-**Situação:** linha de base para revisão antes da implementação  
-**Prazo de entrega informado:** 23/11/2026
+**Versão documental:** 1.0 — revisão para entrega
+**Atualizado em:** 23/11/2026
+**Responsável:** Thiago Silva
+**Origem:** teste prático da Seleção nº 5/2026, CIn-UFPE
+**Prazo de entrega:** 23/11/2026
+**Estado:** requisitos mínimos e requisito adicional **US-13** implementados e validados conforme evidências relatadas; acesso do avaliador ao GitLab confirmado pelo responsável. Documentação pronta para commit/push final.
+
+> **Histórico:** a versão 0.1, de 21/11/2026, era um backlog *antes* da implementação. Este documento atualiza a rastreabilidade sem apagar as regras e os critérios de aceitação originais. As evidências estão em [Sprint 1](sprints/sprint-1.md) e [plano de testes](testes/plano-de-testes.md).
 
 ## 1. Visão do produto e escopo
 
-Construir uma aplicação web de matrícula de graduação com dois perfis: a **Secretaria**, responsável por disciplinas, professores e turmas, e o **Aluno**, responsável por consultar ofertas, matricular-se, cancelar suas matrículas e acompanhar a carga horária curricular.
+Construir uma aplicação web de matrícula para graduação, com dois perfis:
 
-O valor principal é tornar as regras acadêmicas explícitas e verificáveis, tanto na API como na experiência do usuário. O teste avalia especialmente legibilidade, modelagem, validações, testes, histórico de commits e capacidade de explicar decisões.
+- **Secretaria de Graduação:** consulta, cadastra e edita disciplinas; consulta/cadastra professores; consulta, abre e ajusta a capacidade das turmas.
+- **Aluno:** consulta ofertas de disciplinas e vagas, realiza e cancela matrículas, acompanha suas matrículas ativas, visualiza o progresso curricular e, como requisito adicional, consulta seu histórico de cancelamentos.
 
-### Premissas e limites impostos pelo teste
+A aplicação busca tornar verificáveis as regras acadêmicas tanto na API quanto no frontend. A avaliação também considera clareza do código, decisões técnicas, testes, controle de acesso e facilidade de reproduzir a instalação.
 
-- Existe **um único semestre corrente**; não modelar períodos letivos ou turmas históricas.
-- Alunos pertencem a cursos; a estrutura curricular vincula disciplinas ao curso como obrigatórias ou eletivas de perfil. As demais disciplinas contam como eletivas livres.
-- Os dados de curso, currículo, alunos e histórico são fornecidos por carga inicial, sem telas de cadastro.
-- A autenticação exige nome de usuário; senha é opcional no enunciado. A decisão sobre mecanismo e sessão será registrada em ADR.
-- A área da secretaria pode ser desktop; as telas de aluno precisam funcionar desde 360 px.
-- O repositório de entrega é pessoal, no GitLab do CIn, com front e back no **mesmo monorepo**, compartilhado com `selecaogersist` até o prazo.
+### Premissas do enunciado
 
-### Stack aprovada
+1. Existe **apenas um semestre corrente**; não é necessário modelar períodos letivos nem turmas de semestres anteriores.
+2. Cada aluno pertence a um curso; cada curso classifica disciplinas obrigatórias e eletivas de perfil. As demais disciplinas são livres para aquele aluno.
+3. Cursos, alunos, currículos e histórico de aprovações/reprovações são criados por carga inicial, sem telas administrativas de cadastro.
+4. O enunciado permite autenticação só por nome de usuário; este projeto adotou `username` **e senha** com sessão, por segurança.
+5. A área da secretaria precisa funcionar em desktop; a área do aluno precisa ser utilizável desde **360 px**.
+6. Backend e frontend pertencem ao **mesmo monorepo** no GitLab do CIn, com acesso concedido ao usuário `selecaogersist` dentro do prazo.
+7. Um requisito funcional adicional é obrigatório, do backend ao frontend; neste projeto, é a **US-13 — Histórico de matrículas canceladas**.
 
-React + TypeScript + Vite; Express + TypeScript; Prisma + SQLite; pnpm workspaces; Vitest + Supertest.
+### Tecnologias adotadas
+
+| Camada | Stack |
+| --- | --- |
+| Frontend | React, React Router, TypeScript e Vite |
+| Backend | Node.js, Express e TypeScript |
+| Banco | SQLite e Prisma ORM 7, com adaptador Better SQLite3 |
+| Sessões e senhas | Express Session, sessões em SQLite e Argon2id |
+| Testes | Vitest, Supertest, Testing Library e jsdom |
+| Pacotes | pnpm |
 
 ### Fora do escopo mínimo
 
-Gestão de calendários de diversos semestres, telas para cadastro de cursos e alunos, históricos de turmas antigas, notas e aprovação automática, pagamento, e qualquer funcionalidade adicional ainda não escolhida.
+- Múltiplos semestres, calendário e matrícula em lote.
+- Cadastro de alunos e cursos via interface.
+- Lançamento de notas e aprovação automática.
+- Gestão financeira, boletos e pagamentos.
+- Pré-requisitos ou choque de horários, não escolhidos como requisito adicional.
+- Redesign amplo inspirado em produtos externos, se ainda não implementado e testado.
 
 ## 2. Requisitos funcionais
 
-| ID | Requisito | Ator | Referência Jira |
-|---|---|---|---|
-| RF-01 | Entrar pelo nome de usuário e acessar apenas a própria área | Ambos | MAT-4 |
-| RF-02 | Encerrar ou expirar sessão, retornando ao login | Ambos | MAT-4 |
-| RF-03 | Listar disciplinas com busca e paginação; cadastrar e editar | Secretaria | MAT-5 |
-| RF-04 | Listar e cadastrar professores | Secretaria | MAT-5 |
-| RF-05 | Listar turmas com vagas ocupadas/totais; abrir turma e alterar capacidade | Secretaria | MAT-5 |
-| RF-06 | Consultar ofertas com pesquisa, paginação, vagas livres e classificação curricular | Aluno | MAT-2 |
-| RF-07 | Efetuar matrícula em turma elegível | Aluno | MAT-2 |
-| RF-08 | Listar e cancelar as próprias matrículas ativas | Aluno | MAT-2 |
-| RF-09 | Consultar CH exigida, integralizada, em curso e faltante em cada grupo | Aluno | MAT-3 |
-| RF-10 | Popular cursos, currículos, alunos, secretaria e histórico na inicialização | Sistema | Transversal |
-| RF-11 | Oferecer estados de carregamento, vazio, busca sem resultados, erro e retentativa | Ambos | Transversal |
-| RF-12 | Refletir busca e página atual na URL das listagens | Ambos | Transversal |
-| RF-13 | Implementar um requisito funcional adicional do back ao front | A definir | MAT-1 |
+| ID | Requisito | Perfil | Histórias |
+| --- | --- | --- | --- |
+| RF-01 | Login por usuário/senha e acesso à área correta | Ambos | US-01, US-02 |
+| RF-02 | Encerrar sessão e retornar ao login quando não autenticado | Ambos | US-01, US-02 |
+| RF-03 | Consultar, pesquisar, paginar, cadastrar e editar disciplinas | Secretaria | US-08, US-09 |
+| RF-04 | Consultar e cadastrar professores | Secretaria | US-10 |
+| RF-05 | Consultar turmas, abrir oferta e alterar capacidade respeitando a ocupação | Secretaria | US-11, US-12 |
+| RF-06 | Consultar ofertas com pesquisa, paginação, vagas e classificação para o curso | Aluno | US-03 |
+| RF-07 | Realizar matrícula elegível | Aluno | US-04 |
+| RF-08 | Consultar e cancelar as próprias matrículas ativas | Aluno | US-05, US-06 |
+| RF-09 | Consultar progresso por grupo curricular, incluindo CH em curso e faltante | Aluno | US-07 |
+| RF-10 | Popular cursos, currículos, usuários e histórico com seed reproduzível | Sistema | Transversal |
+| RF-11 | Exibir carregamento, lista vazia, ausência de resultados, erro e recuperação | Ambos | Transversal |
+| RF-12 | Refletir pesquisa e página na URL das listagens previstas | Ambos | Transversal |
+| RF-13 | Requisito adicional: consultar histórico paginado de matrículas canceladas | Aluno | **US-13** |
 
-## 3. Regras de negócio — transcrição estruturada
+## 3. Regras de negócio
 
-| ID | Regra | Caso de teste essencial |
-|---|---|---|
-| RN-01 | Código de disciplina único | Recusar cadastro duplicado |
-| RN-02 | CH da disciplina múltipla de 15, de 15 a 120 h | Recusar 10, 25 e 135; aceitar 15 e 120 |
-| RN-03 | E-mail de professor único | Recusar segundo professor com mesmo e-mail |
-| RN-04 | Turma requer disciplina, professor e pelo menos uma vaga | Recusar capacidade zero |
-| RN-05 | Nova capacidade nunca menor que o número de matrículas ativas | Com 10 alunos, recusar reduzir para 9 |
-| RN-06 | Aluno não pode matricular-se em turma lotada | Recusar matrícula sem vaga |
-| RN-07 | Aprovação anterior impede nova matrícula; reprovação permite repetir | Verificar ambos os históricos |
-| RN-08 | Aluno cancela as próprias matrículas ativas e a vaga volta à turma | Contagem decresce ao cancelar |
-| RN-09 | Aluno só vê e altera as próprias matrículas | Rejeitar acesso à matrícula alheia |
-| RN-10 | Classificação obrigatória/perfil/livre é relativa ao curso do aluno | Mesma disciplina em dois cursos com classificações diferentes |
-| RN-11 | CH aprovada de perfil acima da exigida migra para eletiva livre | Perfil exige 60, aprovadas 90: 60 perfil + 30 livre |
-| RN-12 | Apenas aprovações no histórico integralizam CH; reprovações não; matrículas ativas são CH em curso separada | Testar as três situações |
-| RN-13 | Percentuais de conclusão limitados a 100%; CH faltante não negativa | Excesso de CH não gera 110% nem -30 h |
+As RN-01 a RN-13 correspondem ao conjunto mínimo do enunciado; as RN-A são decisões complementares explicitadas pelo projeto.
 
-## 4. Requisitos não funcionais e critérios de qualidade
+| ID | Regra | Verificação esperada |
+| --- | --- | --- |
+| RN-01 | Código de disciplina é único | Recusar duplicidade |
+| RN-02 | CH de disciplina entre 15 e 120h, múltipla de 15 | Aceitar 15/120; rejeitar 10/25/135 |
+| RN-03 | E-mail do professor é único | Recusar segundo cadastro com e-mail existente |
+| RN-04 | Turma exige disciplina, professor e ao menos 1 vaga | Recusar capacidade zero ou IDs inválidos |
+| RN-05 | Capacidade atualizada não pode ser inferior às matrículas ativas | Recusar redução abaixo da ocupação; aceitar igualdade |
+| RN-06 | Aluno não se matricula em turma lotada | Recusar sem alterar ocupação |
+| RN-07 | Disciplina já aprovada impede matrícula; reprovação permite repetir | Testar ambos os históricos |
+| RN-08 | Aluno pode cancelar matrícula própria ativa e liberar vaga | Registrar cancelamento e diminuir ocupação |
+| RN-09 | Aluno só consulta/altera as próprias matrículas | Não expor registros de terceiros |
+| RN-10 | Classificação curricular depende do curso | Mesma disciplina pode ter classificações diferentes |
+| RN-11 | Excedente de CH aprovada em perfil conta como livre | Ex.: 90h aprovadas/60h exigidas: 60h perfil + 30h livre |
+| RN-12 | Apenas aprovações integralizam CH; matrículas ativas são CH em curso separada | Reprovação não integraliza |
+| RN-13 | Percentual máximo de 100%; CH faltante nunca negativa | Excesso não gera 110% nem -30h |
+| RN-A01 | Não permitir duas matrículas ativas do mesmo aluno em turmas de uma única disciplina | Recusar matrícula duplicada mesmo com turma diferente |
+| RN-A02 | Após cancelar, uma nova matrícula elegível deve criar outro registro | Preservar o cancelamento anterior |
+| RN-A03 | Matrículas concorrentes não podem exceder a capacidade | Proteger verificação e escrita em transação |
+| RN-A04 | Histórico adicional só retorna matrículas `CANCELADA` pertencentes ao aluno autenticado | Nunca incluir ativas nem registros de terceiros |
+| RN-A05 | Histórico adicional usa ordenação estável e paginação validada | Evitar itens repetidos em páginas sucessivas |
 
-- **RNF-01 — Usabilidade:** feedback claro para recusas por regra de negócio, erro de rede, listas vazias e carregamento; ação de tentar novamente quando aplicável.
-- **RNF-02 — Responsividade:** fluxo do aluno utilizável a partir de 360 px; secretaria funcional em desktop.
-- **RNF-03 — Segurança básica:** autorização no back-end para cada perfil e para propriedade de matrículas; nunca confiar apenas em botões ocultos do front-end.
-- **RNF-04 — API:** verbos e status HTTP coerentes, validação na entrada e formato consistente de erro; rotas documentadas.
-- **RNF-05 — Integridade:** impedir exceder vagas, inclusive em requisições concorrentes; garantir consistência em matrículas e cancelamentos.
-- **RNF-06 — Testabilidade:** testes automatizados das regras de negócio com dados de teste controlados.
-- **RNF-07 — Reprodutibilidade:** README deve permitir iniciar do zero, criar o banco e carregar o seed sem etapas implícitas.
-- **RNF-08 — Processo:** histórico incremental de commits e registro das principais decisões e limitações.
+As RN-A01/RN-A02 têm ADRs próprias. As RN-A04/RN-A05 correspondem à US-13; não são obrigações textuais da lista original de 13 regras do edital.
 
-## 5. MVP e MoSCoW
+## 4. Requisitos não funcionais
 
-**MVP priorizado pelo próprio edital:** login, fluxo completo do aluno (ofertas, matrícula, cancelamento e progresso) e testes das respectivas regras. Em seguida: secretaria; depois requisito adicional.
+| ID | Requisito | Critério |
+| --- | --- | --- |
+| RNF-01 | Usabilidade | Mensagens claras, feedback por regra e recuperação de falhas |
+| RNF-02 | Responsividade | Fluxos do aluno utilizáveis desde 360 px |
+| RNF-03 | Segurança | Validação de perfil e titularidade no backend; proteção de sessão e senhas |
+| RNF-04 | HTTP | Métodos/status coerentes, validação de entrada e erros tratados |
+| RNF-05 | Integridade | Capacidade e matrículas consistentes sob concorrência |
+| RNF-06 | Testabilidade | Testes automatizados das regras com banco isolado |
+| RNF-07 | Reprodutibilidade | README descreve instalação, configuração, migração e seed |
+| RNF-08 | Processo | Código legível, documentos revisados e histórico de commits |
+| RNF-09 | Acessibilidade básica | Navegação identificável, rótulos e mensagens sem depender só de cor |
 
-| MoSCoW | Escopo |
-|---|---|
-| Must | RF-01 a RF-13, RN-01 a RN-13, seed mínimo, responsividade exigida, testes, README e monorepo |
-| Should | Testes de integração adicionais, refinamento visual e documentação suplementar |
-| Could | Filtros convenientes não exigidos, refinamentos de acessibilidade além do mínimo, monitoramento |
-| Won't nesta entrega | Vários semestres, matrícula em lote, módulo financeiro, cadastro de cursos e alunos por interface |
+**Ressalva:** os testes informados não comprovam, por si só, todos os aspectos de segurança operacional (CSRF, HTTPS real e tempo de expiração de cookie).
 
-## 6. User Stories propostas
+## 5. Priorização MoSCoW e MVP
 
-Cada história descreve valor observável e pode ser validada verticalmente (API, interface e teste). As condições de dependência técnica ficam nas tarefas, sem aumentar artificialmente o tamanho da história.
+| Prioridade | Escopo |
+| --- | --- |
+| **Must** | Autenticação, ofertas, matrícula/cancelamento, progresso, secretaria, regras RN-01 a RN-13, requisito adicional funcional, seed, README, testes e responsividade |
+| **Should** | Testes de integração complementares, documentação de decisões, recuperação de erro e polimento visual |
+| **Could** | Melhorias de acessibilidade e filtros adicionais, painéis-resumo e evolução do design |
+| **Won't nesta entrega** | Múltiplos semestres, finanças, notas, cadastro de cursos/alunos por interface |
 
-| ID | Épico | História de usuário | Critérios essenciais |
-|---|---|---|---|
-| US-01 | MAT-4 | Como usuário, quero entrar com meu nome de usuário para acessar a área do meu perfil | Credencial válida; redirecionamento; desconhecido recusado |
-| US-02 | MAT-4 | Como usuário, quero que minha sessão e minhas permissões sejam respeitadas para proteger meus dados | Perfil errado bloqueado; sessão expirada redireciona; API restringe |
-| US-03 | MAT-2 | Como aluno, quero consultar ofertas pesquisáveis para escolher uma turma | Busca/página na URL; vagas; classificação por curso; estados vazios/erro |
-| US-04 | MAT-2 | Como aluno, quero me matricular numa turma elegível para cursar a disciplina | Vaga disponível; aprovação anterior bloqueada; reprovação permite; erro compreensível |
-| US-05 | MAT-2 | Como aluno, quero ver minhas matrículas ativas para acompanhar meu semestre | Apenas minhas matrículas; turma e disciplina identificáveis |
-| US-06 | MAT-2 | Como aluno, quero cancelar uma matrícula ativa para liberar a vaga | Cancelamento próprio; atualização das vagas; matrícula alheia bloqueada |
-| US-07 | MAT-3 | Como aluno, quero visualizar meu progresso por categoria para saber quanto falta concluir | CH exigida/integralizada/em curso/faltante; excedente perfil; limites 100% e 0 h |
-| US-08 | MAT-5 | Como secretaria, quero pesquisar e consultar disciplinas para administrar o catálogo | Busca/página na URL; vazio, erro e retentativa |
-| US-09 | MAT-5 | Como secretaria, quero cadastrar e editar disciplinas válidas para manter o catálogo atualizado | Código único; CH válida; erros claros |
-| US-10 | MAT-5 | Como secretaria, quero listar e cadastrar professores para associá-los a turmas | E-mail único; entradas validadas |
-| US-11 | MAT-5 | Como secretaria, quero listar e abrir turmas para disponibilizar vagas no semestre | Disciplina e professor; capacidade mínima; ocupação exibida |
-| US-12 | MAT-5 | Como secretaria, quero ajustar a capacidade de uma turma para refletir a oferta real | Redução nunca abaixo de matrículas ativas |
-| US-13 | MAT-1 | Como [ator], quero [funcionalidade adicional] para [benefício concreto] | Definir após escolher a funcionalidade; deve atravessar API e UI |
+**Ordem histórica de implementação:** base técnica → login → fluxos do aluno → secretaria → US-13 → navegação, robustez e documentação para entrega.
 
-### Rastreabilidade das histórias cadastradas no Jira
+## 6. User Stories e situação atual
 
-| História | Ticket | História | Ticket |
-|---|---|---|---|
-| US-01 | [MAT-6](https://cin-1402.atlassian.net/browse/MAT-6) | US-07 | [MAT-12](https://cin-1402.atlassian.net/browse/MAT-12) |
-| US-02 | [MAT-7](https://cin-1402.atlassian.net/browse/MAT-7) | US-08 | [MAT-10](https://cin-1402.atlassian.net/browse/MAT-10) |
-| US-03 | [MAT-16](https://cin-1402.atlassian.net/browse/MAT-16) | US-09 | [MAT-13](https://cin-1402.atlassian.net/browse/MAT-13) |
-| US-04 | [MAT-11](https://cin-1402.atlassian.net/browse/MAT-11) | US-10 | [MAT-17](https://cin-1402.atlassian.net/browse/MAT-17) |
-| US-05 | [MAT-8](https://cin-1402.atlassian.net/browse/MAT-8) | US-11 | [MAT-9](https://cin-1402.atlassian.net/browse/MAT-9) |
-| US-06 | [MAT-15](https://cin-1402.atlassian.net/browse/MAT-15) | US-12 | [MAT-14](https://cin-1402.atlassian.net/browse/MAT-14) |
+| US | Ticket conhecido | História / valor | Situação informada |
+| --- | --- | --- | --- |
+| **US-01** | [MAT-6](https://cin-1402.atlassian.net/browse/MAT-6) | Login e sessão autenticada | Implementada; 8 testes específicos de autenticação API e 3 de middleware de autorização |
+| **US-02** | [MAT-7](https://cin-1402.atlassian.net/browse/MAT-7) | Interface de login, perfis e sessão expirada | Implementada; telas/rotas testadas e tratamento de `401` corrigido |
+| **US-03** | [MAT-16](https://cin-1402.atlassian.net/browse/MAT-16) | Consultar ofertas pesquisáveis, vagas e classificação | Implementada e testada |
+| **US-04** | [MAT-11](https://cin-1402.atlassian.net/browse/MAT-11) | Realizar matrícula elegível | Implementada e testada, incluindo concorrência de vagas |
+| **US-05** | [MAT-8](https://cin-1402.atlassian.net/browse/MAT-8) | Consultar matrículas ativas próprias | Implementada e testada |
+| **US-06** | [MAT-15](https://cin-1402.atlassian.net/browse/MAT-15) | Cancelar matrícula e liberar vaga | Implementada e testada |
+| **US-07** | [MAT-12](https://cin-1402.atlassian.net/browse/MAT-12) | Acompanhar progresso curricular | Implementada e testada |
+| **US-08** | [MAT-10](https://cin-1402.atlassian.net/browse/MAT-10) | Consultar/pesquisar disciplinas | Implementada; 8 testes API, 6 frontend, 8 manuais informados |
+| **US-09** | [MAT-13](https://cin-1402.atlassian.net/browse/MAT-13) | Cadastrar e editar disciplinas | Implementada; 17 testes API, 11 frontend, 8 manuais informados |
+| **US-10** | [MAT-17](https://cin-1402.atlassian.net/browse/MAT-17) | Consultar e cadastrar professores | Implementada; 14 testes API, 11 frontend, 8 manuais informados |
+| **US-11** | MAT-9 *(conferir associação no Jira)* | Consultar e abrir turmas | Implementada; 15 testes API, 14 frontend, 8 manuais informados |
+| **US-12** | MAT-14 *(conferir associação no Jira)* | Ajustar capacidade sem prejudicar matrículas ativas | Implementada; 10 testes API, 8 frontend, 8 manuais informados |
+| **US-13** | Requisito adicional; **ticket específico não confirmado** | Consultar histórico de matrículas canceladas | Implementada; 10 testes API, 9 frontend, 8 manuais informados |
 
-US-13 está propositalmente sem ticket: o requisito adicional ainda precisa de definição para passar na avaliação INVEST.
+**Atenção à rastreabilidade:** as chaves MAT-9 e MAT-14 foram usadas no planejamento, mas a associação definitiva deve ser conferida no Jira. Não inventar ticket da US-13; o projeto tinha o épico MAT-1 para o requisito adicional.
 
-### Verificação INVEST
+### Critérios INVEST
 
-| Critério | Como verificaremos |
-|---|---|
-| **I — Independent** | A história entrega um comportamento identificável; dependências de infraestrutura não viram histórias gigantes |
-| **N — Negotiable** | A implementação (rotas, componentes, arquitetura) pode mudar sem perder o resultado de negócio |
-| **V — Valuable** | Há benefício explícito para aluno ou secretaria |
-| **E — Estimable** | Entrada, saída, regra e testes são identificáveis |
-| **S — Small** | Uma entrega vertical curta; se não couber no tempo disponível, dividir sem descartar critérios obrigatórios |
-| **T — Testable** | Critérios podem virar testes automatizados e/ou verificações de interface |
+| Critério | Verificação |
+| --- | --- |
+| **I — Independent** | História entrega comportamento observável sem depender de uma tela genérica |
+| **N — Negotiable** | Detalhes de UI/API podem mudar desde que a regra e o benefício sejam preservados |
+| **V — Valuable** | Cada US beneficia aluno, secretaria ou a segurança |
+| **E — Estimable** | Entrada, saída, validação e testes são identificáveis |
+| **S — Small** | Fluxo vertical implementável e revisável |
+| **T — Testable** | Regras expressas em Gherkin e cenários automatizados/manuais |
 
-**Revisão inicial:** US-07 concentra cálculo e interface e pode precisar virar duas tarefas técnicas sob a mesma história; US-09 e US-11 devem ser divididas se a implementação não couber numa entrega curta. US-13 **ainda não atende completamente** a Valuable, Estimable e Testable, pois depende da escolha do requisito adicional. Não marcar US-13 como pronta para desenvolvimento.
+A US-13 era indefinida na versão 0.1; passou a ter ator, valor, endpoint e critérios concretos. Não manter seu status como “aguardando escolha”.
 
-## 7. Critérios de aceitação em Gherkin
+## 7. Requisito adicional escolhido — US-13
 
-Estes cenários são uma primeira base para testes de domínio e API. Um teste completo também deve validar o status HTTP e o estado persistido no banco.
+**História:** Como aluno, quero consultar minhas matrículas **canceladas** para lembrar em quais disciplinas/turmas estive inscrito, sem misturá-las às matrículas ativas.
+
+**Justificativa:** o cancelamento já preserva a linha de matrícula e sua data; expor esses registros com segurança oferece rastreabilidade acadêmica real, sem ampliar o modelo para vários semestres.
+
+### Escopo e regras
+
+1. Disponibilizar consulta HTTP paginada do histórico de **cancelamentos** do aluno autenticado.
+2. Filtrar por `situacao = CANCELADA` e pelo aluno obtido da sessão.
+3. Retornar dados acadêmicos úteis (disciplina, turma, professor e data de cancelamento, quando registrada), sem informações de outros usuários.
+4. Estabelecer ordenação estável e rejeitar parâmetros de paginação inválidos.
+5. Apresentar o histórico sob a área “Minhas matrículas”, em aba própria, mantendo a lista de ativas separada.
+6. Tratar carregamento, ausência de cancelamentos, erro de rede e retentativa; oferecer navegação entre páginas quando necessário.
+7. Consultar o histórico quando o aluno escolher sua aba, evitando carregar dados desnecessários antes disso.
+
+**Implementação relatada:** `GET /api/aluno/matriculas/historico`, serviço e controlador de matrículas, componente `HistoricoMatriculas.tsx` e sua integração com `MatriculasPage.tsx`.
+
+**Evidências:** 10 testes API em `matriculas.historico.test.ts` (incluídos nos 133), 9 frontend em `HistoricoMatriculas.test.tsx` (incluídos nos 95) e oito cenários manuais informados como aprovados.
+
+## 8. Cenários essenciais em Gherkin
+
+Os exemplos abaixo formam uma matriz concisa de aceitação. A suíte real pode ter cenários adicionais, conforme o [plano de testes](testes/plano-de-testes.md).
 
 ```gherkin
-Funcionalidade: Acesso e autorização
-  Cenário: Usuário aluno não acessa funções da secretaria
+Funcionalidade: Autenticação e sessão
+  Cenário: Perfil incorreto
     Dado que estou autenticado como aluno
     Quando tento cadastrar uma disciplina
-    Então a ação deve ser recusada por falta de permissão
+    Então a API deve recusar por falta de permissão
 
-  Cenário: Sessão expirada
-    Dado que minha sessão expirou
-    Quando tento abrir minhas matrículas
-    Então devo voltar à tela de login
+  Cenário: Sessão invalidada
+    Dado que minha sessão não está mais válida
+    Quando consulto uma página acadêmica protegida
+    Então a aplicação deve me encaminhar ao login
 
-Funcionalidade: Cadastro acadêmico
+Funcionalidade: Catálogo e turmas da secretaria
   Cenário: Código de disciplina duplicado
-    Dado que existe a disciplina IF668
-    Quando a secretaria tenta cadastrar outra disciplina IF668
+    Dado que uma disciplina com código IF668 já existe
+    Quando a secretaria cadastra outra disciplina IF668
     Então o cadastro deve ser recusado
 
   Esquema do Cenário: Carga horária inválida
-    Quando a secretaria cadastra uma disciplina com <ch> horas
-    Então o cadastro deve ser recusado por carga horária inválida
+    Quando a secretaria informa <ch> horas
+    Então o cadastro deve ser recusado
     Exemplos:
       | ch  |
       | 10  |
@@ -165,107 +205,145 @@ Funcionalidade: Cadastro acadêmico
       | 135 |
 
   Cenário: E-mail de professor duplicado
-    Dado que existe professor com e-mail prof@ufpe.br
-    Quando a secretaria tenta cadastrar outro professor com esse e-mail
+    Dado que um professor já usa determinado e-mail
+    Quando a secretaria tenta cadastrar outro com o mesmo e-mail
     Então o cadastro deve ser recusado
 
   Cenário: Turma sem vagas
-    Quando a secretaria tenta abrir uma turma com zero vagas
-    Então a abertura deve ser recusada
+    Quando a secretaria tenta abrir turma com zero vagas
+    Então a criação deve ser recusada
 
   Cenário: Redução abaixo da ocupação
-    Dado que uma turma tem 10 matrículas ativas
-    Quando a secretaria tenta reduzir sua capacidade para 9
+    Dado que a turma possui 10 matrículas ativas
+    Quando a secretaria reduz a capacidade para 9
     Então a alteração deve ser recusada
 
 Funcionalidade: Matrícula do aluno
-  Cenário: Matrícula numa turma lotada
-    Dado que uma turma oferece 30 vagas e possui 30 matrículas ativas
-    Quando o aluno tenta se matricular nela
-    Então a matrícula deve ser recusada
-    E a ocupação deve permanecer em 30
+  Cenário: Turma lotada
+    Dado que a turma oferece 30 vagas e possui 30 alunos ativos
+    Quando o aluno tenta matricular-se
+    Então a matrícula é recusada
+    E a ocupação permanece em 30
 
   Cenário: Disciplina já aprovada
-    Dado que o aluno foi aprovado na disciplina IF668
-    Quando tenta se matricular numa turma de IF668
+    Dado que o aluno foi aprovado em IF668
+    Quando tenta matricular-se novamente em IF668
     Então a matrícula deve ser recusada
 
-  Cenário: Disciplina anteriormente reprovada
-    Dado que o aluno foi reprovado na disciplina IF668
-    E existe uma turma de IF668 com vagas disponíveis
-    Quando solicita matrícula nessa turma
-    Então a matrícula deve ser criada como ativa
+  Cenário: Disciplina reprovada
+    Dado que o aluno foi reprovado em IF668
+    E uma turma de IF668 possui vagas
+    Quando solicita matrícula
+    Então uma matrícula ATIVA é criada
 
-  Cenário: Cancelamento de matrícula própria
-    Dado que o aluno possui matrícula ativa numa turma
+  Cenário: Duas turmas da mesma disciplina
+    Dado que o aluno já tem matrícula ativa em IF668
+    Quando tenta matricular-se em outra turma de IF668
+    Então a segunda matrícula é recusada
+
+  Cenário: Cancelamento próprio
+    Dado que o aluno possui matrícula ativa
     Quando cancela a matrícula
-    Então ela deixa de estar ativa
-    E a turma passa a ter uma vaga disponível a mais
+    Então sua situação passa a CANCELADA
+    E uma vaga é liberada
 
-  Cenário: Cancelamento de matrícula alheia
+  Cenário: Matrícula de outro aluno
     Dado que o aluno A está autenticado
-    E a matrícula ativa pertence ao aluno B
-    Quando o aluno A tenta cancelá-la
-    Então a operação deve ser recusada
-    E a matrícula do aluno B deve continuar ativa
+    E o registro pertence ao aluno B
+    Quando o aluno A tenta consultá-lo ou cancelá-lo
+    Então a operação não revela nem altera o registro de B
 
 Funcionalidade: Progresso curricular
-  Cenário: Classificação conforme o curso
-    Dado que IF668 é obrigatória para o curso A
-    E IF668 é eletiva de perfil para o curso B
-    Quando alunos desses cursos consultam a oferta de IF668
-    Então o aluno do curso A deve ver a classificação obrigatória
-    E o aluno do curso B deve ver a classificação eletiva de perfil
+  Cenário: Classificação relativa ao curso
+    Dado que IF668 é obrigatória no curso A
+    E IF668 é eletiva de perfil no curso B
+    Quando os dois alunos consultam suas ofertas
+    Então cada aluno vê a classificação do próprio curso
 
   Cenário: Excedente de eletiva de perfil
-    Dado que o curso exige 60 horas de eletivas de perfil
-    E o aluno aprovou 90 horas em disciplinas desse grupo
+    Dado que o curso exige 60 horas de perfil
+    E o aluno aprovou 90 horas desse grupo
     Quando o progresso é calculado
-    Então 60 horas devem contar como eletivas de perfil
-    E 30 horas devem contar como eletivas livres
+    Então 60 horas contam como perfil
+    E 30 horas contam como livres
 
-  Cenário: Reprovações e matrículas correntes
-    Dado que o aluno reprovou numa disciplina de 60 horas
-    E possui matrícula ativa em outra disciplina de 60 horas
+  Cenário: Reprovação e disciplina em curso
+    Dado que o aluno possui uma disciplina reprovada
+    E uma matrícula ativa em outra disciplina
     Quando consulta o progresso
-    Então a disciplina reprovada não deve somar CH integralizada
-    E a disciplina com matrícula ativa deve aparecer como CH em curso
+    Então a reprovação não soma CH integralizada
+    E a ativa aparece como CH em curso
 
-  Cenário: Limites do indicador de progresso
-    Dado que o aluno aprovou mais horas do que exige um grupo curricular
-    Quando consulta o progresso desse grupo
-    Então o percentual exibido não deve ultrapassar 100
-    E a carga horária faltante não deve ser negativa
+  Cenário: Limites de progresso
+    Dado que a CH aprovada excede a CH mínima
+    Quando o progresso é calculado
+    Então o percentual não ultrapassa 100
+    E a carga horária faltante não é negativa
+
+Funcionalidade: Histórico de matrículas canceladas (US-13)
+  Cenário: Consultar cancelamentos próprios
+    Dado que o aluno possui matrículas ATIVAS e CANCELADAS
+    Quando consulta seu histórico de cancelamentos
+    Então visualiza somente as CANCELADAS
+    E os registros de outros alunos não aparecem
+
+  Cenário: Histórico vazio
+    Dado que não possuo matrículas canceladas
+    Quando abro a aba de histórico
+    Então vejo uma mensagem de ausência de cancelamentos
+
+  Cenário: Falha de comunicação
+    Dado que abri a aba de histórico
+    Quando a requisição falha
+    Então vejo mensagem de erro
+    E posso tentar novamente
+
+  Cenário: Histórico paginado
+    Dado que possuo cancelamentos em várias páginas
+    Quando avanço ou retorno na paginação
+    Então vejo itens ordenados sem duplicação indevida
 ```
 
-## 8. Decisões e perguntas de modelagem
+## 9. Decisões técnicas registradas
 
-Antes da primeira migração Prisma, decidir e registrar:
+| Tema | Decisão | Documento |
+| --- | --- | --- |
+| Matrícula duplicada por disciplina | Não permitir duas ativas; validar por disciplina, não só turma | [ADR-0002](adr/0002-unicidade-matricula-ativa-por-disciplina.md) |
+| Rematrícula após cancelamento | Criar nova linha, preservar cancelamento | [ADR-0001](adr/0001-rematricula-novo-registro.md) |
+| Autenticação | `username` e senha, Argon2id, sessão em SQLite e cookie HttpOnly | [ADR-0003](adr/0003-autenticacao-por-sessao.md) |
+| Concorrência | Proteger gravações e verificações de disponibilidade em transações adequadas ao SQLite | [Arquitetura](arquitetura/visao-geral.md) |
+| CH em curso | Não antecipar aprovação; apresentar carga ativa separadamente | [Arquitetura](arquitetura/visao-geral.md) |
+| Requisito adicional | Histórico de matrículas canceladas, sem novo semestre | Seção 7 deste documento |
 
-1. **Autenticação:** nome de usuário com senha (recomendado por segurança) ou login simplificado permitido pelo edital; como a sessão expira.
-2. **Matrícula duplicada:** se é permitida uma segunda turma da mesma disciplina no semestre corrente; recomendação: não permitir duas matrículas ativas da mesma disciplina.
-3. **Rematrícula após cancelamento:** criar novo registro ou reativar um registro cancelado; recomendação: novo registro, preservando o cancelamento.
-4. **Concorrência de vagas:** operação atômica/transacional para evitar matrícula acima da capacidade.
-5. **CH em curso:** como exibir o excedente potencial de perfil nas matrículas ainda ativas; recomendação inicial: separar “em curso” da CH integralizada, sem antecipar aprovação.
-6. **Escolha da funcionalidade adicional:** só fechar após validar o núcleo; evitar dependência de entidades de semestre/horário, a menos que haja tempo.
+**Estado da ADR-0003:** estratégia de sessão adotada e implementada, com limites de segurança de uma futura implantação documentados. A revisão formal da decisão é registrada na própria ADR, sem afirmar testes de CSRF ou HTTPS não realizados.
 
-Esses pontos são decisões propostas de implementação, não regras adicionais declaradas no edital.
+## 10. Evidências e rastreabilidade de testes
 
-## 9. Definition of Done de cada história
+| Verificação | Resultado informado | Limite |
+| --- | --- | --- |
+| API completa | **133/133 testes aprovados em 11 arquivos** | Executada no banco dedicado `test.db` |
+| Frontend completo | **95/95 testes aprovados em 12 arquivos** | Confirmação do responsável após incluir três casos do cliente HTTP |
+| Verificações manuais US-08 a US-13 | **48 aprovadas** | Oito por US, não são testes automatizados |
+| Linters e tipagem | `pnpm lint` e `pnpm exec tsc -b` no web; `pnpm exec tsc --noEmit` na API, sem erros relatados | Conferir novamente após qualquer edição de código |
+| Reprodução da base | Migração, geração do Client e seed aprovados em banco separado | Validada localmente; documentar preparação no README |
 
-- Comportamento atende aos critérios Gherkin relevantes.
-- Regra de negócio é validada no back-end, não apenas na interface.
-- API retorna status e erros claros; estados persistidos são corretos.
-- Interface mostra loading, vazio/sem resultado, erro e tentativa novamente quando aplicável.
-- Telas de aluno verificadas em 360 px.
-- Testes relevantes executados e passando.
-- Commits pequenos e descritivos; README/ADR atualizados quando necessário.
+**Total automatizado informado:** **228 testes**, distribuídos nas duas aplicações, sem E2E automatizado adicional declarado.
 
-## 10. Plano de execução para a janela restante
+## 11. Definition of Done e fechamento documental
 
-1. **Preparação:** estruturar monorepo, configurar scripts, Prisma, seed e README mínimo.
-2. **Primeira entrega vertical:** login e listagem de ofertas por aluno.
-3. **Núcleo de negócio:** matrícula, cancelamento, restrições e testes.
-4. **Progresso:** cálculo do domínio e tela; testes para excedentes.
-5. **Secretaria:** cadastros e capacidade das turmas.
-6. **Extra e refinamento:** funcionalidade adicional, validação final, documentação do que ficou incompleto e ensaio de entrevista.
+Para marcar uma história como funcionalmente concluída:
+
+- [x] Regra implementada no backend e fluxo correspondente no frontend, quando aplicável.
+- [x] Testes relevantes executados e aprovados conforme os resultados compartilhados.
+- [x] Cenários manuais de US-08 a US-13 relatados como aprovados.
+- [x] Navegação por perfil e tratamento de erros/requisições revisados.
+- [x] README, arquitetura, autenticação, modelagem física, ADR-0003, sprints e plano de testes revisados com os registros compartilhados.
+- [x] `schema.prisma` integral conferido com o documento de modelagem física.
+- [x] Arquivos locais sensíveis e habilidades de IA instaladas pelo Prisma identificados para exclusão do estágio do Git.
+- [x] Convite do usuário avaliador `selecaogersist` aceito, conforme confirmação de Thiago.
+
+**Publicação:** a seleção final dos arquivos, o commit/push e a eventual atualização de tickets Jira são atos operacionais externos a esta revisão documental; não são apresentados falsamente como já executados. Os comandos exatos estão em [Checklist de entrega](entrega-checklist.md).
+
+**Preparação para entrevista:** saber explicar o isolamento de dados por sessão, o uso de transação para vagas, a unicidade de matrícula ativa por disciplina, a rematrícula como novo registro, os cálculos de CH e a motivação da US-13.
+
+**Próximo passo após esta revisão:** concluir documentação e Git; um redesign visual maior deve ser tratado como evolução posterior, com nova rodada de validação, para não comprometer a entrega já testada.

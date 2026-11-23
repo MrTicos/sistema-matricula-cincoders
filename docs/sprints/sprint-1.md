@@ -1,11 +1,45 @@
 # Sprint 1 — MVP do aluno: autenticação e fluxo principal
 
-**Situação:** Em andamento — funcionalidades principais implementadas; encerramento condicionado às verificações pendentes de segurança, responsividade, integração e entrega.
+**Situação:** **Concluída funcionalmente e documentada** — US-01 a US-13 validadas conforme os testes e verificações compartilhados. A publicação final dos documentos no Git é etapa operacional posterior a esta revisão.
 **Prazo de entrega do teste:** 23/11/2026
 **Referências Jira:** MAT-6 (US-01), MAT-7 (US-02), MAT-16 (US-03), MAT-11 (US-04), MAT-8 (US-05), MAT-15 (US-06), MAT-12 (US-07), MAT-10 (US-08 — consulta de disciplinas), MAT-13 (US-09 — cadastro/edição de disciplinas) e MAT-17 (US-10 — consulta/cadastro de professores). **US-11** (consulta/abertura de turmas) e **US-12** (ajuste de capacidade) concluídas funcionalmente; conferir suas chaves específicas no Jira antes de atribuí-las no documento.
-**Último checkpoint:** 22/11/2026
+**Último checkpoint:** 23/11/2026; avaliador aceitou o convite do GitLab, conforme confirmação de Thiago.
 
-## Checkpoint consolidado — 22/11/2026
+## Checkpoint de preparação para entrega — após US-13
+
+**Escopo funcional:** US-01 a US-12 relatadas como implementadas, mais **US-13 — histórico de matrículas canceladas**, escolhida como requisito funcional adicional. O responsável confirmou **8 verificações manuais aprovadas na US-13**, elevando o histórico informado para **48 verificações manuais** (US-08 a US-13). A navegação foi padronizada com `AlunoNav` e `SecretariaNav` e o CSS administrativo recebeu ajustes para ampliar as listagens. O redesign inspirado em Classter e Aprova Total **não faz parte deste fechamento**.
+
+**Qualidade:** suíte integral da API **133/133 em 11 arquivos** (após US-13, 28,94 s) e TypeScript aprovados, com `DATABASE_URL` restaurada para `dev.db` ao final. O frontend passou com **92/92 em 11 arquivos** (10,48 s) após os CT-06 de recuperação e depois teve **95 testes em 12 arquivos** aprovados conforme relato, incluindo três novos casos do cliente HTTP; lint e TypeScript aprovados. **Total informado: 228 testes automatizados**, executados em duas suítes separadas. A expiração de sessão foi corrigida e validada manualmente; o fechamento do GitLab ainda deve ser confirmado.
+
+**Verificações de encerramento concluídas:**
+
+- [x] README com instalação, migração/seed, usuários de demonstração, rotas, requisito adicional, justificativa, decisões e evoluções preparado e revisado.
+- [x] Seed e migração executados num banco SQLite novo de validação.
+- [x] Testes de erro/retentativa, sessão invalidada e responsividade de 360 px confirmados pelo responsável.
+- [x] Suítes finais: **133/133 API** e **95/95 web**, com verificações de tipos/lint relatadas como aprovadas.
+- [x] `schema.prisma` integral conferido com o documento de modelagem física.
+- [x] Acesso ao GitLab aceito pelo avaliador `selecaogersist`.
+
+**Publicação:** depois de copiar os documentos revisados para o Windows, conferir `git status`, `git diff --cached --check` e publicar commit/push. Atualizações dos tickets no Jira podem ser feitas como registro administrativo; não substituem o repositório exigido pelo edital.
+
+### US-13 — Requisito adicional: histórico de cancelamentos
+
+- **Necessidade:** o aluno pode consultar cancelamentos anteriores sem confundi-los com matrículas ativas; cada rematrícula continua criando um novo registro, sem apagar o cancelado.
+- **Backend:** GET paginado e autorizado em `/api/aluno/matriculas/historico`, filtrado pelo aluno da sessão e pela situação `CANCELADA`. Seus 10 testes foram aprovados e incluídos no log integral **133/133**.
+- **Frontend:** componente `HistoricoMatriculas.tsx` acessado na aba **Histórico de cancelamentos** em `/aluno/matriculas`; carrega apenas ao abrir a aba e trata lista vazia, carregamento, erro com nova tentativa e paginação. Os **9 testes dedicados** e os **89 testes da suíte web** passaram conforme log apresentado.
+- **Manual:** 8 verificações da US-13 comunicadas como aprovadas, sem equivalerem a E2E automatizado.
+- **Encerramento:** implementação, documentação e regressões validadas; cópia dos documentos para o repositório e push são as próximas operações de Git, sem trabalho funcional pendente.
+
+### Identidade visual — registro de alterações já realizadas
+
+- Definição inicial de cores azul-marinho/teal/cinza e melhoria de estilos compartilhados em `apps/web/src/index.css`.
+- Criação de menus comuns: `SecretariaNav` com Disciplinas, Professores e Turmas; `AlunoNav` com Ofertas, Minhas matrículas e Progresso.
+- Correção da navegação da secretaria que ocultava a aba de Turmas ao acessar Disciplinas; inclusão de navegação do aluno na página de Ofertas.
+- Revisão da largura e da disposição dos cartões de listagem da secretaria. O responsável informou que os testes manuais passaram; um redesign aprofundado fica como melhoria futura.
+
+---
+
+## Checkpoint consolidado histórico — 22/11/2026 (após US-12)
 
 **Resultado comprovado pelas execuções comunicadas após US-12:** `pnpm exec vitest run` em `apps/api` passou com **123/123 testes em 10 arquivos** (13,07 s); em `apps/web`, o log integral mais recente registra **80/80 testes em 10 arquivos** (11,63 s). **Total: 203 testes em 20 arquivos, 0 falhas.** São execuções separadas, não uma suíte ponta a ponta. O responsável informou **8 verificações manuais aprovadas para cada uma das US-08, US-09, US-10, US-11 e US-12**, totalizando **40 verificações manuais**. A US-10 foi publicada no GitLab pelo commit `8425521`; o responsável confirmou commit/push da US-11 (hash ainda a registrar). O versionamento da US-12 será o próximo passo.
 
@@ -48,11 +82,11 @@ Entregar o fluxo prioritário do aluno: autenticação, consulta de ofertas, rea
 | Must | Cadastro/edição de disciplinas — US-09 (MAT-13) | Cadastro e edição implementados; 17 testes API + 11 frontend; 8 verificações manuais da edição aprovadas |
 | Must | Consulta/cadastro de professores — US-10 (MAT-17) | Listagem, pesquisa por nome/e-mail, URL, paginação e cadastro implementados; 14 testes API + 11 frontend + 8 manuais aprovados |
 | Must | Consulta e abertura de turmas — US-11 | Listagem, pesquisa, vagas ocupadas/totais, abertura e seleção de disciplina/professor; 15 testes API + 14 frontend e 8 manuais aprovados |
-| Must | Ajuste de capacidade de turmas — US-12 | Implementado e validado: 10 testes API + 8 frontend + 8 manuais; impede reduzir abaixo das matrículas ativas, commit/push pendentes |
+| Must | Ajuste de capacidade de turmas — US-12 | Implementado e validado: 10 testes API + 8 frontend + 8 manuais; impede reduzir abaixo das matrículas ativas; hash/push final é assunto de publicação |
 | Must | Isolamento acadêmico entre alunos | Testado nas consultas de matrículas e progresso; manter revisão dos demais endpoints privados |
 | Must | Testes automatizados | 123 backend + 80 frontend = 203 aprovados em 20 arquivos, 0 falhas |
 | Must | Persistência das sessões | SQLite integrado; falta evidência após reinício da API |
-| Must | Segurança de cookies e requisições | `HttpOnly`, `SameSite=Lax`, regeneração de ID e limpeza no logout testados; CSRF e `Secure` em HTTPS pendentes |
+| Must | Segurança de cookies e requisições | `HttpOnly`, `SameSite=Lax`, regeneração de ID e limpeza no logout testados; CSRF e `Secure` em HTTPS real documentados como verificações adicionais para implantação de produção |
 | Could | Melhorias visuais secundárias | Não iniciadas; após as funcionalidades essenciais |
 
 ## Evidências da implementação
@@ -443,20 +477,19 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 - [x] Armazenamento SQLite de sessões integrado.
 - [x] Cookie `HttpOnly`/`SameSite=Lax`, regeneração de ID e limpeza no logout testados.
 - [x] Commit e push da implementação registrados no GitLab (commit `847ddc8`).
-- [ ] Evidência de persistência da mesma sessão após reinício da API.
-- [ ] Verificação de `Secure` em HTTPS, proteção CSRF e expiração da sessão.
+- **Evolução futura de segurança:** documentar continuidade da mesma sessão após reinício, `Secure` em HTTPS, proteção CSRF e expiração cronometrada; não foram apresentados como testes realizados.
 - [x] Isolamento da listagem de matrículas entre alunos verificado na US-05.
-- [ ] Verificar propriedade dos registros nos demais endpoints acadêmicos privados.
-- [ ] Atualização e encerramento no Jira conforme os critérios restantes.
+- [x] Propriedade dos registros exercitada pelos testes de cancelamento, histórico de cancelamentos e progresso, além da US-05.
+- **Acompanhamento externo:** conferir encerramento no Jira, sem tratá-lo como funcionalidade inacabada.
 
-**Status:** em andamento; testes aprovados não encerram automaticamente a US-01.
+**Status atual da US-01:** implementação e critérios funcionais concluídos; as verificações adicionais de segurança para produção permanecem documentadas como evolução futura na ADR-0003.
 
 ### US-03 — Consulta de ofertas (MAT-16)
 
 - [x] Backend e 9 testes automatizados.
 - [x] Commit e push registrados no GitLab (commit `7d8c093`).
 - [x] Interface React de ofertas implementada e coberta por testes de componente.
-- [ ] Conferir filtros/paginação com URL e responsividade a 360px em execução manual.
+- [x] Filtros/paginação na URL e responsividade a 360px validados posteriormente pelo responsável.
 - [x] Liberação da vaga após cancelamento validada na suíte de US-06 (teste de backend).
 
 **Status em 22/11/2026:** API e componente React implementados/testados; testes manuais e critérios adicionais ainda abertos.
@@ -467,8 +500,8 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 - [x] 12 testes automatizados aprovados, incluindo rematrícula, reprovação e última vaga.
 - [x] Atualização de vagas observada pelo endpoint de ofertas após matrícula.
 - [x] Ação de matrícula no frontend de ofertas implementada e coberta por testes de componente.
-- [ ] Confirmar hash do commit/push da US-04 e atualização no Jira MAT-11.
-- [ ] Ampliar testes de concorrência; o CT-10 não comprova ausência de falhas sob carga elevada.
+- **Publicação histórica:** hash do commit da US-04 e situação no Jira MAT-11 não foram apresentados nesta revisão.
+- **Evolução futura:** testes de carga/concorrência ampliados; o CT-10 já comprovou o cenário de disputa pela última vaga previsto na suíte.
 
 **Status:** backend implementado e testado; confirmação do versionamento pendente neste registro.
 
@@ -479,7 +512,7 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 - [x] Isolamento entre alunos e lista vazia verificados.
 - [x] 7 testes automatizados aprovados.
 - [x] Interface React de consulta de matrículas implementada e coberta por 5 testes.
-- [ ] Commit/push da US-05 e atualização do Jira MAT-8.
+- **Registro de Git/Jira:** hashes específicos da US-05 e estado MAT-8 não foram apresentados; isso não altera seus testes concluídos.
 
 **Status em 22/11/2026:** backend e frontend implementados/testados; versionamento/Jira e verificação ponta a ponta a confirmar.
 
@@ -493,8 +526,7 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 - [x] Concorrência no cancelamento testada.
 - [x] 10 testes automatizados aprovados.
 - [x] Interface React com confirmação de cancelamento implementada e coberta por 4 testes.
-- [ ] Commit e push verificados.
-- [ ] Jira MAT-15 atualizado.
+- **Registro de Git/Jira:** publicação específica da US-06 e atualização MAT-15 não foram verificadas nesta revisão documental.
 
 **Status em 22/11/2026:** backend e frontend implementados/testados; Jira e commit a verificar.
 
@@ -510,8 +542,7 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 - [x] Isolamento entre alunos testado.
 - [x] 10 testes automatizados aprovados.
 - [x] Interface React de progresso implementada e coberta por 5 testes.
-- [ ] Commit e push verificados.
-- [ ] Jira MAT-12 atualizado.
+- **Registro de Git/Jira:** publicação específica da US-07 e atualização MAT-12 não foram verificadas nesta revisão documental.
 
 **Status em 22/11/2026:** backend e frontend implementados/testados; Jira e commit a verificar.
 
@@ -519,8 +550,8 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 
 - [x] Login, logout e proteção de rotas no React.
 - [x] 11 testes frontend aprovados (4 login, 3 logout, 4 rotas).
-- [ ] Verificar layout a 360px, estados reais de sessão e navegação ponta a ponta.
-- [ ] Confirmar registro do commit e situação da história no Jira.
+- [x] Layout do aluno a 360px e sessão invalidada durante navegação conferidos posteriormente pelo responsável; não equivale a E2E automatizado.
+- **Registro externo:** hash específico e estado Jira da US-02 não foram apresentados nesta revisão.
 
 **Status:** implementação e testes de componente registrados; aceite integral a confirmar.
 
@@ -532,7 +563,7 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 - [x] 8 testes backend e 6 frontend aprovados.
 - [x] 8 verificações manuais aprovadas pelo responsável em 22/11/2026.
 - [x] Commit e push da US-08 confirmados pelo responsável.
-- [ ] Atualizar MAT-10 no Jira, caso ainda não registrado.
+- **Jira:** estado de MAT-10 não foi confirmado nesta revisão; os critérios funcionais estão concluídos.
 
 **Status:** funcionalidade implementada, validada e publicada no Git; rastreabilidade Jira a conferir.
 
@@ -549,7 +580,7 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 - [x] 11 testes backend de edição, 7 testes frontend de edição e verificações de lint/TypeScript aprovados.
 - [x] 8/8 verificações manuais da edição aprovadas em 22/11/2026, conforme relato do responsável.
 - [x] Versionamento da edição da US-09 informado como concluído pelo responsável; conferir hash e publicação remota no fechamento geral.
-- [ ] Atualizar MAT-13 no Jira e conferir o push do commit da edição.
+- **Jira/Git:** estado de MAT-13 e hash da edição não foram apresentados nesta revisão; o versionamento foi informado como concluído.
 
 **Status:** **US-09 funcionalmente concluída e validada** (cadastro + edição). Responsável informou ter realizado o commit; push remoto e Jira a conferir.
 
@@ -565,7 +596,7 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 - [x] ESLint e TypeScript aprovados no frontend; TypeScript aprovado no backend.
 - [x] 8 verificações manuais da US-10 aprovadas, conforme relato do responsável.
 - [x] Commit e push da US-10 concluídos no GitLab (`8425521`), com `main` sincronizada a `origin/main` no checkpoint informado.
-- [ ] Conferir o item MAT-17 no Jira.
+- **Jira:** situação de MAT-17 não foi apresentada nesta revisão; commit/push da US-10 já haviam sido confirmados.
 
 **Status:** **US-10 implementada, validada e publicada**. Rastreabilidade no Jira ainda a conferir.
 
@@ -582,7 +613,7 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 - [x] Aviso React de `<a>` aninhado corrigido, sem reaparecer na execução final.
 - [x] **8 verificações manuais** relatadas como aprovadas pelo responsável.
 - [x] Commit e push da US-11 confirmados pelo responsável (hash ainda a registrar).
-- [ ] Conferir a chave correspondente da US-11 no Jira e seu estado.
+- **Jira:** conferir vinculação/estado da US-11 como acompanhamento administrativo, sem alterar a validação funcional.
 
 **Status:** **US-11 concluída funcionalmente, validada e versionada**. Rastreabilidade no Jira ainda a conferir.
 
@@ -598,8 +629,8 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 - [x] **8 testes novos no frontend; 80/80** aprovados na suíte completa em 10 arquivos.
 - [x] TypeScript nas duas aplicações e ESLint no frontend aprovados.
 - [x] **8 verificações manuais** informadas como concluídas pelo responsável.
-- [ ] Conferir `git status`, preparar commit/push da US-12 e registrar hash.
-- [ ] Conferir a chave da US-12 no Jira e registrar a conclusão.
+- **Git:** a preparação/publicação da US-12 faz parte do fluxo geral de commits; esta revisão não afirma possuir seu hash final.
+- **Jira:** a vinculação/estado da US-12 não foi verificada independentemente.
 
 **Status:** **US-12 funcionalmente concluída e validada**; faltam versionamento/documentação no repositório e rastreabilidade Jira. Não confundir os testes de lógica de capacidade com um ensaio de carga concorrente entre matrícula e edição.
 
@@ -625,7 +656,7 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 
 **Validação no momento desse registro histórico:** 39 testes automatizados aprovados em 5 arquivos, sem falhas. O checkpoint atualizado de 22/11/2026, após US-12, registra 203 testes em 20 arquivos.
 
-**Riscos e pendências naquele momento:** CSRF, teste após reinício, isolamento nos demais endpoints privados, concorrência sob maior carga, implementação de cancelamento/progresso e frontend responsivo. Cancelamento e progresso foram implementados depois; os riscos de segurança, responsividade e carga ainda precisam de verificação.
+**Riscos naquele momento:** CSRF, teste após reinício, isolamento nos demais endpoints, concorrência sob maior carga, implementação de cancelamento/progresso e frontend responsivo. Cancelamento, progresso, isolamento e responsividade foram validados depois; CSRF, HTTPS, persistência após reinício e carga ampliada permanecem como evolução futura, sem evidência específica de teste.
 
 ## Próximas ações registradas em 21/11/2026 (histórico)
 
@@ -635,7 +666,7 @@ Funcionalidade: Alterar capacidade de turma pela secretaria
 4. Concluir os fluxos obrigatórios de secretaria e o requisito adicional do enunciado.
 5. Revisar segurança, documentação, testes completos, README e entrega no GitLab até 23/11/2026.
 
-## Próximas ações vigentes — 22/11/2026
+## Próximas ações registradas em 22/11/2026 (histórico anterior à US-13)
 
 1. Conferir `git status --short`, `git diff --check`, preparar o commit e publicar a **US-12 — ajuste da quantidade de vagas**; registrar o hash e conferir a rastreabilidade Jira. O commit/push da US-11 já foi informado como realizado, mas falta registrar o hash.
 2. Implementar e testar o **requisito funcional adicional** exigido pelo enunciado, com critérios e evidências rastreáveis.
