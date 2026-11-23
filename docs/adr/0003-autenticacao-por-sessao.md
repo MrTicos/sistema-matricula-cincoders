@@ -6,7 +6,7 @@
 **Escopo:** US-01 (MAT-6) e US-02 (MAT-7)
 **Responsável pela decisão:** Thiago Silva
 
-> **Nota de estado:** a equipe adotou a estratégia de sessão no servidor e sua implementação funcional foi validada. Os critérios essenciais de login, autenticação, autorização, cookies e logout foram testados. Esta ADR registra explicitamente o limite do escopo acadêmico: **CSRF, HTTPS real e continuidade após reiniciar o processo não foram comprovados**. A adoção da decisão não equivale a certificação de segurança para produção.
+> **Nota de estado:** sessão no servidor, login, autorização, cookies e logout implementados e testados. Em 23/11/2026, foi acrescentada verificação CSRF de `Origin`/`Referer` no login e nas escritas autenticadas, com 10 testes de integração aprovados. **HTTPS real, continuidade após reinício e fluxo E2E de CSRF no navegador** ainda não foram comprovados. A adoção da decisão não equivale a certificação de segurança para produção.
 
 ## 1. Contexto e problema
 
@@ -32,6 +32,8 @@ Utilizar **`express-session` com sessão armazenada no servidor e cookie de iden
 | Identificador de sessão | Cookie `cincoders.sid` |
 | Proteção contra leitura via JavaScript | `HttpOnly: true` |
 | Política de envio entre sites | `SameSite: "lax"` |
+| Proteção adicional contra CSRF | Verificação de `Origin` ou `Referer` em métodos de escrita autenticados e no login |
+| Origem do frontend permitida | `FRONTEND_ORIGIN`, padrão `http://localhost:5173`, compartilhada com CORS |
 | Cookie em produção | `Secure: true` quando `NODE_ENV=production` |
 | Tempo de expiração | 8 horas (`maxAge`) |
 | Segredo de assinatura | Variável local `SESSION_SECRET`, mínimo de 32 caracteres |
@@ -55,6 +57,7 @@ Os arquivos SQLite de sessão não são os mesmos que armazenam os dados acadêm
 5. Rotas restritas exigem `ALUNO` ou `SECRETARIA`. Nas operações do aluno, a vinculação ao registro acadêmico vem do usuário autenticado, não de um ID arbitrário enviado pelo navegador.
 6. `POST /api/auth/logout` invalida a sessão armazenada e instrui o navegador a remover o cookie.
 7. Quando uma chamada protegida recebe `401`, o cliente HTTP compartilhado encaminha o usuário à tela de login, respeitando as exceções de `/api/auth/login` e `/api/auth/me`.
+8. Em `POST`/`PATCH`/`PUT`/`DELETE` com sessão (e no login), o middleware recusa `Origin` diferente da origem configurada; na ausência desse cabeçalho, aceita somente `Referer` cuja origem corresponda. Sem origem verificável, retorna `403`. Requisições `GET`, `HEAD` e `OPTIONS` não são bloqueadas por essa regra.
 
 ### Fluxo resumido
 
@@ -104,7 +107,7 @@ sequenceDiagram
 - Proteger rotas por perfil e por propriedade acadêmica.
 - Garantir que o logout invalide a sessão no armazenamento.
 - Manter `SESSION_SECRET` e arquivos de sessão fora do Git.
-- Avaliar mitigação de CSRF para requisições mutáveis. `SameSite=Lax` reduz risco, mas não substitui uma análise completa.
+- Manter a verificação de origem contra CSRF nas requisições mutáveis e testar qualquer nova origem autorizada. `SameSite=Lax` é uma camada adicional, não substitui a verificação nem dispensa análise para produção.
 
 ### Na manutenção e implantação
 
@@ -119,6 +122,7 @@ sequenceDiagram
 | --- | --- |
 | `apps/api/tests/auth.test.ts` | 8 testes de login, sessão, cookies, logout e regeneração aprovados |
 | `apps/api/tests/auth.middleware.test.ts` | 3 testes de autorização por perfil aprovados |
+| `apps/api/tests/csrf.test.ts` | 10 testes de integração de origem confiável, externa, ausente, `null`, `Referer`, login, `POST`, `PATCH` e `GET` aprovados |
 | Autorização por titularidade | Exercitada por testes de matrícula, cancelamento, consultas, progresso e histórico |
 | `apps/web/src/pages/LoginPage.test.tsx` | 4 testes da interface de login aprovados |
 | `apps/web/src/routes/AppRoutes.test.tsx` | 4 testes de proteção e navegação de rotas aprovados |
@@ -126,7 +130,7 @@ sequenceDiagram
 | `apps/web/src/api/client.test.ts` | 3 testes adicionais do cliente HTTP, incluindo tratamento de `401`, aprovados conforme relato |
 | Teste manual com duas abas | Sessão invalidada em uma aba leva a outra ao login ao receber `401`; informado como aprovado |
 
-**Checkpoint global de 23/11/2026:** API **133/133 testes em 11 arquivos**; frontend **95/95 testes em 12 arquivos**, conforme as execuções e confirmações compartilhadas. Esses totais abrangem **todo o projeto**, não apenas esta ADR; não devem ser somados aos testes da tabela.
+**Checkpoint global atualizado em 23/11/2026:** API **143/143 testes em 12 arquivos** após T-32; frontend **95/95 testes em 12 arquivos**. Total: **238 testes automatizados** em duas suítes independentes, não uma suíte E2E.
 
 ## 7. Riscos residuais e recomendações para produção
 
@@ -134,7 +138,7 @@ sequenceDiagram
 | --- | --- | --- |
 | Persistência após **reiniciar o processo** | Banco de sessões criado; ensaio com mesmo cookie ainda não documentado | Login, reinício da API mantendo banco/segredo e `GET /api/auth/me` autenticado sem novo login |
 | Cookie `Secure` sobre HTTPS | Configuração de produção presente, sem teste HTTPS informado | Validar atributos e comportamento em ambiente HTTPS |
-| CSRF | `SameSite=Lax` configurado; mitigação e teste específicos não documentados | Definir controle e evidenciar comportamento das requisições mutáveis |
+| CSRF | Validação de `Origin`/`Referer` implementada e aprovada em 10 testes HTTP | Complementar com teste E2E em navegador e reavaliar proteção por token em implantação com múltiplas origens |
 | Expiração real após 8 horas | `maxAge` configurado; expiração por relógio não testada | Confirmar recusa de cookie expirado e navegação ao login |
 | Sessão revogada em outra aba | Correção funcional e teste manual relatados | **Concluído funcionalmente**, sem equivaler ao ensaio de expiração por tempo |
 | Privacidade acadêmica | Testes de titularidade nas funcionalidades implementadas | Manter testes de regressão ao alterar endpoints |
@@ -148,9 +152,9 @@ O registro inicial condicionava a aceitação à seleção de um armazenamento p
 1. **Armazenamento persistente selecionado:** `@bleed-believer/connect-sqlite3`, sem `MemoryStore`.
 2. **Login e autorização testados:** autenticação, senha incorreta, perfis, cookie, regeneração e logout.
 3. **Comportamento da interface testado:** login, rotas por perfil e redirecionamento após `401` de sessão invalidada.
-4. **Limites reconhecidos:** não existe evidência de verificação específica de HTTPS, CSRF, expiração cronometrada nem sessão mantida após reiniciar o processo.
+4. **Limites reconhecidos:** não existe evidência de verificação específica de HTTPS, expiração cronometrada, sessão mantida após reiniciar o processo nem fluxo E2E de CSRF em navegador; a verificação de origem foi testada por HTTP.
 
-**Decisão final para a entrega acadêmica:** manter `express-session` com SQLite e cookie HttpOnly; documentar os limites acima como recomendações para implantação em produção, sem declará-los testados. Isso fecha o registro da escolha arquitetural para o código entregue, sem prometer garantias inexistentes.
+**Decisão final para a entrega acadêmica:** manter `express-session` com SQLite, cookie HttpOnly e verificação de origem nas escritas autenticadas; documentar os limites restantes como recomendações para implantação em produção, sem declará-los testados. Isso fecha o registro da escolha arquitetural para o código entregue, sem prometer garantias inexistentes.
 
 Uma eventual mudança para JWT ou outra estratégia requer nova ADR ou revisão explícita desta decisão, não apenas uma alteração de código.
 

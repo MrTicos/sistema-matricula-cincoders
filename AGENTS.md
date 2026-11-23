@@ -10,7 +10,7 @@ Este arquivo orienta agentes de IA que colaboram com o responsável pelo Sistema
 - **Entrega:** monorepo com backend e frontend no GitLab do CIn, compartilhado com `selecaogersist`. **O avaliador aceitou o convite**, conforme confirmação de Thiago em 23/11/2026; o push dos arquivos finais ainda precisa ser confirmado para declarar a entrega efetivada.
 - **Histórias:** US-01 a US-12 e **US-13 — Histórico de matrículas canceladas** foram relatadas como implementadas e validadas. A US-13 é o requisito funcional adicional escolhido.
 - **Interface:** navegação compartilhada por perfil, estados de erro e recuperação, ajustes de identidade visual e responsividade para o aluno.
-- **Evidência automatizada recente:** 133 testes de API em 11 arquivos aprovados; 95 testes frontend em 12 arquivos aprovados conforme confirmação do responsável. São **228 testes em duas suítes separadas**, não testes E2E.
+- **Evidência automatizada recente:** 143 testes de API em 12 arquivos aprovados (incluindo 10 testes novos de CSRF, T-32) e 95 testes frontend em 12 arquivos aprovados. São **238 testes em duas suítes separadas**, não testes E2E.
 - **Evidência manual:** 48 verificações relatadas para US-08 a US-13 (oito por história). Não confundir com testes automatizados.
 
 O estado detalhado e as ressalvas estão em `docs/sprints/sprint-1.md`, `docs/testes/plano-de-testes.md` e `docs/entrega-checklist.md`.
@@ -75,7 +75,7 @@ As operações de matrícula e alteração de capacidade precisam preservar inva
 
 - `docs/adr/0001-rematricula-novo-registro.md` — nova linha após cancelamento.
 - `docs/adr/0002-unicidade-matricula-ativa-por-disciplina.md` — no máximo uma matrícula ativa por disciplina/aluno.
-- `docs/adr/0003-autenticacao-por-sessao.md` — estratégia **adotada e implementada** com cookie HttpOnly e sessões SQLite; limitações para produção explicitadas, sem afirmar testes de CSRF/HTTPS não executados.
+- `docs/adr/0003-autenticacao-por-sessao.md` — estratégia **adotada e implementada** com cookie HttpOnly, sessões SQLite e validação de origem CSRF nas escritas autenticadas; HTTPS real e continuidade após reinício permanecem sem teste específico.
 - `docs/modelagem-fisica.md` — documentação **conferida contra o schema integral** enviado em 23/11/2026; `apps/api/prisma/schema.prisma` continua sendo a fonte executável.
 
 Mudanças que contrariem ADRs aceitas exigem conversa prévia com o responsável e registro explícito da nova decisão.
@@ -85,9 +85,10 @@ Mudanças que contrariem ADRs aceitas exigem conversa prévia com o responsável
 - Armazenar senhas como hash Argon2id; nunca devolver `senhaHash`, senhas ou segredos.
 - A sessão do usuário é mantida no servidor, não no conteúdo legível do cookie.
 - A configuração conhecida usa `HttpOnly`, `SameSite=Lax`, `Secure` quando `NODE_ENV=production`, prazo de oito horas e regeneração de ID após login.
+- Login e requisições autenticadas com método de escrita exigem `Origin` confiável ou `Referer` compatível, comparados a `FRONTEND_ORIGIN`; a API retorna `403` para origens inválidas ou ausentes. `GET`/`HEAD`/`OPTIONS` não exigem esse cabeçalho.
 - O cliente HTTP reage a `401` em chamadas protegidas levando ao login; preservar as exceções necessárias para login e verificação inicial de sessão.
 - Verificar autorização por **perfil** e por **titularidade acadêmica** nos serviços e endpoints.
-- **Pendências a não ocultar:** verificação específica de continuidade de sessão após reinício, política/mitigação contra CSRF e comportamento real de `Secure` sob HTTPS. Não afirmar que foram validados sem evidência.
+- **Pendências a não ocultar:** verificação específica de continuidade de sessão após reinício, comportamento real de `Secure` sob HTTPS e teste E2E em navegador da proteção CSRF. A verificação de origem possui 10 testes de integração, mas não equivale a auditoria para produção.
 - Não usar `MemoryStore` para sessões persistentes. Evitar logs sensíveis e respostas que permitam enumerar usuários.
 - Não versionar `apps/api/.env`, bancos SQLite, arquivos auxiliares `-wal`/`-shm`/`-journal`, `node_modules`, nem `apps/api/src/generated/prisma/`.
 - Versionar fontes, migrações, `schema.prisma`, `seed.ts` e `.env.example` **sem credenciais reais**.

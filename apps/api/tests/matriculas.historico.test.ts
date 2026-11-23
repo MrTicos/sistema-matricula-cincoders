@@ -55,7 +55,7 @@ async function agenteAutenticado(username: string) {
     throw new Error("SEED_PASSWORD não configurada.");
   }
 
-  const agente = request.agent(app);
+  const agente = request.agent(app).set("Origin", "http://localhost:5173");
 
   await agente
     .post("/api/auth/login")

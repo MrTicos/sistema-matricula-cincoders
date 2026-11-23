@@ -107,7 +107,7 @@ As RN-A01/RN-A02 têm ADRs próprias. As RN-A04/RN-A05 correspondem à US-13; n�
 | RNF-08 | Processo | Código legível, documentos revisados e histórico de commits |
 | RNF-09 | Acessibilidade básica | Navegação identificável, rótulos e mensagens sem depender só de cor |
 
-**Ressalva:** os testes informados não comprovam, por si só, todos os aspectos de segurança operacional (CSRF, HTTPS real e tempo de expiração de cookie).
+**Ressalva:** a verificação de origem CSRF foi implementada e aprovada em 10 testes HTTP no dia 23/11. Ainda não comprova HTTPS real, expiração cronometrada de cookie ou proteção E2E em navegador.
 
 ## 5. Priorização MoSCoW e MVP
 
@@ -315,19 +315,19 @@ Funcionalidade: Histórico de matrículas canceladas (US-13)
 | CH em curso | Não antecipar aprovação; apresentar carga ativa separadamente | [Arquitetura](arquitetura/visao-geral.md) |
 | Requisito adicional | Histórico de matrículas canceladas, sem novo semestre | Seção 7 deste documento |
 
-**Estado da ADR-0003:** estratégia de sessão adotada e implementada, com limites de segurança de uma futura implantação documentados. A revisão formal da decisão é registrada na própria ADR, sem afirmar testes de CSRF ou HTTPS não realizados.
+**Estado da ADR-0003:** estratégia de sessão adotada e implementada. A verificação de origem CSRF está testada; HTTPS real e continuidade após reinício permanecem sem evidência específica. A revisão está registrada na própria ADR.
 
 ## 10. Evidências e rastreabilidade de testes
 
 | Verificação | Resultado informado | Limite |
 | --- | --- | --- |
-| API completa | **133/133 testes aprovados em 11 arquivos** | Executada no banco dedicado `test.db` |
+| API completa | **143/143 testes aprovados em 12 arquivos** | Executada no banco dedicado de testes após T-32 |
 | Frontend completo | **95/95 testes aprovados em 12 arquivos** | Confirmação do responsável após incluir três casos do cliente HTTP |
 | Verificações manuais US-08 a US-13 | **48 aprovadas** | Oito por US, não são testes automatizados |
 | Linters e tipagem | `pnpm lint` e `pnpm exec tsc -b` no web; `pnpm exec tsc --noEmit` na API, sem erros relatados | Conferir novamente após qualquer edição de código |
 | Reprodução da base | Migração, geração do Client e seed aprovados em banco separado | Validada localmente; documentar preparação no README |
 
-**Total automatizado informado:** **228 testes**, distribuídos nas duas aplicações, sem E2E automatizado adicional declarado.
+**Total automatizado atualizado:** **238 testes**, distribuídos nas duas aplicações, sem E2E automatizado adicional declarado.
 
 ## 11. Definition of Done e fechamento documental
 

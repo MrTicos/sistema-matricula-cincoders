@@ -19,6 +19,7 @@ describe("US-01 — Autenticação", () => {
   it("deve rejeitar credenciais inválidas", async () => {
     const resposta = await request(app)
       .post("/api/auth/login")
+      .set("Origin", "http://localhost:5173")
       .send({
         username: "aluno.si",
         senha: "senha-incorreta",
@@ -37,7 +38,7 @@ describe("US-01 — Autenticação", () => {
       throw new Error("SEED_PASSWORD não configurada.");
     }
 
-    const agente = request.agent(app);
+    const agente = request.agent(app).set("Origin", "http://localhost:5173");
 
     const login = await agente
       .post("/api/auth/login")
@@ -72,7 +73,7 @@ describe("US-01 — Autenticação", () => {
       throw new Error("SEED_PASSWORD não configurada.");
     }
 
-    const agente = request.agent(app);
+    const agente = request.agent(app).set("Origin", "http://localhost:5173");
 
     await agente
       .post("/api/auth/login")
@@ -94,6 +95,7 @@ describe("US-01 — Autenticação", () => {
     it("deve rejeitar usuário inexistente com erro genérico", async () => {
     const resposta = await request(app)
         .post("/api/auth/login")
+        .set("Origin", "http://localhost:5173")
         .send({
         username: "usuario.inexistente",
         senha: "qualquer-senha",
@@ -115,6 +117,7 @@ describe("US-01 — Autenticação", () => {
 
     const resposta = await request(app)
         .post("/api/auth/login")
+        .set("Origin", "http://localhost:5173")
         .send({
         username: "aluno.si",
         senha,
@@ -142,7 +145,7 @@ describe("US-01 — Autenticação", () => {
         throw new Error("SEED_PASSWORD não configurada.");
     }
 
-    const agente = request.agent(app);
+    const agente = request.agent(app).set("Origin", "http://localhost:5173");
 
     const primeiroLogin = await agente
         .post("/api/auth/login")
@@ -189,7 +192,7 @@ describe("US-01 — Autenticação", () => {
         throw new Error("SEED_PASSWORD não configurada.");
     }
 
-    const agente = request.agent(app);
+    const agente = request.agent(app).set("Origin", "http://localhost:5173");
 
     await agente
         .post("/api/auth/login")

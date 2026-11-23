@@ -1,8 +1,20 @@
 # Plano de Testes — Sistema de Matrícula CINCoders
 
-**Estado em 23/11/2026:** testes e validações funcionais informados como concluídos; **133/133 testes API**, **95/95 testes web** e **48 verificações manuais** aprovadas. Este documento mantém os checkpoints anteriores como registro histórico, não como tarefas ainda abertas.
+**Estado atualizado em 23/11/2026:** **143/143 testes API em 12 arquivos**, **95/95 testes web em 12 arquivos** e **48 verificações manuais** relatadas anteriormente. O total automatizado é **238 testes**, em suítes independentes. Os checkpoints anteriores são registros históricos e mantêm as contagens que eram válidas em suas datas.
 
-## Checkpoint de entrega — após US-13 e ajustes de navegação
+## Verificação adicional — T-32, proteção CSRF por origem
+
+O backend agora exige `Origin` compatível com `FRONTEND_ORIGIN` ou, na ausência desse cabeçalho, `Referer` com a mesma origem para login e operações autenticadas de escrita. Origem externa, ausente, `null` ou malformada resulta em `403`. Consultas `GET` permanecem acessíveis; acessos acadêmicos sem sessão continuam retornando `401`.
+
+| Verificação | Evidência | Resultado |
+| --- | --- | --- |
+| T-32 — `apps/api/tests/csrf.test.ts` | 10 cenários: login com origem externa/ausente, Referer confiável, POST autenticado sem origem, origem adversária, `Origin: null`, POST legítimo, fallback para Referer, PATCH recusado e GET permitido, 401 preservado | **10/10 aprovados** |
+| Regressão API | `pnpm exec vitest run --no-file-parallelism` em banco SQLite isolado de testes | **143/143 aprovados, 12 arquivos** |
+| TypeScript API | `pnpm exec tsc --noEmit` | **Aprovado** |
+
+Esses resultados validam a política no nível HTTP, não substituem uma inspeção E2E de navegadores, HTTPS ou teste de sessão após reiniciar o processo. Os 10 testes T-32 já estão incluídos nos 143 e não devem ser somados novamente.
+
+## Checkpoint anterior — após US-13 e ajustes de navegação
 
 **Fonte:** logs de terminal e verificações manuais compartilhados pelo responsável. A US-13 acrescentou o histórico de matrículas canceladas e foi validada com **9 testes frontend dedicados** (`HistoricoMatriculas.test.tsx`, log 9/9), **10 testes backend** incluídos na suíte integral **133/133 em 11 arquivos** e **8 verificações manuais** informadas como aprovadas. No frontend, houve log integral de **92/92 em 11 arquivos** (após CT-06 de Ofertas, Matrículas e Progresso) e, posteriormente, **três novos testes dedicados ao cliente HTTP**, com aprovação geral informada como **95 testes em 12 arquivos**. O histórico manual informado totaliza **48 verificações** (8 para cada US-08 a US-13).
 
@@ -236,7 +248,7 @@ O material abaixo mantém critérios, Gherkin e evidências de marcos anteriores
 
 **Comandos (em `apps/web`):** `pnpm exec vitest run`, `pnpm lint` e `pnpm exec tsc -b`. Resultado: 3 arquivos, **11 testes aprovados**, ESLint e TypeScript sem erros. Login e logout também foram verificados manualmente com a API real.
 
-**Limites:** os testes de componente usam um hook de autenticação simulado; não constituem um teste ponta a ponta da API. Permanecem pendentes a verificação visual em 360px e a revisão de CSRF e HTTPS/cookies.
+**Limites naquele checkpoint:** os testes de componente usam autenticação simulada e não constituem E2E da API. A validação manual em 360px e a verificação de origem CSRF foram realizadas posteriormente; HTTPS/cookies em produção seguem pendentes.
 
 ## Histórico e plano original (checkpoints anteriores)
 
@@ -338,7 +350,7 @@ Verificar que o sistema cumpre as regras funcionais e de autorização do teste 
 | T-29 | US-01, logout | Logout envia instrução para limpar o cookie da sessão | Integração | P0 |
 | T-30 | US-01, persistência | Sessão continua válida após reinício da API sem novo login, dentro do prazo de expiração | Manual/integração | P1 |
 | T-31 | US-01, HTTPS | Cookie contém `Secure` em ambiente HTTPS de produção | Integração/manual | P1 |
-| T-32 | US-01, CSRF | Requisições que alteram dados são protegidas contra CSRF | Integração | P0 |
+| T-32 | US-01, CSRF | Requisições que alteram dados são protegidas contra CSRF | Integração | P0 — aprovado em 23/11 |
 | T-33 | US-09, acesso | Requisição não autenticada não cadastra disciplina; aluno autenticado é bloqueado | Integração | P0 |
 | T-34 | US-09, cadastro | Secretaria cria disciplina com código, nome e CH válidos | Integração | P1 |
 | T-35 | US-09, unicidade | Código já existente, inclusive após normalização, não produz novo cadastro | Integração | P1 |
@@ -720,7 +732,8 @@ pnpm exec vitest run
 | 21/11/2026 | `pnpm exec vitest run tests/matriculas.test.ts` | 12 casos aprovados, incluindo concorrência por última vaga | Passou |
 | 21/11/2026 | `pnpm exec vitest run` | **4 arquivos, 32 testes (11 autenticação/autorização + 9 ofertas + 12 matrículas), 0 falhas; duração 2,55 s** | **Passou** |
 | Evolução futura | Sessão mantida após reiniciar a API | Registro não apresentado | Não testado especificamente |
-| Evolução futura | CSRF e atributo `Secure` em HTTPS | Verificação destinada à implantação em produção | Não testado especificamente |
+| Concluído após 21/11 | CSRF por verificação de origem | 10 testes de integração T-32 em 23/11 | **Aprovado posteriormente** |
+| Evolução futura | Atributo `Secure` em HTTPS | Verificação destinada à implantação em produção | Não testado especificamente |
 | Concluído após 21/11 | Isolamento acadêmico entre alunos | Coberto posteriormente nas suítes de matrículas, cancelamento, progresso e US-13 | **Aprovado posteriormente** |
 | Concluído após 21/11 | Cancelamento via API, progresso e demais regras de negócio | US-06/US-07/US-13 implementadas e testadas | **Aprovado posteriormente** |
 | Concluído após 21/11 | Interface em largura de 360px | Validação manual confirmada pelo responsável | **Aprovado posteriormente** |
@@ -753,7 +766,7 @@ Os três testes de autorização por perfil utilizam uma **rota exclusiva do amb
 
 - O armazenamento em arquivo SQLite foi criado, mas isso **não comprova sozinho** que a sessão sobrevive a reinício da API. É necessária a evidência específica do cenário T-30.
 
-- `SameSite=Lax` não é prova suficiente de proteção contra CSRF; o cenário T-32 permanece aberto.
+- `SameSite=Lax` não é prova suficiente de proteção contra CSRF. **Naquele checkpoint, T-32 estava aberto; foi concluído posteriormente em 23/11** com 10 testes de origem confiável.
 
 - **Nota histórica (21/11):** naquele momento não havia cobertura de titularidade acadêmica. Os testes das US-05, US-06, US-07 e US-13 acrescentaram essa verificação posteriormente.
 
@@ -775,7 +788,7 @@ Os três testes de autorização por perfil utilizam uma **rota exclusiva do amb
 
 - [x] Commit/push da autenticação verificados no GitLab (`847ddc8`).
 
-- **Segurança além do escopo validado:** continuidade da sessão após reinício, CSRF e `Secure` sob HTTPS são verificações futuras descritas na ADR-0003; não foram apresentadas como testes aprovados.
+- **Segurança além do escopo validado naquele checkpoint:** continuidade após reinício, CSRF e `Secure` sob HTTPS ainda não tinham evidência. T-32 foi concluído posteriormente; os demais pontos permanecem sem validação específica.
 - **Jira MAT-6:** estado do ticket não foi verificado nesta revisão documental.
 
 **Status da US-01:** funcionalmente implementada e testada; este bloco contém os resultados da etapa original, complementados pelas suítes posteriores. A publicação inicial de autenticação foi registrada no GitLab (`847ddc8`).
@@ -1174,7 +1187,7 @@ Abertura:
 
 **Verificações manuais:** roteiro de 8 casos (acesso à edição, formulário preenchido, cancelamento, aumento, redução permitida, igualdade com ocupação, impedimento de redução indevida e preservação de URL/recarga) informado pelo responsável como concluído. Sem captura independente, não tratar o relato como E2E automatizado.
 
-**Validação adicional recomendada antes da entrega:** ensaio concorrente envolvendo aumento de matrículas e redução de vagas, revisão de responsividade a 360px e proteção CSRF. O `UPDATE` condicional na transação fornece defesa de integridade na operação de alteração, mas os dez testes atuais não são um teste de estresse ou simulação de todos os interleavings possíveis.
+**Validação adicional recomendada naquele checkpoint:** ensaio concorrente envolvendo aumento de matrículas e redução de vagas, responsividade a 360px e proteção CSRF. Responsividade e T-32 foram verificadas posteriormente. O `UPDATE` condicional reduz riscos, mas os testes não constituem teste de estresse de todos os interleavings.
 
 **Status naquele checkpoint:** US-12 funcionalmente implementada, testada e validada manualmente. Posteriormente, a US-13, os testes finais e a revisão documental foram concluídos conforme o consolidado de 23/11/2026. O estado do último commit/push é verificado na publicação, fora deste plano de testes.
 
@@ -1188,11 +1201,11 @@ Riscos que exigem atenção:
 
 2. **Privacidade:** usar o ID vindo do cliente em vez da sessão pode expor dados de outro aluno.
 
-3. **Sessões e CSRF:** a persistência foi integrada ao SQLite, mas requer evidência após reinício; revisar CSRF e os cookies de produção antes da entrega.
+3. **Sessões e CSRF:** a persistência foi integrada ao SQLite, mas ainda requer evidência após reinício. O middleware de origem foi aprovado em T-32; restam HTTPS/cookies de produção e eventual defesa adicional por token conforme a implantação.
 
 4. **Banco de teste:** assegurar que Vitest, Prisma e o armazenamento de sessão não modifiquem `dev.db` nem o banco de sessões de desenvolvimento.
 
-5. **Cobertura falsa (exemplo histórico):** os 32 testes de um checkpoint de 21/11 cobriam autenticação/autorização, ofertas e realização de matrícula no backend, sem provar cancelamento, progresso, frontend ou secretaria naquela época. No checkpoint atual de 22/11 há **203 testes**, mas ainda não há prova automática de CSRF, responsividade, carga ou MVP completo.
+5. **Cobertura falsa (exemplo histórico):** os 32 testes de 21/11 cobriam apenas o início do backend. Em 22/11 havia 203 testes, mas ainda não havia prova automática de CSRF. O consolidado de 23/11 já inclui T-32, matrícula/cancelamento/progresso, secretaria e requisito extra; não comprova carga, HTTPS nem E2E completo.
 
 ## 10. Manutenção
 

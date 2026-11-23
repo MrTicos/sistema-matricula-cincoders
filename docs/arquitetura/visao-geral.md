@@ -1,6 +1,8 @@
 # Visão geral da arquitetura — CINCoders
 
-> **Estado documental final — 23/11/2026:** US-01 a US-13 implementadas e validadas conforme os registros do responsável, incluindo o requisito adicional **US-13 — histórico de matrículas canceladas**. A navegação ganhou componentes compartilhados para aluno e secretaria, e o CSS recebeu ajustes de identidade visual e largura das listagens. A suíte completa da API passou com **133/133 testes em 11 arquivos** (28,94 s, banco `test.db`) e TypeScript aprovado; `DATABASE_URL` foi restaurada para `dev.db`. O frontend passou com **95/95 testes em 12 arquivos**, incluindo os casos do cliente HTTP, com lint e TypeScript aprovados. Total: **228 testes automatizados**, em duas suítes, e **48 verificações manuais** informadas como aprovadas (US-08 a US-13). O `schema.prisma` integral foi conferido com a modelagem física. O avaliador `selecaogersist` **aceitou o convite ao GitLab**, conforme Thiago; a publicação dos documentos finais é a próxima operação de Git.
+> **Estado documental após US-13 — 23/11/2026:** US-01 a US-13 implementadas e validadas conforme os registros do responsável, incluindo o requisito adicional **US-13 — histórico de matrículas canceladas**. A navegação ganhou componentes compartilhados para aluno e secretaria, e o CSS recebeu ajustes de identidade visual e largura das listagens. A suíte completa da API passou com **133/133 testes em 11 arquivos** (28,94 s, banco `test.db`) e TypeScript aprovado; `DATABASE_URL` foi restaurada para `dev.db`. O frontend passou com **95/95 testes em 12 arquivos**, incluindo os casos do cliente HTTP, com lint e TypeScript aprovados. Total naquele checkpoint: **228 testes automatizados**, em duas suítes, e **48 verificações manuais** informadas como aprovadas (US-08 a US-13). O `schema.prisma` integral foi conferido com a modelagem física. O avaliador `selecaogersist` **aceitou o convite ao GitLab**, conforme Thiago; a publicação dos documentos finais é a próxima operação de Git.
+
+**Complemento T-32 em 23/11/2026:** validação de `Origin`/`Referer` para login e operações autenticadas de escrita, com origem compartilhada entre CORS e proteção CSRF. Os 10 testes novos passaram, elevando a API para **143/143 testes em 12 arquivos** e o total automatizado para **238 testes** (143 API + 95 web). A verificação foi HTTP, não E2E em navegador.
 
 ## Evolução desde o checkpoint US-12 — requisito adicional e navegação
 
@@ -361,7 +363,7 @@ não são versionados.
 
 - Verificar atributos de segurança dos cookies em testes.
 
-- Revisar proteção contra CSRF.
+- Ampliar a validação CSRF para um ensaio E2E em navegador; a verificação de origem já está implementada e testada por HTTP.
 
 - Ampliar a verificação de isolamento de dados acadêmicos; as suítes de consulta de matrículas e progresso já exercitam casos de titularidade.
 

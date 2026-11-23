@@ -12,6 +12,7 @@ Legenda: **Aprovado** = código/testes/logs/verificações manuais relatados pel
 | --- | --- | --- |
 | Monorepo React + API JavaScript/TypeScript e banco | `apps/web`, `apps/api`, Prisma/SQLite, testes e commits por US | **Implementado; publicação final em preparação** |
 | Login, sessões, logout e perfis `ALUNO`/`SECRETARIA` | US-01/US-02; testes de sessão, middlewares, rotas e tratamento de `401` | **Aprovado funcionalmente** |
+| Proteção CSRF nas escritas autenticadas e no login | Middleware de `Origin`/`Referer`, integrado ao CORS e com origem configurável; T-32 com 10 testes e regressão da API aprovada | **Implementado e testado por HTTP** |
 | Disciplina: código único, CH de 15–120 e múltiplo de 15 | US-08/US-09; API e formulário; duplicidade `409` | **Aprovado** |
 | Professores: cadastro com e-mail único e consulta | US-10; API/React; testes de duplicidade e busca | **Aprovado** |
 | Turmas: disciplina, professor, ao menos uma vaga, consulta de ocupação | US-11; API/React; 15 testes API + 14 web | **Aprovado** |
@@ -56,12 +57,13 @@ Legenda: **Aprovado** = código/testes/logs/verificações manuais relatados pel
 - [x] **Sessão expirada — falha corrigida em 23/11:** o teste com duas abas revelou inicialmente que a primeira permanecia na área do aluno exibindo `Usuário não autenticado.` e **Tentar novamente**. O cliente HTTP passou a redirecionar respostas `401` de endpoints protegidos para `/login`, preservando os erros de `/api/auth/login` e a verificação inicial de `/api/auth/me`. **Responsável confirmou aprovação do reteste manual e dos testes automatizados após a correção**, incluindo três cenários dedicados em `apps/web/src/api/client.test.ts`.
 - [x] **360px:** responsável confirmou que os testes manuais de login, ofertas, matrículas (incluindo histórico), progresso e navegação passaram em 360px. A captura anterior com possível recorte era inconclusiva e não demonstrou um defeito reproduzível. Não equivale a teste visual automatizado.
 - [x] **Confirmação do backend após US-13:** `pnpm exec tsc --noEmit` e `pnpm exec vitest run --no-file-parallelism` concluídos; **133/133 testes em 11 arquivos** (28,94 s), em `test.db`; `DATABASE_URL` restaurada para `file:./dev.db`, conforme logs compartilhados.
+- [x] **Validação posterior de CSRF — T-32:** middleware de origem adicionado para login e escritas com sessão, rejeitando origem externa, `null` ou ausente; 10 testes focados passaram e a API completa alcançou **143/143 testes em 12 arquivos** em banco de testes isolado.
 - [x] **Regressão frontend após correções de rede e sessão:** lint, TypeScript e **95 testes em 12 arquivos** aprovados conforme relato; o log completo anteriormente compartilhado registra 92/92 em 11 arquivos (10,48 s), antes dos três casos do cliente HTTP. Reexecutar se houver alterações de código posteriores.
 - [x] **Modelagem:** `schema.prisma` integral recebido e documentado com nove modelos, quatro enums, índices, chaves, valores padrão e relações.
 - [x] **Acesso ao GitLab:** o avaliador `selecaogersist` aceitou o convite de acesso, conforme confirmação de Thiago.
 - [x] **Git anterior:** `git diff --check` foi executado sem erros antes da atualização final dos documentos; nova revisão do estágio será feita no procedimento da seção 4.
 
-**Limites conhecidos, não pendências funcionais:** não houve demonstração de teste E2E automatizado, CSRF, HTTPS real nem da persistência da sessão após reiniciar o processo. São limitações documentadas para evolução/implantação posterior, sem serem rotuladas como testes aprovados.
+**Limites conhecidos, não pendências funcionais:** CSRF está validado em testes HTTP por verificação de origem, mas não houve demonstração E2E automatizada dessa proteção, HTTPS real nem persistência de sessão após reinício. São limites documentados para evolução/implantação.
 
 ## 4. Procedimento de commit e publicação no PowerShell
 
@@ -76,14 +78,28 @@ git diff --check
 git diff --cached --check
 ```
 
-### Adicionar somente os documentos conferidos
+### Adicionar somente os arquivos conferidos
 
-Após copiar os arquivos finais para suas pastas:
+Após copiar os arquivos finais para suas pastas, **incluindo o middleware e os testes T-32**:
 
 ```powershell
 git add README.md
 git add AGENTS.md
 git add apps/api/.env.example
+git add apps/api/src/app.ts
+git add apps/api/src/config/frontend-origin.ts
+git add apps/api/src/middlewares/csrf.middleware.ts
+git add apps/api/tests/auth.test.ts
+git add apps/api/tests/csrf.test.ts
+git add apps/api/tests/ofertas.test.ts
+git add apps/api/tests/matriculas.test.ts
+git add apps/api/tests/matriculas.consulta.test.ts
+git add apps/api/tests/matriculas.cancelamento.test.ts
+git add apps/api/tests/matriculas.historico.test.ts
+git add apps/api/tests/progresso.test.ts
+git add apps/api/tests/secretaria.disciplinas.test.ts
+git add apps/api/tests/secretaria.professores.test.ts
+git add apps/api/tests/secretaria.turmas.test.ts
 git add docs/requisitos-e-backlog.md
 git add docs/modelagem-fisica.md
 git add docs/adr/0003-autenticacao-por-sessao.md
@@ -101,22 +117,22 @@ git diff --cached --name-only
 
 **Não adicionar:** `apps/api/.agents/`, `apps/api/.claude/`, `apps/api/.windsurf/`, `apps/api/skills-lock.json`, bancos SQLite, arquivos `.env`, dependências ou Prisma Client gerado.
 
-Se o estágio contiver **somente os documentos e `.env.example`**, publicar com:
+Se o estágio contiver **somente os arquivos revisados acima**, publicar com:
 
 ```powershell
-git commit -m "docs: consolida requisitos arquitetura testes e entrega"
+git commit -m "feat(security): protege escritas com verificacao de origem"
 git push origin main
 git status --short
 git log -1 --oneline
 git branch -vv
 ```
 
-Caso existam **arquivos de código também no estágio**, revisar o diff e escolher mensagem que os represente; não chamar um commit funcional de `docs:`. O avaliador já aceitou o convite, segundo Thiago. Depois do push, conferir que a branch remota contém os commits mais recentes.
+Caso existam **outros arquivos de código também no estágio**, revisar o diff e escolher mensagem que os represente. O avaliador já aceitou o convite, segundo Thiago. Depois do push, conferir que a branch remota contém os commits mais recentes.
 
 ## 5. Encerramento
 
 **Funcionalidades:** US-01 a US-13 validadas conforme os testes relatados.
-**Qualidade:** 133 testes API, 95 web e 48 manuais informados como aprovados.
+**Qualidade:** 143 testes API e 95 web aprovados (238 automatizados); 48 verificações manuais informadas como aprovadas.
 **Documentos:** revisados, com modelagem agora conferida contra o schema integral.
 **Acesso do avaliador:** convite aceito.
 **Próximo ato operacional:** publicar os arquivos no GitLab. Documento pronto para commit não equivale a commit/push já realizados.

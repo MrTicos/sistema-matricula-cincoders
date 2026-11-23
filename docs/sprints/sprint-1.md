@@ -5,7 +5,11 @@
 **Referências Jira:** MAT-6 (US-01), MAT-7 (US-02), MAT-16 (US-03), MAT-11 (US-04), MAT-8 (US-05), MAT-15 (US-06), MAT-12 (US-07), MAT-10 (US-08 — consulta de disciplinas), MAT-13 (US-09 — cadastro/edição de disciplinas) e MAT-17 (US-10 — consulta/cadastro de professores). **US-11** (consulta/abertura de turmas) e **US-12** (ajuste de capacidade) concluídas funcionalmente; conferir suas chaves específicas no Jira antes de atribuí-las no documento.
 **Último checkpoint:** 23/11/2026; avaliador aceitou o convite do GitLab, conforme confirmação de Thiago.
 
-## Checkpoint de preparação para entrega — após US-13
+## Complemento de segurança — T-32 (23/11/2026)
+
+A API passou a verificar `Origin` ou `Referer` no login e nas operações autenticadas de escrita, com `FRONTEND_ORIGIN` compartilhada com CORS. Foram aprovados **10 testes novos de CSRF** e a regressão integral atingiu **143/143 testes em 12 arquivos**, além do TypeScript. O frontend mantém **95/95 testes**, totalizando **238 testes automatizados**. Ainda não há ensaio E2E da política de origem no navegador ou teste HTTPS real; commit e push permanecem etapas de publicação a confirmar.
+
+## Checkpoint anterior de preparação para entrega — após US-13
 
 **Escopo funcional:** US-01 a US-12 relatadas como implementadas, mais **US-13 — histórico de matrículas canceladas**, escolhida como requisito funcional adicional. O responsável confirmou **8 verificações manuais aprovadas na US-13**, elevando o histórico informado para **48 verificações manuais** (US-08 a US-13). A navegação foi padronizada com `AlunoNav` e `SecretariaNav` e o CSS administrativo recebeu ajustes para ampliar as listagens. O redesign inspirado em Classter e Aprova Total **não faz parte deste fechamento**.
 

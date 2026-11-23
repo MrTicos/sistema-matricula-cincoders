@@ -5,7 +5,7 @@
 **Estado funcional:** implementado e testado; há verificações de segurança complementares ainda não comprovadas
 **ADR:** [0003 — Autenticação por sessão](../adr/0003-autenticacao-por-sessao.md) — decisão técnica adotada e limites de segurança registrados.
 
-> **Atualização em relação à versão de 21/11:** o React **não está mais planejado**: há login, rotas por perfil, tratamento de sessão expirada e logout na interface. Os endpoints acadêmicos já exercitam autorização por perfil e titularidade. A existência desses controles não implica que os testes específicos de CSRF, HTTPS e reinício de processo tenham sido executados.
+> **Atualização em relação à versão de 21/11:** login, rotas por perfil, sessão expirada e logout estão implementados no React. Os endpoints acadêmicos aplicam autorização por perfil/titularidade. Em 23/11, a proteção CSRF por origem foi adicionada e testada; HTTPS e continuidade de sessão após reinício ainda não foram verificados.
 
 ## 1. Requisito e atores
 
@@ -134,16 +134,17 @@ O cookie armazena uma referência à sessão, enquanto os dados autenticados fic
 - [x] Logout destruindo sessão e enviando limpeza de cookie.
 - [x] Autorização por titularidade nas rotas acadêmicas, contemplada nas suítes de matrícula/consulta/cancelamento/progresso/histórico.
 - [x] Tratamento de `401` pelo cliente web, com redirecionamento ao login conforme validação relatada.
+- [x] Verificação de `Origin` ou `Referer` nas requisições de login e escritas autenticadas, com `403` para origem inválida/ausente; 10 testes de integração T-32 aprovados. `FRONTEND_ORIGIN` compartilha o valor da origem permitida com CORS.
 
 ### Recomendações para implantação futura
 
 - **Reinício:** demonstrar persistência da mesma sessão depois de reiniciar a API com banco e segredo intactos.
 - **HTTPS:** conferir emissão e envio do cookie `Secure` em ambiente HTTPS real.
-- **CSRF:** definir/testar mitigação para requisições mutáveis autenticadas por cookie; `SameSite=Lax` não é proteção completa.
+- **CSRF:** a validação de origem está implementada e testada no nível HTTP. Em uma implantação com múltiplas origens ou ameaças ampliadas, reavaliar uso de token CSRF e testes E2E; `SameSite=Lax` permanece como proteção complementar.
 - **Expiração por tempo:** automatizar o cenário de cookie efetivamente expirado após o prazo.
 - **Cobertura adicional:** testar individualmente todos os usuários do seed, se necessário.
 
-Essas verificações **não foram declaradas como executadas**. Constituem limites transparentes de uma entrega acadêmica funcional, não checkboxes esquecidos de uma User Story.
+As verificações de **reinício, HTTPS real, expiração cronometrada e E2E** ainda não foram executadas. Constituem limites transparentes de uma entrega acadêmica funcional.
 
 ## 8. Critérios de aceitação em Gherkin
 
@@ -198,12 +199,13 @@ Funcionalidade: Autenticação e autorização
 | --- | --- | --- |
 | API | `tests/auth.test.ts` | 8 testes aprovados |
 | API | `tests/auth.middleware.test.ts` | 3 testes aprovados |
+| API | `tests/csrf.test.ts` | 10 testes aprovados de verificação de origem (T-32) |
 | Web | `src/pages/LoginPage.test.tsx` | 4 testes aprovados |
 | Web | `src/routes/AppRoutes.test.tsx` | 4 testes aprovados |
 | Web | `src/components/LogoutButton.test.tsx` | 3 testes aprovados |
 | Web | `src/api/client.test.ts` | 3 testes adicionados para comportamento de `401`; incluídos nos 95 |
 
-**Escopo da contagem:** os 11 primeiros são os testes diretos de autenticação/autorização da API. Os testes de rotas, logout e cliente HTTP fazem parte da suíte web geral. As verificações de titularidade também aparecem em outras suítes API. Não somar subconjuntos novamente ao total de **133 testes API + 95 testes web**.
+**Escopo da contagem:** 11 testes diretos de autenticação/autorização e 10 de CSRF estão incluídos na suíte API; testes web e de titularidade aparecem em outras suítes. Não somar subconjuntos novamente ao total de **143 testes API + 95 testes web**.
 
 ### Execução recomendada
 
@@ -224,7 +226,7 @@ pnpm exec tsc -b
 pnpm exec vitest run
 ```
 
-**Resultados comunicados em 23/11/2026:** API **133/133** (11 arquivos), web **95/95** (12 arquivos), além de validações manuais do logout e sessão invalidada em outra aba. As duas suítes são independentes e não constituem teste E2E.
+**Resultados consolidados em 23/11/2026:** API **143/143** (12 arquivos), incluindo T-32; web **95/95** (12 arquivos). Logout e sessão invalidada em outra aba também tiveram validação manual comunicada. As duas suítes são independentes e não constituem teste E2E.
 
 ## 10. Encerramento documental
 

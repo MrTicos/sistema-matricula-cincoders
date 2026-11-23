@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { sessionMiddleware } from "./config/session";
+import { frontendOrigin } from "./config/frontend-origin";
+import { exigirOrigemConfiavel } from "./middlewares/csrf.middleware";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { ofertasRoutes } from "./modules/ofertas/ofertas.routes";
 import { matriculasRoutes } from "./modules/matriculas/matriculas.routes";
@@ -13,13 +15,14 @@ import { turmasRoutes } from "./modules/secretaria/turmas/turmas.routes";
 export const app = express();
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: frontendOrigin,
   credentials: true,
 }));
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(sessionMiddleware);
+app.use(exigirOrigemConfiavel);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/aluno/ofertas", ofertasRoutes);
