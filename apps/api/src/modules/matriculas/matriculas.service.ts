@@ -246,3 +246,95 @@ export async function cancelarMatriculaDoAluno(
 
   return { tipo: "NAO_ENCONTRADA" as const };
 }
+
+interface ConsultarMatriculasCanceladasInput {
+  usuarioId: number;
+  pagina: number;
+  limite: number;
+}
+
+export async function consultarMatriculasCanceladas(
+  dados: ConsultarMatriculasCanceladasInput
+) {
+  const { usuarioId, pagina, limite } = dados;
+
+  const aluno = await prisma.aluno.findUnique({
+    where: {
+      usuarioId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!aluno) {
+    return null;
+  }
+
+  const where = {
+    alunoId: aluno.id,
+    situacao: "CANCELADA" as const,
+  };
+
+  const [total, registros] = await prisma.$transaction([
+    prisma.matricula.count({
+      where,
+    }),
+
+    prisma.matricula.findMany({
+      where,
+      orderBy: [
+        { canceladaEm: "desc" },
+        { id: "desc" },
+      ],
+      skip: (pagina - 1) * limite,
+      take: limite,
+      select: {
+        id: true,
+        turmaId: true,
+        situacao: true,
+        criadaEm: true,
+        canceladaEm: true,
+
+        turma: {
+          select: {
+            disciplina: {
+              select: {
+                id: true,
+                codigo: true,
+                nome: true,
+                cargaHoraria: true,
+              },
+            },
+
+            professor: {
+              select: {
+                id: true,
+                nome: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  return {
+    matriculas: registros.map((registro) => ({
+      id: registro.id,
+      turmaId: registro.turmaId,
+      situacao: registro.situacao,
+      criadaEm: registro.criadaEm,
+      canceladaEm: registro.canceladaEm,
+      disciplina: registro.turma.disciplina,
+      professor: registro.turma.professor,
+    })),
+
+    paginacao: {
+      pagina,
+      limite,
+      total,
+      totalPaginas: Math.ceil(total / limite),
+    },
+  };
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { SecretariaNav } from "../../components/SecretariaNav";
 
 import { apiRequest } from "../../api/client";
 import { LogoutButton } from "../../components/LogoutButton";
@@ -199,31 +200,12 @@ export function ProfessoresPage() {
           <span className="login-brand">CINCoders</span>
           <h1>Professores</h1>
           <p>Consulte e cadastre professores do sistema acadêmico.</p>
-          <nav aria-label="Navegação da secretaria">
-            <Link to="/secretaria">
-                Disciplinas
-            </Link>
-
-            {" · "}
-
-            <Link
-                to="/secretaria/professores"
-                aria-current="page"
-            >
-                Professores
-            </Link>
-
-            {" · "}
-
-            <Link to="/secretaria/turmas">
-                Turmas
-            </Link>
-            </nav>
+          <SecretariaNav />
         </div>
         <LogoutButton />
       </header>
 
-      <section className="secretaria-card" aria-labelledby="titulo-listagem-professores">
+      <section className="secretaria-card secretaria-card--listagem" aria-labelledby="titulo-listagem-professores">
         <h2 id="titulo-listagem-professores">Professores cadastrados</h2>
 
         <form className="secretaria-busca" onSubmit={pesquisar}>
@@ -316,7 +298,7 @@ export function ProfessoresPage() {
         )}
       </section>
 
-      <section className="secretaria-card" aria-labelledby="titulo-cadastro-professores">
+      <section className="secretaria-card secretaria-card--listagem" aria-labelledby="titulo-cadastro-professores">
         <h2 id="titulo-cadastro-professores">Novo professor</h2>
 
         <form onSubmit={cadastrar}>

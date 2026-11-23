@@ -13,8 +13,10 @@ import {
   cleanup,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
 
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
 import { MatriculasPage } from "./MatriculasPage";
@@ -158,4 +160,65 @@ describe("US-05 — Consultar matrículas ativas", () => {
       "Carregando matrículas..."
     );
   });
+
+  it("CT-06: deve permitir tentar novamente após falha de rede", async () => {
+  // A primeira consulta falha e a segunda funciona.
+  vi.mocked(apiRequest)
+    .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+    .mockResolvedValue(respostaMatriculas);
+
+  const usuario = userEvent.setup();
+
+  renderizarPagina();
+
+  // A página deve apresentar uma mensagem amigável.
+  const alerta = await screen.findByRole("alert");
+
+  expect(alerta.textContent).toContain(
+    "Não foi possível conectar ao servidor."
+  );
+
+  // O aluno deve conseguir solicitar uma nova tentativa.
+  const botao = screen.getByRole("button", {
+    name: "Tentar novamente",
+  });
+
+  await usuario.click(botao);
+
+  // A API deve ser consultada novamente.
+  await waitFor(() => {
+    expect(apiRequest).toHaveBeenCalledTimes(2);
+  });
+
+  // As duas consultas devem utilizar o mesmo endpoint.
+  expect(apiRequest).toHaveBeenNthCalledWith(
+    1,
+    "/api/aluno/matriculas"
+  );
+
+  expect(apiRequest).toHaveBeenNthCalledWith(
+    2,
+    "/api/aluno/matriculas"
+  );
+
+  // Após recuperar a conexão, as matrículas reaparecem.
+  expect(
+    await screen.findByText("Banco de Dados")
+  ).toBeTruthy();
+
+  expect(
+    screen.getByText("CIN0002")
+  ).toBeTruthy();
+
+  // O botão de recuperação deve desaparecer.
+  expect(
+    screen.queryByRole("button", {
+      name: "Tentar novamente",
+    })
+  ).toBeNull();
+
+  // A mensagem de erro também deve desaparecer.
+  expect(screen.queryByRole("alert")).toBeNull();
+});
+
 });

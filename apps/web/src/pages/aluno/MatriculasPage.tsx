@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { AlunoNav } from "../../components/AlunoNav";
 
 import { apiRequest } from "../../api/client";
 import { cancelarMatricula } from "../../api/cancelamento";
 import { LogoutButton } from "../../components/LogoutButton";
+import { HistoricoMatriculas } from "./HistoricoMatriculas";
 
 import type {
   MatriculaAtiva,
@@ -21,7 +23,13 @@ export function MatriculasPage() {
     carregando: true,
     matriculas: [],
     erro: null,
-  });
+});
+
+  const [tentativaConsulta, setTentativaConsulta] = useState(0);
+
+    const [exibicao, setExibicao] = useState<
+      "ativas" | "historico"
+    >("ativas");
 
   const [confirmandoId, setConfirmandoId] = useState<number | null>(null);
   const [cancelandoId, setCancelandoId] = useState<number | null>(null);
@@ -48,8 +56,10 @@ export function MatriculasPage() {
           setEstado({
             carregando: false,
             matriculas: [],
-            erro:
-              erro instanceof Error
+           erro:
+            erro instanceof TypeError
+              ? "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente."
+              : erro instanceof Error
                 ? erro.message
                 : "Não foi possível consultar suas matrículas.",
           });
@@ -59,7 +69,17 @@ export function MatriculasPage() {
     return () => {
       ativo = false;
     };
-  }, []);
+  }, [tentativaConsulta]);
+
+  function tentarNovamente() {
+  setEstado((anterior) => ({
+    ...anterior,
+    carregando: true,
+    erro: null,
+  }));
+
+  setTentativaConsulta((anterior) => anterior + 1);
+}
 
   function formatarData(data: string) {
     return new Date(data).toLocaleDateString("pt-BR");
@@ -126,19 +146,41 @@ export function MatriculasPage() {
       </header>
 
       {/* Navegação */}
-      <nav className="matriculas-navegacao">
-        <Link to="/aluno/ofertas">
-          Consultar ofertas
-        </Link>
+      <AlunoNav />
 
-        <Link to="/aluno/matriculas">
-          Minhas matrículas
-        </Link>
+        <div
+        className="matriculas-abas"
+        role="group"
+        aria-label="Tipos de matrícula"
+        >
+        <button
+          type="button"
+          className={
+            exibicao === "ativas"
+              ? "matriculas-aba matriculas-aba--ativa"
+              : "matriculas-aba"
+          }
+          aria-pressed={exibicao === "ativas"}
+          disabled={cancelandoId !== null}
+          onClick={() => setExibicao("ativas")}
+        >
+          Matrículas ativas
+        </button>
 
-        <Link to="/aluno/progresso">
-          Progresso curricular
-        </Link>
-      </nav>
+        <button
+          type="button"
+          className={
+            exibicao === "historico"
+              ? "matriculas-aba matriculas-aba--ativa"
+              : "matriculas-aba"
+          }
+          aria-pressed={exibicao === "historico"}
+          disabled={cancelandoId !== null}
+          onClick={() => setExibicao("historico")}
+        >
+          Histórico de cancelamentos
+        </button>
+      </div>
 
       {/* Mensagens */}
       {mensagemSucesso && (
@@ -154,19 +196,31 @@ export function MatriculasPage() {
       )}
 
       {/* Carregamento */}
-      {estado.carregando && (
+      {exibicao === "ativas" && estado.carregando && (
         <p role="status">Carregando matrículas...</p>
       )}
 
-      {/* Erro na consulta */}
-      {!estado.carregando && estado.erro && (
-        <p role="alert" className="mensagem-erro">
-          {estado.erro}
-        </p>
+    {/* Erro na consulta */}
+    {exibicao === "ativas" &&
+      !estado.carregando &&
+      estado.erro && (
+        <div className="matriculas-erro">
+          <p role="alert" className="mensagem-erro">
+            {estado.erro}
+          </p>
+
+          <button
+            type="button"
+            onClick={tentarNovamente}
+          >
+            Tentar novamente
+          </button>
+        </div>
       )}
 
       {/* Nenhuma matrícula */}
-      {!estado.carregando &&
+      {exibicao === "ativas" &&
+        !estado.carregando &&
         !estado.erro &&
         estado.matriculas.length === 0 && (
           <section className="matriculas-vazio">
@@ -183,7 +237,8 @@ export function MatriculasPage() {
         )}
 
       {/* Matrículas ativas */}
-      {!estado.carregando &&
+      {exibicao === "ativas" &&
+        !estado.carregando &&
         !estado.erro &&
         estado.matriculas.length > 0 && (
           <>
@@ -280,6 +335,10 @@ export function MatriculasPage() {
             </div>
           </>
         )}
+
+      {exibicao === "historico" && (
+        <HistoricoMatriculas />
+      )}
     </main>
   );
 }

@@ -13,7 +13,10 @@ import {
   cleanup,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
+
+import userEvent from "@testing-library/user-event";
 
 import { MemoryRouter } from "react-router-dom";
 
@@ -165,4 +168,66 @@ describe("US-07 — Progresso curricular", () => {
       "Falha ao consultar progresso."
     );
   });
+
+  it("CT-06: deve permitir tentar novamente após falha de rede", async () => {
+  // A primeira consulta falha e a segunda funciona.
+  vi.mocked(apiRequest)
+    .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+    .mockResolvedValue(resposta);
+
+  const usuario = userEvent.setup();
+
+  renderizarPagina();
+
+  // Deve apresentar uma mensagem amigável.
+  const alerta = await screen.findByRole("alert");
+
+  expect(alerta.textContent).toContain(
+    "Não foi possível conectar ao servidor."
+  );
+
+  // O botão de recuperação deve estar disponível.
+  const botao = screen.getByRole("button", {
+    name: "Tentar novamente",
+  });
+
+  await usuario.click(botao);
+
+  // A API deve receber uma segunda requisição.
+  await waitFor(() => {
+    expect(apiRequest).toHaveBeenCalledTimes(2);
+  });
+
+  // Ambas as consultas utilizam o mesmo endpoint.
+  expect(apiRequest).toHaveBeenNthCalledWith(
+    1,
+    "/api/aluno/progresso"
+  );
+
+  expect(apiRequest).toHaveBeenNthCalledWith(
+    2,
+    "/api/aluno/progresso"
+  );
+
+  // Após recuperar a conexão, os dados reaparecem.
+  expect(
+    await screen.findByText("Sistemas de Informação")
+  ).toBeTruthy();
+
+  // O percentual total deve ser restaurado corretamente.
+  const barra = screen.getByRole("progressbar", {
+    name: "Progresso total do curso",
+  });
+
+  expect(barra).toHaveProperty("value", 28.57);
+
+  // O erro e o botão de recuperação devem desaparecer.
+  expect(screen.queryByRole("alert")).toBeNull();
+
+  expect(
+    screen.queryByRole("button", {
+      name: "Tentar novamente",
+    })
+  ).toBeNull();
+});
 });

@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { SecretariaNav } from "../../components/SecretariaNav";
 
 import { apiRequest } from "../../api/client";
 import { LogoutButton } from "../../components/LogoutButton";
@@ -436,18 +437,12 @@ async function salvarCapacidade(
           <span className="login-brand">CINCoders</span>
           <h1>Turmas</h1>
           <p>Consulte as ofertas abertas e cadastre novas turmas.</p>
-          <nav aria-label="Navegação da secretaria">
-            <Link to="/secretaria">Disciplinas</Link>{" · "}
-            <Link to="/secretaria/professores">Professores</Link>{" · "}
-            <Link to="/secretaria/turmas" aria-current="page">
-              Turmas
-            </Link>
-          </nav>
+          <SecretariaNav />
         </div>
         <LogoutButton />
       </header>
 
-      <section className="secretaria-card" aria-labelledby="titulo-listagem-turmas">
+      <section className="secretaria-card secretaria-card--listagem" aria-labelledby="titulo-listagem-turmas">
         <h2 id="titulo-listagem-turmas">Turmas cadastradas</h2>
 
         <form className="secretaria-busca" onSubmit={pesquisar}>
@@ -630,7 +625,7 @@ async function salvarCapacidade(
 
       </section>
 
-      <section className="secretaria-card" aria-labelledby="titulo-abertura-turma">
+      <section className="secretaria-card secretaria-card--listagem" aria-labelledby="titulo-abertura-turma">
         <h2 id="titulo-abertura-turma">Abrir nova turma</h2>
         <p>Pesquise disciplina e professor pelo nome antes de selecionar.</p>
 

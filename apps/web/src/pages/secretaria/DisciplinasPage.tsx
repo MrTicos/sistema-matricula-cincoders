@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 import { apiRequest } from "../../api/client";
 import { LogoutButton } from "../../components/LogoutButton";
+import { SecretariaNav } from "../../components/SecretariaNav";
 
 const LIMITE_POR_PAGINA = 10;
 
@@ -304,20 +305,12 @@ export function DisciplinasPage() {
           <span className="login-brand">CINCoders</span>
           <h1>Disciplinas</h1>
           <p>Consulte, cadastre e edite disciplinas do sistema acadêmico.</p>
-          <nav aria-label="Navegação da secretaria">
-            <Link to="/secretaria" aria-current="page">
-              Disciplinas
-            </Link>
-            {" · "}
-            <Link to="/secretaria/professores">
-              Professores
-            </Link>
-          </nav>
+          <SecretariaNav />
         </div>
         <LogoutButton />
       </header>
 
-      <section className="secretaria-card" aria-labelledby="titulo-listagem">
+      <section className="secretaria-card secretaria-card--listagem" aria-labelledby="titulo-listagem">
         <h2 id="titulo-listagem">Disciplinas cadastradas</h2>
 
         <form className="secretaria-busca" onSubmit={pesquisar}>
@@ -431,7 +424,7 @@ export function DisciplinasPage() {
 
       {disciplinaEmEdicao && (
         <section
-          className="secretaria-card"
+          className="secretaria-card secretaria-card--listagem"
           aria-labelledby="titulo-edicao"
         >
           <h2 id="titulo-edicao">
@@ -500,7 +493,7 @@ export function DisciplinasPage() {
         </section>
       )}
 
-      <section className="secretaria-card" aria-labelledby="titulo-cadastro">
+      <section className="secretaria-card secretaria-card--listagem" aria-labelledby="titulo-cadastro">
         <h2 id="titulo-cadastro">Nova disciplina</h2>
 
         <form onSubmit={cadastrar}>

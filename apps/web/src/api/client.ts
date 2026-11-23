@@ -14,12 +14,25 @@ export async function apiRequest<T>(
   });
 
   if (!resposta.ok) {
-    const erro = await resposta.json().catch(() => null);
+  // Sessão expirada ou usuário não autenticado.
+  if (
+    resposta.status === 401 &&
+    endpoint !== "/api/auth/login" &&
+    endpoint !== "/api/auth/me"
+  ) {
+    window.location.replace("/login");
 
     throw new Error(
-      erro?.message ?? "Erro ao comunicar com o servidor."
+      "Sua sessão expirou. Faça login novamente."
     );
   }
+
+  const erro = await resposta.json().catch(() => null);
+
+  throw new Error(
+    erro?.message ?? "Erro ao comunicar com o servidor."
+  );
+}
 
   if (resposta.status === 204) {
     return undefined as T;

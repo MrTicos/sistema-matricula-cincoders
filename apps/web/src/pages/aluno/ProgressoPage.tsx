@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { AlunoNav } from "../../components/AlunoNav";
 
 import { apiRequest } from "../../api/client";
 import { LogoutButton } from "../../components/LogoutButton";
@@ -74,6 +74,8 @@ export function ProgressoPage() {
     erro: null,
   });
 
+  const [tentativaConsulta, setTentativaConsulta] = useState(0);
+
   useEffect(() => {
     let ativo = true;
 
@@ -93,9 +95,11 @@ export function ProgressoPage() {
             carregando: false,
             dados: null,
             erro:
-              erro instanceof Error
-                ? erro.message
-                : "Não foi possível consultar o progresso curricular.",
+              erro instanceof TypeError
+                ? "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente."
+                : erro instanceof Error
+                  ? erro.message
+                  : "Não foi possível consultar o progresso curricular.",
           });
         }
       });
@@ -103,7 +107,17 @@ export function ProgressoPage() {
     return () => {
       ativo = false;
     };
-  }, []);
+  }, [tentativaConsulta]);
+
+  function tentarNovamente() {
+    setEstado((anterior) => ({
+      ...anterior,
+      carregando: true,
+      erro: null,
+    }));
+
+    setTentativaConsulta((anterior) => anterior + 1);
+  }
 
   return (
     <main className="progresso-page">
@@ -122,29 +136,27 @@ export function ProgressoPage() {
         <LogoutButton />
       </header>
 
-      <nav className="matriculas-navegacao">
-        <Link to="/aluno/ofertas">
-          Consultar ofertas
-        </Link>
-
-        <Link to="/aluno/matriculas">
-          Minhas matrículas
-        </Link>
-
-        <Link to="/aluno/progresso">
-          Progresso curricular
-        </Link>
-      </nav>
+      <AlunoNav />
 
       {estado.carregando && (
         <p role="status">Carregando progresso curricular...</p>
       )}
 
-      {!estado.carregando && estado.erro && (
+    {/* Erro na consulta */}
+    {!estado.carregando && estado.erro && (
+      <div className="progresso-erro">
         <p className="mensagem-erro" role="alert">
           {estado.erro}
         </p>
-      )}
+
+        <button
+          type="button"
+          onClick={tentarNovamente}
+        >
+          Tentar novamente
+        </button>
+      </div>
+    )}
 
       {!estado.carregando && estado.dados && (
         <>

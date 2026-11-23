@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { apiRequest } from "../../api/client";
 import { criarMatricula } from "../../api/matriculas";
 import { LogoutButton } from "../../components/LogoutButton";
+import { AlunoNav } from "../../components/AlunoNav";
 
 import type {
   ClassificacaoCurricular,
@@ -27,9 +28,12 @@ interface EstadoConsulta {
 export function OfertasPage() {
   const [parametros, setParametros] = useSearchParams();
 
+  const [tentativa, setTentativa] = useState(0);
+
   const busca = parametros.get("busca") ?? "";
   const pagina = Number(parametros.get("pagina") ?? "1");
-  const chave = `${busca}|${pagina}`;
+
+  const chave = `${busca}|${pagina}|${tentativa}`;
 
   const [estado, setEstado] = useState<EstadoConsulta>({
     chave: "",
@@ -71,9 +75,11 @@ export function OfertasPage() {
             chave,
             dados: null,
             erro:
-              erro instanceof Error
-                ? erro.message
-                : "Não foi possível consultar as ofertas.",
+              erro instanceof TypeError
+                ? "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente."
+                : erro instanceof Error
+                  ? erro.message
+                  : "Não foi possível consultar as ofertas.",
           });
         }
       });
@@ -178,6 +184,8 @@ export function OfertasPage() {
         <LogoutButton />
       </header>
 
+      <AlunoNav />
+
       {/* Pesquisa */}
       <form className="ofertas-busca" onSubmit={pesquisar}>
         <label htmlFor="busca">Buscar disciplina</label>
@@ -217,7 +225,20 @@ export function OfertasPage() {
 
       {/* Erro na consulta */}
       {!carregando && estado.erro && (
-        <p role="alert">{estado.erro}</p>
+        <div className="ofertas-erro">
+          <p className="mensagem-erro" role="alert">
+            {estado.erro}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setTentativa((anterior) => anterior + 1);
+            }}
+          >
+            Tentar novamente
+          </button>
+        </div>
       )}
 
       {/* Listagem */}
